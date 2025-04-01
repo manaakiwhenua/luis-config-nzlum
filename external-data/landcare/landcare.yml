@@ -1,0 +1,62 @@
+__publisher_lcr: &lcr
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: "Sourced from the Land Resource Information Systems (LRIS) Portal and licensed for reuse under CC BY 4.0"
+
+__publisher_lcr_wfs: &lcr_wfs
+  <<: *lcr
+  host: https://lris.scinfo.org.nz/services;key={key}/wfs
+  key: LRIS_KEY
+  external_data_type: wfs
+
+external_data:
+
+  lcdb_v5:
+    <<: *lcr_wfs
+    description: LCDB v5
+    layer: layer-104400
+    geom_type: multipolygon
+    indices:
+      - columns: [Name_2018]
+        type: btree
+        name: idx_name_2018
+      - columns: [Class_2018]
+        type: btree
+        name: idx_class_2018
+      - columns: [editdate]
+        type: btree
+        name: idx_editdate
+      - columns: [geom]
+        type: gist
+        name: idx_gist_geom
+    derived_columns: &lcdb_derived
+      - column: lcdbp_cls
+        datatype: text
+        set_query: |-
+          (
+            CASE
+              WHEN Name_2018 IN ('Built-up Area (settlement)', 'Urban Parkland/Open Space') THEN 'Built-up Area (settlement)'
+              WHEN Name_2018 IN ('Transport Infrastructure') THEN 'Transport infrastructure'
+              WHEN Name_2018 IN ('Deciduous Hardwoods', 'Exotic Forest', 'Forest - Harvested') THEN 'Forestry'
+              WHEN Name_2018 IN ('Alpine Grass/Herbfield', 'Depleted Grassland', 'High Producing Exotic Grassland', 'Low Producing Grassland', 'Tall Tussock Grassland') THEN 'Grassland'
+              WHEN Name_2018 IN ('Broadleaved Indigenous Hardwoods', 'Indigenous Forest') THEN 'Natural forest'
+              WHEN Name_2018 IN ('Orchard, Vineyard or Other Perennial Crop') THEN 'Orchards and vineyards'
+              WHEN Name_2018 IN ('Short-rotation Cropland') THEN 'Short-rotation Cropland'
+              WHEN Name_2018 IN ('Fernland', 'Flaxland', 'Gorse and/or Broom', 'Herbaceous Freshwater Vegetation', 'Herbaceous Saline Vegetation', 'Matagouri or Grey Scrub', 'Mixed Exotic Shrubland', 'Sub Alpine Shrubland', 'Dune Shrubland (Chatham Is)', 'Peat Shrubland (Chatham Is)') THEN 'Shrubby vegetation'
+              WHEN Name_2018 IN ('Manuka and/or Kanuka') THEN 'Shrubby vegetation (M/K)'
+              ELSE 'Other land cover'
+            END
+          )
+
+  lcdb_v5_chathams:
+    <<: *lcr_wfs
+    description: LCDB v5 [Chatham Islands]
+    layer: layer-104442
+    geom_type: multipolygon
+    derived_columns: *lcdb_derived
+    indices:
+      - columns: [Name_2018]
+        type: btree
+        name: idx_name_2018
+      - columns: [editdate]
+        type: btree
+        name: idx_editdate

@@ -1,0 +1,20 @@
+__hbrc__: &hbrc
+  external_data_type: arcgis_rest
+  license: null
+  attribution: Hawke's Bay Regional Council
+
+external_data:
+  hawkes_bay_land_categorisation:
+    <<: *hbrc
+    host: https://services1.arcgis.com/hWByVnSkh6ElzHkf/arcgis/rest/services/Hawkes_Bay_Land_Categorisation/FeatureServer
+    description: |-
+      This layer shows the Land Categorisation 3 areas within Hawke's Bay Region. These are the confirmed areas as of 11 Feb 2025 (v25). This data is provided to help inform land owners as to the status of Land Category extents. The Land Category is developed in accordance with "Hawke's Bay Regional Council's Land Categorisation Process and Framework following Cyclone Gabrielle" and is not intended for use for any other purpose.
+      First Created 30 September 2023 
+      Update and maintenance frequency: ad hoc
+      Metadata last updated: 11 Feb 2025
+    geom_type: multipolygon
+    layer: "0"
+    indices:
+      - columns: [category] # NB string
+        type: btree
+        name: idx_btree_category

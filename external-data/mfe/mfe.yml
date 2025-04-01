@@ -1,0 +1,149 @@
+__publisher_mfe: &mfe
+  host: https://data.mfe.govt.nz/services;key={key}/wfs
+  key: MFE_KEY
+  external_data_type: wfs
+  license: https://creativecommons.org/licenses/by/4.0/
+
+# TODO add https://data.mfe.govt.nz/layer/52374-environmental-limiting-factors-2012/
+
+# TODO LUCAS? https://data.mfe.govt.nz/layer/52375-lucas-nz-land-use-map-1990-2008-2012-2016-v008/
+
+external_data:
+
+  irrigation_2020:
+    <<: *mfe
+    description: Irrigated land area, raw, 2020 update
+    layer: layer-105407
+    geom_type: multipolygon
+    derived_columns:
+      - column: irrigation_type
+        datatype: text
+        set_query: type
+      - column: alum_comment
+        datatype: text
+        set_query: "CASE WHEN irrigation_2020.type = 'Unknown' THEN NULL ELSE irrigation_2020.type END"
+      - column: alum_source_date
+        datatype: date
+        set_query: "TO_DATE(irrigation_2020.yearmapped::text, 'YYYY')"
+      - column: alum_confidence
+        datatype: int
+        set_query: |-
+          (
+            CASE
+              WHEN irrigation_2020.confidence = 'High' THEN 1
+              WHEN irrigation_2020.confidence = 'Medium' THEN 2
+              WHEN irrigation_2020.confidence = 'Low' THEN 3
+              ELSE 3 -- TODO 3.5?
+            END
+          )
+      - column: is_current
+        datatype: boolean
+        set_query: irrigation_2020.status = 'Current'
+      - column: ts_notes
+        datatype: tsvector
+        set_query: to_tsvector('english', notes)
+    indices:
+      - columns: [is_current]
+        type: btree
+        name: idx_btree_is_current
+      - columns: [status]
+        type: btree
+        name: idx_btree_status
+      - columns: [confidence]
+        type: btree
+        name: idx_btree_confidence
+      - columns: [irrigation_type]
+        type: btree
+        name: idx_btree_irrigation_type
+      - columns: [irrigation_type]
+        type: gin
+        name: idx_gin_irrigation_type
+      - columns: [ts_notes]
+        type: gin
+        name: idx_gin_ts_notes
+  lum:
+    <<: *mfe
+    description: LUCAS NZ Land Use Map 2020 v003
+    layer: layer-117733
+    geom_type: multipolygon
+    indices:
+      - columns: [lucid_2016]
+        type: btree
+        name: idx_lucid_2016
+      - columns: [subid_2016]
+        type: btree
+        name: idx_subid_2016
+      - columns: [lucid_2016,subid_2016]
+        type: btree
+        name: idx_lucid_2016_subid_2016
+      - columns: [lucid_2020]
+        type: btree
+        name: idx_lucid_2020
+      - columns: [subid_2020]
+        type: btree
+        name: idx_subid_2020
+      - columns: [lucid_2020,subid_2020]
+        type: btree
+        name: idx_lucid_2020_subid_2020
+
+  lum_chathams:
+    <<: *mfe
+    description: LUCAS Chathams NZ Land Use Map 2020 v001
+    layer: layer-118263
+    geom_type: multipolygon
+    indices:
+      - columns: [lucid_2016]
+        type: btree
+        name: idx_lucid_2016
+      - columns: [subid_2016]
+        type: btree
+        name: idx_subid_2016
+      - columns: [lucid_2016,subid_2016]
+        type: btree
+        name: idx_lucid_2016_subid_2016
+      - columns: [lucid_2020]
+        type: btree
+        name: idx_lucid_2020
+      - columns: [subid_2020]
+        type: btree
+        name: idx_subid_2020
+      - columns: [lucid_2020,subid_2020]
+        type: btree
+        name: idx_lucid_2020_subid_2020
+
+  fenz_lakes:
+    <<: *mfe
+    description: FENZ Lakes
+    layer: layer-120714
+    geom_type: multipolygon
+    indices:
+      - columns: [Geomorphic]
+        type: btree
+        name: idx_btree_geomorphic
+      - columns: [ArtInfo]
+        type: btree
+        name: idx_btree_artinfo
+      - columns: [Wetland]
+        type: btree
+        name: idx_btree_wetland
+    derived_columns:
+      - column: water
+        datatype: text
+        set_query: |-
+          (CASE
+            WHEN ArtInfo = 'D' THEN 'lake dam'
+            WHEN ArtInfo = 'C' THEN 'lake constructed'
+            WHEN ArtInfo = 'M' THEN 'lake mine'
+            WHEN Wetland = 'WL' THEN 'lake wetland'
+            WHEN Wetland = 'WC' THEN 'lake wetland complex'
+            WHEN Geomorphic = 'B' THEN 'lake barrier bar'
+            WHEN Geomorphic = 'W' THEN 'lake aeolian'
+            WHEN Geomorphic = 'G' THEN 'lake glacial'
+            WHEN Geomorphic = 'L' THEN 'lake landslide'
+            WHEN Geomorphic = 'P' THEN 'lake phytogenic'
+            WHEN Geomorphic = 'R' THEN 'lake riverine'
+            WHEN Geomorphic = 'S' THEN 'lake solution'
+            WHEN Geomorphic = 'T' THEN 'lake tectonic'
+            WHEN Geomorphic = 'V' THEN 'lake volcanic'
+            ELSE 'lake'
+          END)

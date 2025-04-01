@@ -1,0 +1,68 @@
+external_data:
+
+  crosl:
+    description: |-
+       The Central Record of State Land (CRoSL) identifies all crown land in
+       New Zealand and provides contextual information on the land such 
+       as parcel/title information, ownership information and legislative 
+       information.
+    host: https://services.arcgis.com/xdsHIIxuCWByZiCB/arcgis/rest/services/CRoSL_Layer_N/FeatureServer
+    geom_type: multipolygon
+    external_data_type: arcgis_rest
+    license: https://creativecommons.org/licenses/by/4.0/
+    attribution: Land Information New Zealand
+    layer: '0'
+    indices:
+      - columns: [managed_by]
+        type: btree
+        name: idx_managed_by
+      - columns: [statutory_actions]
+        type: gin
+        name: idx_statutory_actions
+      - columns: [parcel_id]
+        type: btree
+        name: idx_parcel_id
+      - columns: [title_no]
+        type: btree
+        name: idx_title_no
+      - columns: [gov_type]
+        type: btree
+        name: idx_govt_type
+      - columns: [common_name]
+        type: btree
+        name: idx_common_name
+      - columns: [applicable_act]
+        type: btree
+        name: idx_applicable_act
+      - columns: [ts_statutory_actions_common_name]
+        type: gin
+        name: idx_gin_ts_statutory_actions_common_name
+      # - columns: [statutory_actions]
+      #   type: gin
+      #   name: idx_gin_statutory_actions
+      - columns: [ts_statutory_actions]
+        type: gin
+        name: idx_gin_ts_statutory_actions
+      # - columns: [common_name]
+      #   type: gin
+      #   name: idx_gin_common_name
+      - columns: [ts_common_name]
+        type: gin
+        name: idx_gin_ts_common_name
+    derived_columns:
+      - column: alum_source_date
+        datatype: date
+        set_query: "TO_DATE(date_updated, 'YYYYMMDD')"
+      - column: alum_comment
+        datatype: text
+        # set_query: "CONCAT_WS('|', CASE WHEN managed_by = 'To Be Determined' THEN NULL ELSE managed_by END, common_name, applicable_act, statutory_actions)"
+        set_query: coalesce(common_name, CASE WHEN managed_by = 'To Be Determined' THEN NULL ELSE managed_by END, applicable_act)
+      - column: ts_statutory_actions_common_name
+        datatype: tsvector
+        set_query: "to_tsvector('english', CONCAT_WS(' ', statutory_actions, common_name))"
+      - column: ts_statutory_actions
+        datatype: tsvector
+        set_query: to_tsvector('english', statutory_actions)
+      - column: ts_common_name
+        datatype: tsvector
+        set_query: to_tsvector('english', common_name)

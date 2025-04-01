@@ -1,0 +1,362 @@
+__publisher_linz: &linz_topo50
+  host: https://data.linz.govt.nz/services;key={key}/wfs
+  key: LINZ_KEY
+  external_data_type: wfs
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: "Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0"
+
+external_data:
+
+  topo50_land:
+    <<: *linz_topo50
+    description: NZ Coastlines and Islands Polygons (Topo 1:50k)
+    layer: layer-51153
+    geom_type: multipolygon
+
+  topo50_sportsfields:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k sports fields
+    layer: layer-50355
+    geom_type: multipolygon
+  
+  topo50_golf_courses:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k golf courses
+    layer: layer-50281
+    geom_type: multipolygon
+  
+  topo50_chatham_golf_courses:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island golf courses
+    layer: layer-50083
+    geom_type: multipolygon
+  
+  topo50_cemetery:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k cemeteries
+    layer: layer-50255
+    geom_type: multipolygon
+
+  topo50_chatham_cemetery:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island cemeteries
+    layer: layer-50071
+    geom_type: multipolygon
+
+  topo50_airports:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Airport Polygons
+    layer: layer-50237
+    geom_type: multipolygon
+
+  topo50_chatham_airports:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island Airport Polygons
+    layer: layer-50063
+    geom_type: multipolygon
+
+  topo50_runways:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Runway Polygons
+    layer: layer-50333
+    geom_type: multipolygon
+    indices:
+      - columns: [status]
+        type: btree
+        name: idx_btree_status
+
+  topo50_chatham_runways:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island Runway Polygons
+    layer: layer-50103
+    geom_type: multipolygon
+    indices:
+      - columns: [status]
+        type: btree
+        name: idx_btree_status
+
+  topo50_ice:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k ice
+    layer: layer-50287
+    geom_type: multipolygon
+
+  # TODO chatham island https://data.linz.govt.nz/layer/50087-nz-chatham-island-lagoon-polygons-topo-150k/
+  topo50_lagoon:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Lagoon Polygons
+    layer: layer-50292
+    geom_type: multipolygon
+
+  # TODO https://data.linz.govt.nz/layer/50088-nz-chatham-island-lake-polygons-topo-150k/
+  topo50_lake:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Lake Polygons
+    layer: layer-50293
+    geom_type: multipolygon
+    indices:
+      - columns: [lake_use]
+        type: btree
+        name: idx_lake_use
+      - columns: [name]
+        type: btree
+        name: idx_btree_lake_name
+      - columns: [name]
+        type: gin
+        name: idx_gin_lake_name
+      - columns: [grp_name]
+        type: btree
+        name: idx_lake_grp_name
+
+  topo50_pond:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k pond Polygons
+    layer: layer-50310
+    geom_type: multipolygon
+    indices:
+      - columns: [pond_use]
+        type: btree
+        name: idx_pond_use
+      - columns: [name]
+        type: hash
+        name: idx_pond_name
+
+  # TODO https://data.linz.govt.nz/layer/50113-nz-chatham-island-swamp-polygons-topo-150k/
+  topo50_swamp:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k swamp Polygons
+    layer: layer-50359
+    geom_type: multipolygon
+
+  topo50_mangrove:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Mangrove Polygons
+    layer: layer-50296
+    geom_type: multipolygon
+
+  # TODO https://data.linz.govt.nz/layer/50098-nz-chatham-island-river-centrelines-topo-150k/
+  topo50_river:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k River Centrelines
+    layer: layer-50327
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5, 'endcap=round join=round')::geometry AS geom
+
+  topo50_river_pol:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k River Polygons
+    layer: layer-50328
+    geom_type: multipolygon
+
+  topo50_chatham_river_pol:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island River Polygons
+    layer: layer-50099
+    geom_type: multipolygon
+
+  topo50_drain:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Drain Centrelines
+    layer: layer-50262
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 3, 'endcap=round join=round')::geometry AS geom
+
+  topo50_chatham_drain:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island Drain Centrelines
+    layer: layer-50077
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 3, 'endcap=round join=round')::geometry AS geom
+
+  topo50_canal:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Canals
+    layer: layer-50251
+    geom_type: multipolygon
+    indices:
+      - columns: [name]
+        type: btree
+        name: idx_btree_name
+
+  topo50_roads:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Road Centrelines
+    layer: layer-50329
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 1.5 * lane_count + 1.5, 'endcap=round join=round')::geometry AS geom
+    indices:
+      - columns: [geom]
+        type: gist
+        name: idx_gist_geom
+
+  topo50_chatham_roads:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island Road Centrelines
+    layer: layer-50100
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 1.5 * lane_count + 1.5, 'endcap=round join=round')::geometry AS geom
+    indices:
+      - columns: [geom]
+        type: gist
+        name: idx_gist_geom
+
+  topo50_marine_farms:
+    <<: *linz_topo50
+    description: NZ Marine Farm Polygons
+    layer: layer-50298
+    geom_type: multipolygon
+    indices:
+      - columns: [species]
+        type: btree
+        name: idx_spcies
+
+  topo50_railway:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Railway Centrelines
+    layer: layer-50319
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5 * CASE WHEN track_type = 'single' THEN 1 ELSE 2 END, 'endcap=round join=round')::geometry AS geom
+
+  topo50_dredge_tailing_centrelines:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Dredge Tailing Centrelines (buffered 50 m)
+    layer: layer-50264
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 50, 'endcap=round join=round')::geometry AS geom
+
+  # TODO https://data.linz.govt.nz/layer/50097-nz-chatham-island-quarry-polygons-topo-150k/
+  topo50_quarries:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Quarry Polygons
+    layer: layer-50314
+    geom_type: multipolygon
+    derived_columns:
+      - column: disused
+        datatype: bool
+        set_query: CASE WHEN status = 'disused' THEN true ELSE null END
+    indices:
+      - columns: [geom]
+        type: gist
+        name: idx_gist_geom
+
+  topo50_chatham_quarries:
+    <<: *linz_topo50
+    description: LINZ Topo Chatham Island 1:50k Quarry Polygons
+    layer: layer-50097
+    geom_type: multipolygon
+    derived_columns:
+      - column: disused
+        datatype: bool
+        set_query: CASE WHEN status = 'disused' THEN true ELSE null END
+    indices:
+      - columns: [geom]
+        type: gist
+        name: idx_gist_geom
+
+  topo50_mines:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Mine Polygons
+    layer: layer-50301
+    geom_type: multipolygon
+
+  topo50_sand:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Sand Polygons
+    layer: layer-50335
+    geom_type: multipolygon
+
+  topo50_chatham_sand:
+    <<: *linz_topo50
+    description: LINZ Topo Chatham Island 1:50k Sand Polygons
+    layer: layer-50104
+    geom_type: multipolygon
+
+  topo50_mud:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Mud Polygons
+    layer: layer-50335
+    geom_type: multipolygon
+
+  topo50_chatham_mud:
+    <<: *linz_topo50
+    description: LINZ Topo Chatham Island 1:50k Mud Polygons
+    layer: layer-50092
+    geom_type: multipolygon
+
+  topo50_exotic_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Exotic Polygons
+    layer: layer-50305
+    geom_type: multipolygon
+    # nb species: [empty] (i.e. coniferous) and "non-coniferous"
+
+  topo50_chatham_exotic_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo Chatham Island 1:50k Exotic Polygons
+    layer: layer-50078
+    geom_type: multipolygon
+    # nb species: [empty] (i.e. coniferous) and "non-coniferous"
+
+  topo50_orchards:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Orchard Polygons
+    layer: layer-50307
+    geom_type: multipolygon
+
+  topo50_rocks_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Rock Polygons
+    layer: layer-50332
+    geom_type: multipolygon
+
+  topo50_chatham_rocks_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island Rock Polygons
+    layer: layer-50102
+    geom_type: multipolygon
+
+  topo50_scree_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Scree Polygons
+    layer: layer-50338
+    geom_type: multipolygon
+
+  topo50_snow_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Snow Polygons
+    layer: layer-50352
+    geom_type: multipolygon
+
+  topo50_moraine_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Moraine Polygons
+    layer: layer-50303
+    geom_type: multipolygon
+
+  topo50_moraine_wall_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Moraine Wall Polygons
+    layer: layer-50304
+    geom_type: multipolygon
+  
+  topo50_shingle_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Shingle Polygons
+    layer: layer-50342
+    geom_type: multipolygon
+  
+  topo50_chatham_shingle_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island Shingle Polygons
+    layer: layer-50109
+    geom_type: multipolygon
+  
+  topo50_landfill_polygons:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Landfill Polygons
+    layer: layer-50294
+    geom_type: multipolygon
+
+  # TODO reefs?
+  # https://data.linz.govt.nz/layer/50094-nz-chatham-island-reef-polygons-topo-150k/
+  # https://data.linz.govt.nz/layer/50323-nz-reef-polygons-topo-150k/

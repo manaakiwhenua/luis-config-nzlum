@@ -1,0 +1,5 @@
+config.local.yml
+config.local.*.yml
+profiles/slurm
+profiles/slurm-postgres
+scopes/NeSI

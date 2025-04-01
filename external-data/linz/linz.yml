@@ -1,0 +1,38 @@
+__publisher_linz: &linz
+  host: https://data.linz.govt.nz/services;key={key}/wfs
+  key: LINZ_KEY
+  external_data_type: wfs
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: "Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0"
+
+external_data:
+
+  railway_parcels:
+    <<: *linz
+    description: NZ Parcels (all cadastral parcel polygons) - current, primary, railway
+    layer: layer-51571
+    where: \"status\" = 'Current' AND \"topology_type\" = 'Primary' AND \"parcel_intent\" = 'Railway'
+    geom_type: multipolygon
+
+  road_parcels:
+    <<: *linz
+    description: NZ Parcels (all cadastral parcel polygons) - current, primary, road
+    layer: layer-51571
+    where: \"status\" = 'Current' AND \"topology_type\" = 'Primary' AND \"parcel_intent\" = 'Road'
+    geom_type: multipolygon
+
+  nz_facilities:
+    <<: *linz
+    description: NZ Facilities
+    layer: layer-105588
+    geom_type: multipolygon
+    indices:
+      - columns: [use]
+        type: btree
+        name: idx_use
+      - columns: [use_type]
+        type: btree
+        name: idx_use_type
+      - columns: [use_subtype]
+        type: btree
+        name: idx_use_subtype

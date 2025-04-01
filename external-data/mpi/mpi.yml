@@ -1,0 +1,29 @@
+__mpi__: &mpi
+  external_data_type: arcgis_rest
+  license: null # Open data, no license
+  attribution: Ministry for Primary Industries
+
+external_data:
+  mpi_current_marine_farms:
+    <<: *mpi
+    host: https://maps.mpi.govt.nz/wss/service/ags-relay/arcgis1/guest/arcgis/rest/services/MARINE/MARINE_Aquaculture_Marine_Farms/MapServer
+    description: Current Marine Farms
+    geom_type: multipolygon
+    layer: "0"
+    indices:
+      - columns: [effective_date]
+        type: btree
+        name: idx_effective_date
+      - columns: [current_status]
+        type: hash
+        name: idx_current_status
+      - columns: [approval_category]
+        type: btree
+        name: idx_approval_category
+      - columns: [ts_species_group]
+        type: gin
+        name: idx_ts_species_group
+    derived_columns:
+      - column: ts_species_group
+        datatype: tsvector
+        set_query: to_tsvector('english', species_group)

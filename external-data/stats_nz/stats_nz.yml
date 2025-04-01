@@ -1,0 +1,18 @@
+__publisher_stats_nz: &stats_nz
+  host: https://datafinder.stats.govt.nz/services;key={key}/wfs
+  key: STATS_NZ_KEY
+  external_data_type: wfs
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: "Sourced from the Statistics New Zealand Datafinder and licensed for reuse under CC BY 4.0"
+
+external_data:
+
+  urban_rural_2025:
+    <<: *stats_nz
+    description: Urban Rural 2025
+    layer: layer-120965
+    geom_type: multipolygon
+    indices:
+      - columns: [IUR2025_V1_00]
+        type: btree
+        name: idx_btree_IUR2025_V1_00

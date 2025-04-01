@@ -1,0 +1,25 @@
+use-conda: true
+conda-frontend: conda
+printshellcmds: true
+use-envmodules: true
+cores: 32
+rerun-incomplete: true
+configfiles:
+  - luis-config-nzlum/external-data/landcare/landcare.yml
+  # - luis-config-nzlum/external-data/landcare/woni.yml
+  - luis-config-nzlum/external-data/linz/crosl.yml
+  - luis-config-nzlum/external-data/linz/linz.yml
+  - luis-config-nzlum/external-data/linz/nz_properties.yml
+  - luis-config-nzlum/external-data/linz/topo50.yml
+  - luis-config-nzlum/external-data/mfe/mfe.yml
+  - luis-config-nzlum/external-data/mpi/mpi.yml
+  # - luis-config-nzlum/external-data/qeii/qeii.yml
+  - luis-config-nzlum/external-data/stats_nz/stats_nz.yml
+
+  - luis-config-nzlum/external-data/regional-govt/ecan.yml
+  - luis-config-nzlum/external-data/regional-govt/hbrc.yml
+  - luis-config-nzlum/external-data/regional-govt/gdc.yml
+
+  - luis-config-nzlum/config.default.yml
+  - luis-config-nzlum/classifications/nzlum/config.nzlum.yml
+  - luis-config-nzlum/config.local.nzlum.yml

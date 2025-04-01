@@ -1,0 +1,23 @@
+__gdc__: &gdc
+  external_data_type: arcgis_rest
+  license: CC BY 4.0
+  attribution: Gisborne District Council
+
+external_data:
+  fosal_areas_tairawhiti:
+    <<: *gdc
+    host: https://services7.arcgis.com/8G10QCd84QpdcTJ9/arcgis/rest/services/FOSAL_Areas_Tair%C4%81whiti/FeatureServer
+    description: |-
+      Future of severely affected land (FOSAL) areas for the Tairāwhiti region. This data is provisional and subject to change.
+      Following the impacts of Cyclone Gabrielle, government investigated options to enable communities to have future resilience from any future severe weather events. This included assessing options for the difficult issue for some property owners needing to move from areas of high risk of flooding/damage in the future, along with approaches to funding and regulatory implications.
+      In May the government announced 3 categories under which the future of flood and landslide-affected properties will be assessed. We have the provisional maps below along with dates and times for you to come and chat to our team of experts about what this may mean for your property.
+      Government's 3 categories under which the future of flood and landslide-affected properties will be assessed:
+      Category 1 - Low Risk: Repair to previous state is all that is required to manage future severe weather event risks. This means that once any flood protection near the property is repaired, the home can be rebuilt at the same site.
+      Category 2 - Managed Risk: Community or property-level interventions will manage future severe weather event risk. This could include the raising of nearby stop banks, improving drainage or raising the property. (Category two is split into three sub-categories as outlined in table below)
+      Category 3 - High Risk: Areas in the high risk category are not safe to live in because of the unacceptable risk of future flooding or landslide and threat to life. Homes in these areas should not be rebuilt on their current sites.
+    geom_type: multipolygon
+    layer: "0"
+    indices:
+      - columns: [category] # NB string
+        type: btree
+        name: idx_btree_category

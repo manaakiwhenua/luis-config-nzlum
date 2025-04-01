@@ -1,0 +1,158 @@
+__publisher_linz: &linz_nz_properties
+  host: https://data.linz.govt.nz/services;key={key}/wfs
+  key: LINZ_KEY
+  external_data_type: wfs
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: "Sourced from the LINZ Data Service and licensed for reuse under CC BY 4.0"
+
+__publisher_linz_local_restricted: &linz_nz_properties_local_restricted
+  license: null
+  external_data_type: file
+  attribution: 'Restricted use: used under permission from MfE'
+
+_uop_public: &uop_public
+  <<: *linz_nz_properties
+  layer: layer-113968
+
+_uop_local: &uop_local
+  <<: *linz_nz_properties_local_restricted
+  layer: NZ_Properties__Unit_of_Property
+  file:
+    local: /home/lawr/dvr-restricted/nz-properties-unit-of-property.gdb
+
+_dvr_public: &dvr_public
+  <<: *linz_nz_properties
+  layer: layer-114085
+
+_dvr_local: &dvr_local
+  <<: *linz_nz_properties_local_restricted
+  layer: NZ_Properties__National_District_Valuation_Roll__restricted_access_
+  file:
+    local: /home/lawr/dvr-restricted/nz-properties-national-district-valuation-roll-restricted-ac.gdb
+
+external_data:
+
+  unit_of_property:
+    # <<: *uop_public
+    <<: *uop_local
+    description: |-
+      This pilot dataset provides a representation of the boundaries of all known properties in New Zealand. It consists of a unique identifier for a property, with spatial property boundaries, but no additional attribution.
+      Each spatial object in this table has an assigned unit_of_property_id, and is created using land parcels and the Landonline: Title Parcel Associations table. This dataset delivers spatial representations of property boundaries for use in mapping products where only a boundary needs to be displayed.
+      Initially this table is derived using records in the District Valuation Roll (DVR) that meet the requirements for a rated property, as defined by the Rating Valuation Rules 2008. However, in future it could be expanded to include other property perspectives, as listed in the Perspective table.
+      The table is updated on a weekly basis.
+      Related tables
+      Together with the NZ Properties: Property-Title Reference table, this dataset will provide a full replica of the National DVR.
+      Please refer to the NZ Properties Data Dictionary for detailed metadata and information about this table and its relationships to other tables in this collection.
+    geom_type: multipolygon
+    indices:
+      - columns: [unit_of_property_id]
+        type: hash
+        name: idx_hash_unit_of_property_id
+      - columns: [gt_half_acre]
+        type: btree
+        name: idx_btree_partial_gt_half_acre
+        where: gt_half_acre = TRUE
+    derived_columns: # Is geometry greater than half an acre?
+      - column: gt_half_acre
+        datatype: boolean
+        set_query: st_area(geom::geography) > 2023.43
+  
+  national_dvr:
+    # <<: *dvr_public
+    <<: *dvr_local
+    description: |-
+      This pilot dataset provides a subset of the national collection of District Valuation Roll (DVR) data which is available under an open (CC:BY 4.0) licence. The data is based on DVR property audit files supplied to Toitū Te Whenua Land Information New Zealand by Territorial Authorities. The data is limited to that supplied by those Territorial Authorities that have given permission for their District Valuation Roll data to be made public by Toitū Te Whenua Land Information New Zealand.
+      National DVR data for all Territorial Authorities is accessible for government organisations only, from NZ Properties: National District Valuation Roll (Restricted Access).
+      This table is updated weekly.
+      Together with the NZ Properties: Unit of Property Subset, NZ Properties: Property Title Reference Subset, and associated look-up tables, this dataset will provide a subset of a replica of the national DVR.
+    geom_type: null
+    nlt: [NONE]
+    indices:
+      - columns: [unit_of_property_id]
+        type: hash
+        name: idx_hash_unit_of_property_id
+      - columns: [property_category]
+        type: gin
+        name: idx_gin_property_category
+      - columns: [property_category]
+        type: trigram
+        name: idx_trigram_property_category
+      - columns: [property_category]
+        type: btree
+        name: idx_btree_property_category
+      - columns: [zoning]
+        type: gin
+        name: idx_gin_zoning
+      - columns: [zoning]
+        type: trigram
+        name: idx_trigram_zoning
+      - columns: [zoning]
+        type: btree
+        name: idx_btree_zoning
+      - columns: [actual_property_use]
+        type: gin
+        name: idx_actual_property_use
+      - columns: [current_effective_valuation_date]
+        type: btree
+        name: idx_btree_current_effective_valuation_date
+      - columns: [improvements_description]
+        type: gin
+        name: idx_gin_improvements_description
+      - columns: [improvements_description]
+        type: trigram
+        name: idx_trgm_improvements_description
+      - columns: [legal_description]
+        type: gin
+        name: idx_gin_legal_description
+      - columns: [legal_description]
+        type: trigram
+        name: idx_trgm_legal_description
+      - columns:
+          - current_effective_valuation_date DESC
+          - (capital_value / NULLIF(land_area, 0)) DESC
+          - land_area ASC
+          - improvements_value DESC
+          - zoning ASC
+        type: btree
+        name: idx_h3_ordering
+      - columns:
+        - improvements_value_ratio
+        type: btree
+        name: idx_low_improvement_value_ratio
+    derived_columns:
+      - column: ts_improvements_description
+        datatype: tsvector
+        set_query: to_tsvector('english', improvements_description)
+      - column: improvements_value_ratio
+        datatype: NUMERIC(3, 2)
+        set_query: LEAST(COALESCE(improvements_value, 0) / NULLIF(capital_value,  0), 1)
+
+  property_title_reference:
+    <<: *linz_nz_properties
+    description: |
+      This dataset provides a non-spatial relationship between unit_of_property_id and title_no from Landonline (Title ID). This table can be used to connect to parcels using the Landonline: Title Parcel Association table. This table provides a PDMF-compliant link between property and title.
+      The data is updated on a weekly basis.
+    geom_type: null
+    nlt: [NONE]
+    layer: table-113970
+    indices:
+      - columns: [unit_of_property_id]
+        type: hash
+        name: idx_hash_unit_of_property_id
+      - columns: [title_no]
+        type: hash
+        name: idx_hash_title_no
+  
+  nz_property_titles_list:
+    <<: *linz_nz_properties
+    description: |
+      This table provides information on Records of Title that are live and part-cancelled.
+      This table contains top level, general title data only, such as the title number, type (e.g. Freehold, Unit Title, Cross Lease etc) and status.
+      A Record of Title is a record of a property's owners, legal description and the rights and responsibilities registered against the title.
+    geom_type: null
+    nlt: [NONE]
+    layer: table-51567
+    indices:
+      - columns: [title_no]
+        type: hash
+        name: idx_hash_title_no

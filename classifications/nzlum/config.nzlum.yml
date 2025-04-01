@@ -1,0 +1,184 @@
+region_of_interest:
+  # id: otorohanga_district_cbs_2025
+  # id: otorohanga_cb_2025
+  id: nz_grid_1km
+
+
+h3:
+  # resolution: 12
+  resolution: 13
+
+external_data:
+  # palmerston_north_cb_2025: &cb2025
+  #   host: https://datafinder.stats.govt.nz/services;key={key}/wfs
+  #   key: STATS_NZ_KEY
+  #   external_data_type: wfs
+  #   license: https://creativecommons.org/licenses/by/4.0/
+  #   attribution: "Sourced from the Statistics New Zealand Datafinder and licensed for reuse under CC BY 4.0"
+  #   description: Community Board 2025
+  #   layer: layer-120952
+  #   geom_type: polygon
+  #   where: CB2025_V1_00 = '04099'
+  # otorohanga_cb_2025:
+  #   <<: *cb2025
+  #   where: CB2025_V1_00 = '01802'
+  # otorohanga_district_cbs_2025:
+  #   <<: *cb2025
+  #   where: CB2025_V1_00 IN ('01802', '01899', '01801')
+  nz_grid_1km:
+    host: https://datafinder.stats.govt.nz/services;key={key}/wfs
+    key: STATS_NZ_KEY
+    external_data_type: wfs
+    license: https://creativecommons.org/licenses/by/4.0/
+    attribution: "Sourced from the Statistics New Zealand Datafinder and licensed for reuse under CC BY 4.0"
+    description: New Zealand Grid 1 kilometre, 2023
+    layer: layer-115046
+    geom_type: polygon
+    where: |-
+      GridID LIKE 'E179%N577%'
+      OR GridID LIKE 'E177%N57845'
+      OR GridID LIKE 'E17755N578%'
+      OR GridID = 'E18045N57785'
+      OR GridID LIKE 'E175%N57855'
+      OR GridID LIKE 'E1533%N516%'
+      OR GridID LIKE 'E1928%N560%'
+      OR GridID LIKE 'E1927%N560%'
+      OR GridID LIKE 'E1929%N560%'
+      OR GridID LIKE 'E1928%N561%'
+      OR GridID LIKE 'E1812%N563%'
+      OR GridID = 'E16675N54345'
+      OR GridID LIKE 'E192%N56155'
+      OR GridID LIKE 'E157%N518%'
+      OR GridID LIKE 'E138%N512%'
+      OR GridID LIKE 'E184%N551%'
+      OR GridID LIKE 'E183%N551%'
+      OR GridID LIKE 'E174%N542%'
+      OR GridID LIKE 'E175%N543%'
+      OR GridID LIKE 'E176%N543%'
+classifications:
+  nzlum:
+    depends:
+      - national_dvr
+      - unit_of_property
+      - property_title_reference
+      - nz_property_titles_list
+      - lum
+      - lum_chathams
+      - lcdb_v5
+      - lcdb_v5_chathams
+      - crosl
+      - topo50_lake
+      - topo50_river_pol
+      - topo50_chatham_river_pol
+      - topo50_lagoon
+      - topo50_pond
+      - topo50_swamp
+      - topo50_mangrove
+      - topo50_drain
+      - topo50_chatham_drain
+      - topo50_canal
+      - topo50_ice
+      - topo50_railway
+      - topo50_mines
+      - topo50_quarries
+      - topo50_chatham_quarries
+      - topo50_dredge_tailing_centrelines
+      - railway_parcels
+      - topo50_roads
+      - topo50_chatham_roads
+      - road_parcels
+      - topo50_airports
+      - topo50_chatham_airports
+      - topo50_runways
+      - topo50_chatham_runways
+      - nz_facilities
+      - topo50_sand
+      - topo50_chatham_sand
+      - topo50_mud
+      - topo50_chatham_mud
+      - topo50_exotic_polygons
+      - topo50_chatham_exotic_polygons
+      - topo50_land
+      - irrigation_2020
+      - urban_rural_2025
+      - fenz_lakes
+      - topo50_orchards
+      - mpi_current_marine_farms
+      - topo50_marine_farms
+      - topo50_rocks_polygons
+      - topo50_chatham_rocks_polygons
+      - topo50_scree_polygons
+      - topo50_snow_polygons
+      - topo50_moraine_polygons
+      - topo50_moraine_wall_polygons
+      - topo50_shingle_polygons
+      - topo50_chatham_shingle_polygons
+      - topo50_golf_courses
+      - topo50_chatham_golf_courses
+      - topo50_sportsfields
+      - topo50_cemetery
+      - topo50_chatham_cemetery
+      - hawkes_bay_land_categorisation
+      - cera_red_zoned_land
+      - fosal_areas_tairawhiti
+      - topo50_landfill_polygons
+      # - ecan_irrig
+      # - ecan_lakes
+      # - ecan_consented_activities_areas_active
+      - ecan_effluent_dairy_discharge_area
+      - ecan_braided_rivers
+    table_schema:
+      unit_id: BIGINT
+      lu_code_primary: INTEGER
+      lu_code_secondary: INTEGER
+      lu_code_tertiary: INTEGER
+      lu_code: TEXT
+      lu_description: TEXT
+      lu_code_ancillary: TEXT
+      commod: TEXT
+      # commod_ancillary: TEXT
+      manage: TEXT
+      # manage_ancillary: TEXT
+      land_estate: TEXT
+      land_status: TEXT
+      water: TEXT
+      zone: TEXT
+      # permeability: TEXT
+      confidence: INTEGER
+      luc_date: DATE
+      source_data: TEXT
+      # source_data_doi: URI # requires https://github.com/petere/pguri
+      source_date: DATERANGE
+      source_scale: INT4RANGE # TODO propose change to INTEGER and use precision as metres, e.g. 10 for 0-10 m accuracy.
+      # comments: TEXT # TODO absent from https://github.com/manaakiwhenua/nzsluc/tree/main/classification-systems/nzlum#data-structure
+    outputs:
+      nzlum:
+        publish: true
+        type: multipolygon
+        fid: unit_id
+        columns:
+          - unit_id
+          - lu_code_primary
+          - lu_code_secondary
+          - lu_code_tertiary
+          - lu_code
+          - lu_description
+          - lu_code_ancillary
+          - commod
+          # - commod_ancillary
+          - manage
+          # - manage_ancillary
+          - land_estate # TODO mapping to terms in NZLUM standard, or leave as-is?
+          - land_status
+          - water
+          - zone
+          # - permeability
+          - confidence
+          - luc_date
+          - source_data
+          # - source_data_doi
+          - source_date
+          - source_scale
+        format: gpkg
+    preclassify: luis-config-nzlum/classifications/nzlum/nzlum-preclassify.sql
+    query: luis-config-nzlum/classifications/nzlum/nzlum.sql

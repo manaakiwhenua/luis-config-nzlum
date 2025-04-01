@@ -1,0 +1,20 @@
+postgres: # host and port are dynamic on NeSI and will need to be changed or set via environment variables
+  data_dir: null
+  dbname: luis
+
+# NB Override these with a config.local.yml
+dir:
+  external_data: './ext'
+  sentinel: './sentinel'
+  log: './log'
+
+container: docker://richardlaw/luis-client:latest
+
+region_of_interest:
+  id: territorial_sea
+
+threads: 8
+warp_mem_limit: 12000
+
+h3:
+  resolution: 8

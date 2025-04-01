@@ -1,0 +1,146 @@
+__ecan__: &ecan
+  external_data_type: arcgis_rest
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: Sourced from Canterbury Maps and partners and licensed for reuse under the CC BY 4.0 licence
+
+
+external_data:
+  # ecan_consented_activities_areas_active:
+  #   <<: *ecan
+  #   host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/Resource_Consents_Active/MapServer
+  #   description: |-
+  #     Records showing a summary of a current consented activity as recorded within Environment Canterbury's Resource Management Act database. This layer contains features that are represented as area of a size 10,000ha or less, and includes feature types such as gravel excavation areas, burnoff areas, etc. Note: Prior to 2013 all actvivties were recorded as point features. Subsequent to this activities may have been captured as line or area features. This layer should be used in conjuction with the Consented Activities - Points, Consented Activities - Lines and Consented Activities - Global layers to get a full representation of all consented activity features. Depending on the nature and conditions of the consent, more than location area may be associated with a single consent. The feature type property indicates the nature of the recorded activity. The layer includes details on: The type of permit (land use consent, discharge permit, etc.), the section of the RMA underwhich the activity was permitted, the current status of the permit (active, in process, etc.), the name of the applicant, a description of the location where the activity related to the permit is undertaken, and if the permit was successfully issued, the period over which the permiitted activities apply. The layer also contains several sumary fields related to spatially defined regions the location lies with including: which territorial local authority(s); the Land and Water Regional Plan groundwater & surface water allocation zones and nutrient management zone; the Canterbury Water Management Strategy (CWMS) zone; the Ngai Tahu Runanga area of interest for Resource Consenting purposes; and the clean air zone.
+  #   layer: "29"
+  #   geom_type: multipolygon
+  #   derived_columns:
+  #     - column: current
+  #       datatype: boolean
+  #       set_query: |-
+  #         (
+  #           CASE
+  #             WHEN (
+  #               ConsentStatus = 'Issued - Active'
+  #               AND Expires > CURRENT_DATE
+  #             ) 
+  #             OR (
+  #               Expires <= CURRENT_DATE
+  #               AND ConsentStatus = 'Issued - s124 Continuance'
+  #             )
+  #             THEN TRUE
+  #             ELSE FALSE
+  #           END
+  #         )
+  #   indices:
+  #     - columns: [ConsentType]
+  #       type: btree
+  #       name: idx_btree_consenttype
+  #     - columns: [ActivityText]
+  #       type: gin
+  #       name: idx_gin_activitytext
+  #     - columns: [current]
+  #       type: btree
+  #       name: idx_current
+
+  # TODO use the point data too?
+  ecan_effluent_dairy_discharge_area:
+    <<: *ecan
+    host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/Resource_Consents_Active/MapServer
+    description: |-
+      Consented Activities - Effluent Dairy Discharge Area (Active)
+      Records showing a summary of a current consented activity related to the storage and discharge of dairy effluent to water or land as recorded within Environment Canterbury's Resource Management Act Database. This layer contains discharge features that are represented as areas less than 10,000ha in size. Note: Prior to 2013 all actvivties were recorded as point features. Subsequent to this activities may have been captured as line or area features. This layer should be used in conjuction with the Consented Activities - Effluent Dairy Discharge Points and Consented Activities - Effluent Dairy Discharge Global layers to get a full representation of all consented activity features. Depending on the nature and conditions of the consent, more than location point may be associated with a single consent. The feature type property indicates the nature of the recorded activity. The layer includes details on: The type of permit (land use consent, discharge permit, etc.), the section of the RMA underwhich the activity was permitted, the current status of the permit (active, in process, etc.), the name of the applicant, a description of the location where the activity related to the permit is undertaken, and if the permit was successfully issued, the period over which the permiitted activities apply. Activity specific details related to dairying practices are also included if relavent. The layer also contains several sumary fields related to spatially defined regions the location lies with including: which territorial local authority(s); the Land and Water Regional Plan groundwater & surface water allocation zones and nutrient management zone; the Canterbury Water Management Strategy (CWMS) zone; the Ngai Tahu Runanga area of interest for Resource Consenting purposes; and the clean air zone.
+    geom_type: multipolygon
+    layer: "37"
+    indices:
+      - columns: [ActualAnimalNumbers_int]
+        type: btree
+        name: idx_btree_ActualAnimalNumbers_int
+    derived_columns:
+      - column: ActualAnimalNumbers_int
+        datatype: integer
+        set_query: ActualAnimalNumbers::INT
+      - column: wintering_off
+        datatype: boolean
+        set_query: |-
+          (CASE
+            WHEN CowsWintered LIKE 'Off farm%'
+            THEN true
+            WHEN CowsWintered = 'On farm'
+            THEN false
+            ELSE NULL
+          END)
+      - column: effluent_irrigation_type
+        datatype: TEXT
+        set_query: |-
+          (CASE
+            WHEN DisposalMethod IN (
+              'Centre Pivot',
+              'Dedicated roto-rainer',
+              'Dedicated Spray-effluent only',
+              'Injection - pivot',
+              'Injection k-line',
+              'Pivot - dedicated sprinklers',
+              'Pivot - gun',
+              'Pivot - TI boom',
+              'Spray Irrigation-effluent + water',
+              'Stationary - dedicated k-line',
+              'Stationary - honey pot',
+              'Tanker',
+              'Travelling Irrigator'
+            )
+            THEN 'irrigation spray'
+            WHEN DisposalMethod IS NOT NULL
+            THEN 'irrigation'
+            ELSE NULL
+          END)
+
+  ecan_braided_rivers:
+    <<: *ecan
+    host: https://gisbasemap.ecan.govt.nz/arcgis/rest/services/Public/SOE_Braided_Rivers/MapServer
+    description: ECAN Braided Rivers Cover Classes
+    geom_type: multipolygon
+    layer: "0"
+    indices:
+      - columns: [Description]
+        type: btree
+        name: idx_btree_description
+    derived_columns:
+      - column: water
+        datatype: TEXT
+        set_query: |- 
+          (CASE
+            WHEN Description LIKE '%water channel%' OR Description LIKE '%riverbed%'
+            THEN 'river'
+            ELSE NULL
+          END)
+
+  # ecan_irrig:
+  #   <<: *ecan
+  #   host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/Irrigation/MapServer
+  #   description: Irrigated Areas
+  #   geom_type: multipolygon
+  #   layer: "0"
+  #   indices:
+  #     - columns: [type]
+  #       type: btree
+  #       name: idx_irrig_type
+  #     - columns: [year_irr]
+  #       type: btree
+  #       name: idx_irrig_year
+
+  # ecan_lakes:
+  #   <<: *ecan
+  #   host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/PlanningZones/MapServer
+  #   description: ECAN Lakes
+  #   geom_type: multipolygon
+  #   layer: "24"
+  #   indices:
+  #     - columns: [LakeType]
+  #       type: hash
+  #       name: idx_lake_type
+
+  cera_red_zoned_land:
+    <<: *ecan
+    host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/LURP/MapServer
+    description: CERA Red Zoned Land as shown in the Land Use Recovery Plan
+    geom_type: multipolygon
+    layer: "8"
