@@ -17,7 +17,7 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
         WHEN improvements_value > 0
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            CASE
+            GREATEST(LEAST(CASE
                 WHEN (
                     actual_property_use LIKE '2%'
                     OR actual_property_use LIKE '9%'
@@ -39,7 +39,13 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
                 WHEN category ~ '^(RB|RM|RP|RV)'
                 THEN 11
                 ELSE 12
-            END,
+            END
+            +
+            CASE -- Adjustment factor is LINZ records as residential
+                WHEN topo50_residential_areas_h3.h3_index IS NOT NULL
+                THEN -1
+                ELSE 0
+            END, 12), 1),
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
             ARRAY[linz_dvr_.source_data]::TEXT[],
@@ -90,4 +96,9 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
         FROM linz_crosl_
         WHERE managed_by = 'Housing New Zealand'
     ) hnz USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT *
+        FROM topo50_residential_areas_h3
+        WHERE :parent::h3index = h3_partition
+    ) AS topo50_residential_areas_h3 USING (h3_index)
 );

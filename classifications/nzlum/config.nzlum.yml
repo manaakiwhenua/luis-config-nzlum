@@ -122,6 +122,7 @@ classifications:
       - cera_red_zoned_land
       - fosal_areas_tairawhiti
       - topo50_landfill_polygons
+      - topo50_residential_areas
       # - ecan_irrig
       # - ecan_lakes
       # - ecan_consented_activities_areas_active

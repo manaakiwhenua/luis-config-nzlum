@@ -357,6 +357,12 @@ external_data:
     layer: layer-50294
     geom_type: multipolygon
 
+  topo50_residential_areas:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Residential Area Polygons
+    layer: layer-50325
+    geom_type: multipolygon
+
   # TODO reefs?
   # https://data.linz.govt.nz/layer/50094-nz-chatham-island-reef-polygons-topo-150k/
   # https://data.linz.govt.nz/layer/50323-nz-reef-polygons-topo-150k/
