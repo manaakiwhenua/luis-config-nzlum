@@ -81,15 +81,19 @@ external_data:
     layer: layer-50287
     geom_type: multipolygon
 
-  # TODO chatham island https://data.linz.govt.nz/layer/50087-nz-chatham-island-lagoon-polygons-topo-150k/
   topo50_lagoon:
     <<: *linz_topo50
     description: LINZ Topo 1:50k Lagoon Polygons
     layer: layer-50292
     geom_type: multipolygon
 
-  # TODO https://data.linz.govt.nz/layer/50088-nz-chatham-island-lake-polygons-topo-150k/
-  topo50_lake:
+  topo50_chatham_lagoon:
+    <<: *linz_topo50
+    description: LINZ Topo Chatham Island 1:50k Lagoon Polygons
+    layer: layer-50087
+    geom_type: multipolygon
+
+  topo50_lake: &topo50_lake
     <<: *linz_topo50
     description: LINZ Topo 1:50k Lake Polygons
     layer: layer-50293
@@ -108,6 +112,11 @@ external_data:
         type: btree
         name: idx_lake_grp_name
 
+  topo50_chatham_lake:
+    <<: *topo50_lake
+    description: LINZ Topo Chatham Island 1:50k Lake Polygons
+    layer: layer-50088
+
   topo50_pond:
     <<: *linz_topo50
     description: LINZ Topo 1:50k pond Polygons
@@ -121,11 +130,16 @@ external_data:
         type: hash
         name: idx_pond_name
 
-  # TODO https://data.linz.govt.nz/layer/50113-nz-chatham-island-swamp-polygons-topo-150k/
   topo50_swamp:
     <<: *linz_topo50
     description: LINZ Topo 1:50k swamp Polygons
     layer: layer-50359
+    geom_type: multipolygon
+
+  topo50_chatham_swamp:
+    <<: *linz_topo50
+    description: LINZ Topo Chatham Island 1:50k swamp Polygons
+    layer: layer-50113
     geom_type: multipolygon
 
   topo50_mangrove:
@@ -134,11 +148,17 @@ external_data:
     layer: layer-50296
     geom_type: multipolygon
 
-  # TODO https://data.linz.govt.nz/layer/50098-nz-chatham-island-river-centrelines-topo-150k/
   topo50_river:
     <<: *linz_topo50
     description: LINZ Topo 1:50k River Centrelines
     layer: layer-50327
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5, 'endcap=round join=round')::geometry AS geom
+
+  topo50_chatham_river:
+    <<: *linz_topo50
+    description: LINZ Topo Chatham Island 1:50k River Centrelines
+    layer: layer-50098
     geom_type: multipolygon
     replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5, 'endcap=round join=round')::geometry AS geom
 
@@ -224,7 +244,6 @@ external_data:
     geom_type: multipolygon
     replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 50, 'endcap=round join=round')::geometry AS geom
 
-  # TODO https://data.linz.govt.nz/layer/50097-nz-chatham-island-quarry-polygons-topo-150k/
   topo50_quarries:
     <<: *linz_topo50
     description: LINZ Topo 1:50k Quarry Polygons

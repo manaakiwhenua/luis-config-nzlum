@@ -68,11 +68,16 @@ classifications:
       - lcdb_v5_chathams
       - crosl
       - topo50_lake
+      - topo50_chatham_lake
       - topo50_river_pol
+      - topo50_river
       - topo50_chatham_river_pol
+      - topo50_chatham_river
       - topo50_lagoon
+      - topo50_chatham_lagoon
       - topo50_pond
       - topo50_swamp
+      - topo50_chatham_swamp
       - topo50_mangrove
       - topo50_drain
       - topo50_chatham_drain
