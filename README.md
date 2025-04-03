@@ -11,7 +11,7 @@ Configuration files for [LUIS](https://github.com/manaakiwhenua/luis) for the [N
 
 This sets run-time parameters for Snakemake (used by LUIS), and importantly declares which other YAML files together constitute the configuration for the classification with the `configfiles` attribute. These files are ultimately merged into one large configuration, and as later files can override settings from earlier files, the `configfiles` directive determines this order.
 
-### `external-data/**/*.yml
+### `external-data/**/*.yml`
 
 `external-data` is a top-level property in the configuration YAML where "external data" is declared. That is principally: what it is, license, attribution, how it is made available. In addition, various transformations can be declared to effect data on import, including the creation of appropriate database indices, new derived columns, and filtering clauses to exclude data from these sources.
 
@@ -85,9 +85,9 @@ This configuration files adds a few more top-level attributes:
     - `depends`: array of layer IDs (defined in `external_data`) on which the classification depends (and therefore should be downloaded and processed as described).
     - `table_schema`: the classification produces an output with attributes and these attributes have particular types, together these are a data schema. For example, `lu_code_primary: INTEGER`.
     - `outputs.nzlum`: declares output geospatial data format, and the location of SQL files where the combinatorial logic is written.
-        - `preclassify`: A SQL file (PostgreSQL dialect) to be executed _before_ the classification proper. Can be used to declare new types, useful functons, etc. See [nzlum-preclassify.sql](classifications/nzlum/nzlum-preclassify.sql). Fucntions may be written using PL/pgSQL.
+        - `preclassify`: A SQL file (PostgreSQL dialect) to be executed _before_ the classification proper. Can be used to declare new types, useful functions, etc. See [nzlum-preclassify.sql](classifications/nzlum/nzlum-preclassify.sql). Fucntions may be written using PL/pgSQL.
         - `query`: A SQL file (PostgreSQL dialect) that performs the classification itself. Using [psql](https://www.postgresql.org/docs/current/app-psql.html) this can make use of `\ir filename` (`\include_relative filename`), additional SQL files can be included to make the SQL file more maintainable. There are two primary constraints:
-            - The query must work on the basis of H3 partitions, referred to by using the `:parent` variable (which will be susbtituted for the parent H3 index).
+            - The query must work on the basis of H3 partitions, referred to by using the `:parent` variable (which will be substituted for the parent H3 index).
             - The output of the query must match the `table_schema` as described in the configuration.
 
 For maintainability, the primary query is [nzlum.sql](classifications/nzlum/nzlum.sql) but this depends on a number of `\include_relative` files which are also SQL.
@@ -154,7 +154,7 @@ CREATE TEMPORARY VIEW transitional_land AS (
 );
 ```
 
-This demonstrates how the CERA Red Zone Land (Christchurch), the Hawke's Bay land categorisation (post-Cyclone Gabrielle), and the future of serverely affected land (FOSAL) areas for the Tarāwhiti/Gisborne region (Gabrielle) are combined into one abstraction that reduces the complexity of the inputs while retaining pertinent variable information from each (`source_date`, etc.) Classes that need to consider such land can then refer to the `transitional_land` view without needing to redetermine how this data is best combined. If more transitionary land needs to be included, it is likely that only this view needs to be revised, and _not_ the SQL definition of a class, which will automatically "recieve" changes to this definition.
+This demonstrates how the CERA Red Zone Land (Christchurch), the Hawke's Bay land categorisation (post-Cyclone Gabrielle), and the future of severely affected land (FOSAL) areas for the Tarāwhiti/Gisborne region (Gabrielle) are combined into one abstraction that reduces the complexity of the inputs while retaining pertinent variable information from each (`source_date`, etc.) Classes that need to consider such land can then refer to the `transitional_land` view without needing to redetermine how this data is best combined. If more transitional land needs to be included, it is likely that only this view needs to be revised, and _not_ the SQL definition of a class, which will automatically "receive" changes to this definition.
 
 
 - [`classifications/nzlum/classes`](classifications/nzlum/classes). NZLUM is here implemented as a series of distinct classifications for each class. Each DGGS cell may be independently classified as each class. But alongside the identification with a class, is a confidence value, a geographic scale of the input data, and a date interval for input data. These are leveraged in a `SORT BY` clause that ultimately gives each location a distinct identification with a particular class (preferring more confident, more recent, and more spatially precise identification).
@@ -246,6 +246,6 @@ CREATE TEMPORARY VIEW class_136 AS (
 );
 ```
 
-This defines a temporary view (limited to one H3 partition) that uses the Central Record of State Land (CRoSL) for the identification of NZDF managed land, but confirmed against actual use as recorded in the District Valuation Roll (DVR) where possible, in order to exclude from the CRoSL set Defence-managed land that is residential, and offer a lower-confidence classification where the DVR indicates that the land is "passive recreational".
+This defines a temporary view (limited to one H3 partition) that uses the Central Record of State Land (CRoSL) for the identification of NZDF managed land, but confirmed against actual use as recorded in the District Valuation Roll (DVR) where possible, in order to exclude from the CRoSL set NZDF-managed land that is residential, and offer a lower-confidence classification where the DVR indicates that the land is "passive recreational".
 
-Independently of CRoSL, the DVR also has an identiciation of land as being for defence purposes (`actual_property_use = 45`). But since there is also an `INNER JOIN ` with a subset of LCDB, any land that is _also_ part of a built-up area, urban parkland or transport infrastructure, is _not_ included for consideration. For instance, this excludes Ohakea Airbase for consideration as class 1.3.6, as it is not a natural area—whereas the Waiouru arym training area _is_ still included.
+Independently of CRoSL, the DVR also has an identification of land as being for defence purposes (`actual_property_use = 45`). But since there is also an `INNER JOIN ` with a subset of LCDB, any land that is _also_ part of a built-up area, urban parkland or transport infrastructure, is _not_ included for consideration. For instance, this excludes Ōhakea Airbase for consideration as class 1.3.6, as it is not a natural area—whereas the Waiouru New Zealand Army training camp _is_ still included.
