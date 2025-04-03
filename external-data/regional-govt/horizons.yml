@@ -1,0 +1,62 @@
+__horizons__: &horizons
+  external_data_type: arcgis_rest
+  license: null
+  attribution: Horizons Regional Council
+
+external_data:
+  horizons_reg_act:
+    <<: *horizons
+    license: CC BY 4.0
+    description: Horizons RC regulatory activities (polygon only)
+    host: https://services1.arcgis.com/VuN78wcRdq1Oj69W/arcgis/rest/services/OpenData_RegulatoryActivity/FeatureServer
+    layer: "1"
+    geom_type: multipolygon
+    indices:
+      - columns: [Ath_IndPrim]
+        type: btree
+        name: idx_btree_AthIndPrim
+      - columns: [Ath_IndPrim, Ath_PurPrim]
+        type: btree
+        name: idx_btree_Ath_IndPrim_Ath_PurPrim
+      - columns: [Ath_PurPrim]
+        type: trigram
+        name: idx_trgm_Ath_PurPrim
+      - columns: [Ath_PurPrim]
+        type: gin
+        name: idx_gin_Ath_PurPrim
+    derived_columns:
+      - column: start_date
+        datatype: date
+        set_query: |-
+          CASE
+            WHEN Ath_Commence IS NOT NULL
+            THEN Ath_Commence::DATE
+            ELSE NULL
+          END
+      - column: end_date
+        datatype: date
+        set_query: |-
+          CASE
+            WHEN Ath_Expiry IS NOT NULL
+            THEN Ath_Expiry::DATE
+            ELSE NULL
+          END
+      - column: source_date
+        datatype: daterange
+        set_query: |-
+          CASE
+            WHEN Ath_Granted IS NULL AND DataLastUpdated IS NULL
+            THEN NULL
+            WHEN Ath_Granted IS NOT NULL AND DataLastUpdated IS NOT NULL
+            THEN daterange(Ath_Granted::DATE, DataLastUpdated::DATE, '[]')
+            WHEN Ath_Granted IS NOT NULL
+            THEN daterange(Ath_Granted::DATE, NULL, '[]')
+            WHEN DataLastUpdated IS NOT NULL
+            THEN daterange(NULL, DataLastUpdated::DATE, '[]')
+          END
+      - column: source_data
+        datatype: text
+        set_query: "'Horizons'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[60,200)'::int4range"

@@ -60,3 +60,88 @@ external_data:
       - columns: [editdate]
         type: btree
         name: idx_editdate
+  
+  nzlri: &nzlri
+    <<: *lcr_wfs
+    description: NZ Land Resource Inventory (NZLRI) Land Use Capability 2021
+    layer: layer-48076
+    geom_type: multipolygon
+    license: https://lris.scinfo.org.nz/license/landcare-data-use-licence-v1/
+    attribution: Data reproduced with the permission of Landcare Research New Zealand Limited
+    derived_columns:
+      - column: start_date
+        datatype: date
+        set_query: "'1973-01-01'::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "'1983-12-31'::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange('1973-01-01'::DATE, '1983-12-31'::DATE::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'MWLR'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[60,100)'::int4range"
+
+  nzlri_lowcapability:
+    <<: *nzlri
+    where: \"lcorrclass\" IN (0, 7, 8)
+
+  # TODO complete crop_type... management practices, commodities?
+  winter_forage_2022:
+    <<: *lcr_wfs
+    license: Copyright © MWLR 2025
+    attribution: "Sourced from the Land Resource Information Systems (LRIS) Portal and used under permission"
+    description: NZ winter forage 2022
+    layer: layer-122024
+    geom_type: multipolygon
+    indices:
+      - columns: [CertRating]
+        type: btree
+        name: idx_btree_certrating
+      - columns: [CR1Case]
+        type: btree
+        name: idx_btree_cr1case
+      - columns: [CertRating, CR1Case]
+        type: btree
+        name: idx_btree_cert_case
+      # - columns: [crop_type]
+      #   type: btree
+      #   name: idx_btree_crop_type
+    derived_columns:
+      - column: start_date
+        datatype: date
+        set_query: "'2022-06-01'::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "'2022-08-31'::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange('2022-06-01'::DATE, '2022-08-31'::DATE::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'MWLR'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[10,60]'::int4range"
+      - column: manage
+        datatype: text
+        set_query: |-
+          (
+            CASE
+              WHEN (CertRating = 1 AND CR1Case = 2)
+              THEN NULL
+              ELSE 'crop pasture rotation'
+            END
+          )
+    #   - column: crop_type
+    #     datatype: text
+    #     setquery: |-
+    #       (
+    #         CASE
+    #           WHEN LndCover LIKE '%brassica%' THEN 'cropping'
+    #           ELSE NULL
+    #         END
+    #       )

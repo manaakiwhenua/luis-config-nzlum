@@ -27,6 +27,7 @@ CREATE TEMPORARY VIEW roi AS (
 \ir data_views/dairy_effluent_discharge.sql
 \ir data_views/marine_farms.sql
 \ir data_views/transitional_land.sql
+\ir data_views/consents/forestry.sql
 
 \ir classes/class_136.sql
 \ir classes/class_140.sql

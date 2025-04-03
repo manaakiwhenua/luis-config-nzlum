@@ -37,31 +37,82 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
             lum_.source_date,
             lum_.source_scale
         )::nzlum_type
-        WHEN topo50_exotic_polygons_.h3_index IS NOT NULL
-        -- TODO lower confidence with hydro parcels 
+        WHEN (
+            consents_forestry.h3_index IS NOT NULL
+            AND (
+                topo50_exotic_polygons_.h3_index IS NOT NULL
+                OR lum_.h3_index IS NOT NULL
+            )
+        )
+        -- TODO lower confidence with hydro parcels?
+        THEN ROW (
+            ARRAY[]::TEXT[],
+            1,
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            ARRAY[topo50_exotic_polygons_.source_data, consents_forestry.source_data]::TEXT[], -- source_data
+            range_merge(datemultirange(
+                VARIADIC ARRAY_REMOVE(ARRAY[
+                    topo50_exotic_polygons_.source_date,
+                    consents_forestry.source_date,
+                    lum_.source_date
+                ], NULL)
+            ))::daterange, -- source_date
+            range_merge(int4multirange(
+                VARIADIC ARRAY_REMOVE(ARRAY[
+                    topo50_exotic_polygons_.source_scale,
+                    consents_forestry.source_scale,
+                    lum_.source_scale
+                ], NULL)
+            ))::int4range -- source_date
+        )::nzlum_type
+        WHEN (
+            consents_forestry.h3_index IS NULL
+            AND (
+                topo50_exotic_polygons_.h3_index IS NOT NULL
+                OR lum_.h3_index IS NOT NULL
+            )
+        )
         THEN ROW (
             ARRAY[]::TEXT[],
             2,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
-            ARRAY[topo50_exotic_polygons_.source_data]::TEXT[], -- source_data
-            topo50_exotic_polygons_.source_date,
-            topo50_exotic_polygons_.source_scale
+            ARRAY[topo50_exotic_polygons_.source_data, lum_.source_data]::TEXT[], -- source_data
+            range_merge(datemultirange(
+                VARIADIC ARRAY_REMOVE(ARRAY[
+                    topo50_exotic_polygons_.source_date,
+                    lum_.source_date
+                ], NULL)
+            ))::daterange, -- source_date
+            range_merge(int4multirange(
+                VARIADIC ARRAY_REMOVE(ARRAY[
+                    topo50_exotic_polygons_.source_scale,
+                    lum_.source_scale
+                ], NULL)
+            ))::int4range
         )::nzlum_type
-        -- TODO lower confidence with hydro parcels 
-        ELSE ROW (
+        WHEN consents_forestry.afforestation_flag IS TRUE
+        THEN ROW ( -- Very recent forests?
             ARRAY[]::TEXT[],
-            2,
+            4,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
-            ARRAY[lum_.source_data]::TEXT[], -- source_data
-            lum_.source_date, -- source_date
-            lum_.source_scale -- source_scale
+            ARRAY[consents_forestry.source_data]::TEXT[],
+            consents_forestry.source_date,
+            consents_forestry.source_scale
         )::nzlum_type
     END AS nzlum_type
     -- commodity type? pinus radiata, douglas fir (lum_.subid_2020)
     -- species (topo50: empty=coniferous, and "non-coniferous")
-    FROM lum_
+    FROM (
+        SELECT *
+        FROM lum_
+        WHERE lum_.lucid_2020 IN (
+            '72 - Planted Forest - Pre 1990',
+            '73 - Post 1989 Forest'
+        )
+    ) AS lum_
     FULL OUTER JOIN (
         SELECT *,
         DATERANGE(
@@ -85,10 +136,7 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
         FROM topo50_chatham_exotic_polygons_h3
         WHERE :parent::h3index = h3_partition
     ) topo50_exotic_polygons_ USING (h3_index)
-    WHERE lum_.lucid_2020 IN (
-        '72 - Planted Forest - Pre 1990',
-        '73 - Post 1989 Forest'
-    )
+    FULL OUTER JOIN consents_forestry USING (h3_index)
 );
 -- TODO use CROSL
 -- TODO use DVR

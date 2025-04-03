@@ -18,3 +18,59 @@ external_data:
       - columns: [category] # NB string
         type: btree
         name: idx_btree_category
+  
+  hbrc_all_consent_polygons:
+    <<: *hbrc
+    license: CC BY 4.0
+    host: https://gis.hbrc.govt.nz/server/rest/services/ExternalServices/Regulatory/MapServer
+    layer: "4"
+    geom_type: multipolygon
+    indices:
+      - columns: [ActPrimaryIndustry]
+        type: btree
+        name: idx_btree_ActPrimaryIndustry
+      - columns: [ActPrimaryIndustry, ActPrimaryPurpose]
+        type: btree
+        name: idx_btree_ActPrimaryIndustry_ActPrimaryPurpose
+      - columns: [ActPrimaryPurpose]
+        type: trigram
+        name: idx_trgm_ActPrimaryPurpose
+      - columns: [ActPrimaryPurpose]
+        type: gin
+        name: idx_gin_ActPrimaryPurpose
+    derived_columns:
+      - column: start_date
+        datatype: date
+        set_query: |-
+          CASE
+            WHEN DecisionServedDate IS NOT NULL
+            THEN DecisionServedDate::DATE
+            ELSE NULL
+          END
+      - column: end_date
+        datatype: date
+        set_query: |-
+          CASE
+            WHEN ExpiryDate IS NOT NULL
+            THEN ExpiryDate::DATE
+            ELSE NULL
+          END
+      - column: source_date
+        datatype: daterange
+        set_query: |-
+          CASE
+            WHEN DecisionServedDate IS NULL AND ExpiryDate IS NULL
+            THEN NULL
+            WHEN DecisionServedDate IS NOT NULL AND ExpiryDate IS NOT NULL
+            THEN daterange(DecisionServedDate::DATE, ExpiryDate::DATE, '[]')
+            WHEN DecisionServedDate IS NOT NULL
+            THEN daterange(DecisionServedDate::DATE, NULL, '[]')
+            WHEN ExpiryDate IS NOT NULL
+            THEN daterange(NULL, ExpiryDate::DATE, '[]')
+          END
+      - column: source_data
+        datatype: text
+        set_query: "'HBRC'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[60,200)'::int4range"

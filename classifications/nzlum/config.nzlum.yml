@@ -89,6 +89,7 @@ classifications:
       - topo50_chatham_quarries
       - topo50_dredge_tailing_centrelines
       - railway_parcels
+      - hydro_parcels
       - topo50_roads
       - topo50_chatham_roads
       - road_parcels
@@ -128,6 +129,11 @@ classifications:
       - fosal_areas_tairawhiti
       - topo50_landfill_polygons
       - topo50_residential_areas
+      - winter_forage_2022
+      - nzlri_lowcapability
+
+      - hbrc_all_consent_polygons
+      - horizons_reg_act
       # - ecan_irrig
       # - ecan_lakes
       # - ecan_consented_activities_areas_active

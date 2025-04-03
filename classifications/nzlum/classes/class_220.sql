@@ -23,6 +23,16 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     CASE
                         WHEN dairy_effluent_discharge.ActualAnimalNumbers_int > 0
                         THEN 1
+                        WHEN (
+                            winter_forage_2022.CertRating = 3 -- Good
+                            OR (
+                                winter_forage_2022.CertRating = 1
+                                AND winter_forage_2022.CR1Case = 2 -- Heavily grazed pasture
+                            )
+                        )
+                        THEN 1
+                        WHEN winter_forage_2022.CertRating = 2 -- Medium
+                        THEN 2
                         ELSE 3
                     END
 
@@ -33,6 +43,10 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     ) OR (
                         linz_dvr_.actual_property_use = '19' -- Vacant within rural industry
                     ) OR linz_dvr_.category ~ '^(D|P)'
+                    OR (
+                        winter_forage_2022.CertRating = 1
+                        AND winter_forage_2022.CR1Case = 2 -- Heavily grazed pasture
+                    )
                 )
                 THEN 5
 
@@ -54,15 +68,17 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                         '18' -- Mineral extraction
                     )
                     OR linz_dvr_.category ~ '^(LI|SD|SH|SX)'
+                    OR winter_forage_2022.h3_index IS NOT NULL
                 )
                 THEN 11
 
-                -- Baseline for any grassland
+                -- Baseline for any remaining grassland
                 WHEN lum_.lucid_2020 IN (
                     '75 - Grassland - High producing',
                     '76 - Grassland - Low producing'
                 )
                 THEN 14 -- >12 to account for modifier
+                ELSE NULL -- No other possibilities permitted
             END
             + -- Add modifier for landcover
             CASE
@@ -93,6 +109,28 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 WHEN lcdb_.Class_2018 IN (10, 12, 15, 16, 20, 21, 30, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
                 THEN 0 -- Neutral evidence
                 ELSE 1 -- Negative evidence
+            END
+            +
+            CASE -- Lower confidence for land in hydro parcel
+                WHEN hydro_parcels_h3.h3_index IS NOT NULL
+                THEN 2
+                ELSE 0
+            END
+            +
+            CASE -- Lower confidence for extremely low capability land according to LUC
+                WHEN nzlri_lowcapability.lcorrclass = 0
+                THEN NULL -- Complete exclude the possibility
+                WHEN nzlri_lowcapability.lcorrclass = 8
+                THEN 12 -- Extremely unlikely; high penalty
+                WHEN nzlri_lowcapability.lcorrclass = 7
+                THEN 1 -- Small additional penalty
+                ELSE 0
+            END
+            +
+            CASE -- Lower confidence for afforestation consents
+                WHEN consents_forestry.afforestation_flag IS TRUE
+                THEN 3
+                ELSE 0
             END, -- confidence
             -- TODO specific commodities per case; this is just placeholder
             -- TODO in this case, it will require moving the modifier to the later part of the query
@@ -107,19 +145,22 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 THEN ARRAY['deer']::TEXT[]
                 ELSE ARRAY[]::TEXT[]
             END, -- commod
-            ARRAY[
+            ARRAY_REMOVE(ARRAY[
                 GREATEST(
                     irrigation_.manage,
                     dairy_effluent_discharge.effluent_irrigation_type
-                )
-            ]::TEXT[], -- manage
-            -- GREATEST is used to handle the {irrigation,irrigation spray} case, to take the option with the most detail
+                ), -- GREATEST is used to handle the {irrigation,irrigation spray} case, to retain only the option with the most detail
+                winter_forage_2022.manage
+            ]::TEXT[], NULL), -- manage
             ARRAY[
                 linz_dvr_.source_data,
                 lcdb_.source_data,
                 lum_.source_data,
                 irrigation_.source_data,
-                dairy_effluent_discharge.source_data
+                dairy_effluent_discharge.source_data,
+                winter_forage_2022.source_data,
+                nzlri_lowcapability.source_data,
+                consents_forestry.source_data
             ]::TEXT[], -- source_data
             range_merge(datemultirange(
                 VARIADIC ARRAY_REMOVE(ARRAY[
@@ -127,7 +168,10 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     lcdb_.source_date,
                     lum_.source_date,
                     irrigation_.source_date,
-                    dairy_effluent_discharge.source_date
+                    dairy_effluent_discharge.source_date,
+                    winter_forage_2022.source_date,
+                    nzlri_lowcapability.source_date,
+                    consents_forestry.source_date
                 ], NULL)
             ))::daterange, -- source_date
             range_merge(int4multirange(
@@ -136,7 +180,10 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     lcdb_.source_scale,
                     lum_.source_scale,
                     irrigation_.source_scale,
-                    dairy_effluent_discharge.source_scale
+                    dairy_effluent_discharge.source_scale,
+                    winter_forage_2022.source_scale,
+                    nzlri_lowcapability.source_scale,
+                    consents_forestry.source_scale
                 ], NULL)
             ))::int4range -- source_scale
         )::nzlum_type AS nzlum_type
@@ -160,6 +207,12 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             FROM dairy_effluent_discharge
             WHERE :parent::h3index = h3_partition
         ) AS dairy_effluent_discharge USING (h3_index)
+        FULL OUTER JOIN (
+            SELECT *
+            FROM winter_forage_2022
+            JOIN winter_forage_2022_h3 USING (ogc_fid)
+            WHERE :parent::h3index = h3_partition
+        ) AS winter_forage_2022 USING (h3_index)
         LEFT JOIN (
             SELECT *
             FROM topo50_sand_h3
@@ -168,9 +221,17 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             SELECT * 
             FROM topo50_chatham_sand_h3
             WHERE :parent::h3index = h3_partition
-        ) topo50_sand_h3 USING (h3_index)
+        ) AS topo50_sand_h3 USING (h3_index)
         LEFT JOIN topo50_land_h3 USING (h3_index)
         LEFT JOIN topo50_pond_h3 USING (h3_index)
+        LEFT JOIN hydro_parcels_h3 USING (h3_index)
+        LEFT JOIN (
+            SELECT h3_index, lcorrclass, source_data, source_date, source_scale
+            FROM nzlri_lowcapability
+            JOIN nzlri_lowcapability_h3 USING (ogc_fid)
+            WHERE :parent::h3index = h3_partition 
+        ) AS nzlri_lowcapability USING (h3_index)
+        LEFT JOIN consents_forestry USING (h3_index)
     )
     SELECT
         h3_index,
@@ -204,10 +265,10 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
 -- Neutral : 82 (other)
 -- Negative evidence: 75/501 and  74/501 (*grassland ungrazed) and all other classes
 
--- TODO MfE irrigation, considering status (i.e. current) and confidence; type as mgmt practice; notes as comment?
+-- MfE irrigation, considering status (i.e. current) and confidence; type as mgmt practice; notes as comment?
 
--- TODO NZLRI LUC (low capability, lower confidence?)
+-- TODO NZLRI LUC lower confidence for luc 0 or 8, even a small lower confidence for class 7
 
--- NB CROSL does not directly identify crown pastoral leases
+-- NB CROSL does -not- directly identify crown pastoral leases
 
 -- TODO lower confidence with hydro parcel

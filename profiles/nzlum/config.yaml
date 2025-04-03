@@ -17,8 +17,10 @@ configfiles:
   - luis-config-nzlum/external-data/stats_nz/stats_nz.yml
 
   - luis-config-nzlum/external-data/regional-govt/ecan.yml
-  - luis-config-nzlum/external-data/regional-govt/hbrc.yml
   - luis-config-nzlum/external-data/regional-govt/gdc.yml
+  # - luis-config-nzlum/external-data/regional-govt/gwrc.yml
+  - luis-config-nzlum/external-data/regional-govt/hbrc.yml
+  - luis-config-nzlum/external-data/regional-govt/horizons.yml
 
   - luis-config-nzlum/config.default.yml
   - luis-config-nzlum/classifications/nzlum/config.nzlum.yml

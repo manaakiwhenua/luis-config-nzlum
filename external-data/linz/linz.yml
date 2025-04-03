@@ -21,6 +21,13 @@ external_data:
     where: \"status\" = 'Current' AND \"topology_type\" = 'Primary' AND \"parcel_intent\" = 'Road'
     geom_type: multipolygon
 
+  hydro_parcels:
+    <<: *linz
+    description: NZ Parcels (all cadastral parcel polygons) - current, primary, hydro
+    layer: layer-51571
+    where: \"status\" = 'Current' AND \"topology_type\" = 'Primary' AND \"parcel_intent\" = 'Hydro'
+    geom_type: multipolygon
+
   nz_facilities:
     <<: *linz
     description: NZ Facilities
