@@ -3,7 +3,7 @@
 Configuration files for [LUIS](https://github.com/manaakiwhenua/luis) for the [NZLUM classification](https://github.com/manaakiwhenua/nzsluc/tree/main/classification-systems/nzlum).
 
 > [!NOTE]
-> The Land Use Information System (LUIS) is proprietary software, but relies on a structure set of configuration files, which are available here for this particular classification system (the New Zealand Land Use and Management classification, NZLUM). This README loosely describes this structure, but this repository is nothing more than configuration files and does not include any software.
+> The Land Use Information System (LUIS) is proprietary software, but relies on a structured set of configuration files, which are available here for this particular classification system (the New Zealand Land Use and Management classification, NZLUM). This README loosely describes this structure, but this repository contains nothing more than the authoritative configuration files and does not include any software. It is used a submodule for LUIS.
 
 ## Structure
 
