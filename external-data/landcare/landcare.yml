@@ -15,7 +15,7 @@ external_data:
     description: LCDB v5
     layer: layer-104400
     geom_type: multipolygon
-    indices:
+    indices: &lcdb_indices
       - columns: [Name_2018]
         type: btree
         name: idx_name_2018
@@ -28,38 +28,13 @@ external_data:
       - columns: [geom]
         type: gist
         name: idx_gist_geom
-    derived_columns: &lcdb_derived
-      - column: lcdbp_cls
-        datatype: text
-        set_query: |-
-          (
-            CASE
-              WHEN Name_2018 IN ('Built-up Area (settlement)', 'Urban Parkland/Open Space') THEN 'Built-up Area (settlement)'
-              WHEN Name_2018 IN ('Transport Infrastructure') THEN 'Transport infrastructure'
-              WHEN Name_2018 IN ('Deciduous Hardwoods', 'Exotic Forest', 'Forest - Harvested') THEN 'Forestry'
-              WHEN Name_2018 IN ('Alpine Grass/Herbfield', 'Depleted Grassland', 'High Producing Exotic Grassland', 'Low Producing Grassland', 'Tall Tussock Grassland') THEN 'Grassland'
-              WHEN Name_2018 IN ('Broadleaved Indigenous Hardwoods', 'Indigenous Forest') THEN 'Natural forest'
-              WHEN Name_2018 IN ('Orchard, Vineyard or Other Perennial Crop') THEN 'Orchards and vineyards'
-              WHEN Name_2018 IN ('Short-rotation Cropland') THEN 'Short-rotation Cropland'
-              WHEN Name_2018 IN ('Fernland', 'Flaxland', 'Gorse and/or Broom', 'Herbaceous Freshwater Vegetation', 'Herbaceous Saline Vegetation', 'Matagouri or Grey Scrub', 'Mixed Exotic Shrubland', 'Sub Alpine Shrubland', 'Dune Shrubland (Chatham Is)', 'Peat Shrubland (Chatham Is)') THEN 'Shrubby vegetation'
-              WHEN Name_2018 IN ('Manuka and/or Kanuka') THEN 'Shrubby vegetation (M/K)'
-              ELSE 'Other land cover'
-            END
-          )
 
   lcdb_v5_chathams:
     <<: *lcr_wfs
     description: LCDB v5 [Chatham Islands]
     layer: layer-104442
     geom_type: multipolygon
-    derived_columns: *lcdb_derived
-    indices:
-      - columns: [Name_2018]
-        type: btree
-        name: idx_name_2018
-      - columns: [editdate]
-        type: btree
-        name: idx_editdate
+    indices: *lcdb_indices
   
   nzlri: &nzlri
     <<: *lcr_wfs

@@ -52,6 +52,4 @@ CREATE TEMPORARY VIEW transitional_land AS (
             '3' -- Future risk cannot be mitigated
         )
     )
-)
-
--- TODO Christchurch Residential Red Zone?
+);
