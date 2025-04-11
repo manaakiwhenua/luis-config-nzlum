@@ -54,6 +54,18 @@ CREATE TEMPORARY VIEW linz_dvr_ AS (
     ORDER BY
         h3_index,
         current_effective_valuation_date DESC NULLS LAST, -- Take more recent valuation
+        CASE
+            WHEN actual_property_use ~ '^0' -- Mixed use
+            THEN 3
+            WHEN actual_property_use ~ '^(1-9)0' -- Mixed use
+            THEN 2
+            ELSE 1
+        END ASC NULLS LAST, -- Prefer information about non-mixed uses 
+        CASE
+            WHEN actual_property_use = '45' -- Community services - Defence
+            THEN 0
+            ELSE 1
+        END ASC NULLS LAST, -- Prefer information about defence as a special case
         capital_value / nullif(land_area, 0) DESC NULLS LAST, -- Take property with greater capital value per unit area,
         improvements_value DESC NULLS LAST, -- Take property with greater improvements value
         "zone" ASC NULLS LAST,

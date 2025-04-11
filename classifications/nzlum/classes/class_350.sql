@@ -100,7 +100,6 @@ CREATE TEMPORARY VIEW class_350 AS (
             'Meridian Energy Limited',
             'Mighty River Power Limited - Grantee',
             'Watercare Services Limited'
-            -- 'Solid Energy NZ Limited' -- TODO check vs mining?
         ) OR statutory_actions ~* '\m(substation|electricity|water\s?power|pump\s?station|water\s?works)\M'
     ) AS linz_crosl_
     FULL OUTER JOIN (
@@ -158,7 +157,6 @@ CREATE TEMPORARY VIEW class_350 AS (
     -- Genesis Energy Limited
     -- Meridian Energy Limited
     -- Mighty River Power Limited - Grantee
-    -- Solid Energy NZ Limited (TODO check not a mine)
     -- etc.
 
 -- LINZ lakes purpose "hydro-electric" and "reservoir"

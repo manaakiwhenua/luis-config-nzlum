@@ -33,6 +33,13 @@ CREATE TEMPORARY VIEW roi AS (
 \ir data_views/consents/forestry.sql
 \ir data_views/consents/pastoral_farms.sql
 
+\ir classes/class_111.sql
+\ir classes/class_112.sql
+\ir classes/class_113.sql
+\ir classes/class_114.sql
+\ir classes/class_115.sql
+\ir classes/class_116.sql
+
 \ir classes/class_136.sql
 \ir classes/class_140.sql
 
@@ -56,6 +63,7 @@ CREATE TEMPORARY VIEW roi AS (
 \ir classes/class_390.sql
 
 \ir attributes/water.sql
+\ir attributes/land_status.sql
 
 INSERT INTO :partition
 SELECT
@@ -85,7 +93,7 @@ FROM (
         commod,
         manage,
         land_estate,
-        NULL AS land_status, --TODO
+        land_status_.land_status,
         water_features_.feature AS water,
         CASE -- TODO these could be refined, see Table 19 (https://environment.govt.nz/assets/publications/national-planning-standards-november-2019-updated-2022.pdf) and Section C.2 (https://www.linz.govt.nz/sites/default/files/30300-Rating%2520Valuations%2520Rules%25202008-%2520version%2520date%25201%2520October%25202010%2520-%2520LINZS30300_0.pdf)
             WHEN linz_zone.zone = '0X' THEN null -- Land in more than one zone or designation
@@ -148,6 +156,18 @@ FROM (
                     AS nzlum0_lu_coden) ASC NULLS LAST -- Sort on enum (preferential order as a tie-break)
             ) AS rn
         FROM (
+            SELECT * FROM class_111 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_112 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_113 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_114 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_115 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_116 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
             SELECT * FROM class_136 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL
             SELECT * FROM class_140 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
@@ -194,15 +214,17 @@ FROM (
         FROM linz_dvr_
         INNER JOIN roi USING (h3_index)
         WHERE :parent::h3index = roi.h3_partition
-    ) AS linz_zone
-    USING (h3_index)
+    ) AS linz_zone USING (h3_index)
     FULL OUTER JOIN (
         SELECT h3_index, feature
         FROM water_features
         INNER JOIN roi USING (h3_index)
         WHERE :parent::h3index = roi.h3_partition
-    ) AS water_features_
-    USING (h3_index)
+    ) AS water_features_ USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT h3_index, land_status
+        FROM land_status
+    ) AS land_status_ USING (h3_index)
     -- TODO consider a function for recording multiple uses
     WHERE rn = 1 -- Select best option after ranking in cases where multiple classes are possible
     --AND :parent::h3index = roi.h3_partition

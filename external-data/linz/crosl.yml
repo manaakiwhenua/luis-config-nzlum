@@ -15,7 +15,13 @@ external_data:
     indices:
       - columns: [managed_by]
         type: btree
-        name: idx_managed_by
+        name: idx_btree_managed_by
+      - columns: [managed_by]
+        type: gin
+        name: idx_gin_managed_by
+      - columns: [managed_by]
+        type: trigram
+        name: idx_trgm_managed_by
       - columns: [statutory_actions]
         type: gin
         name: idx_statutory_actions

@@ -28,13 +28,20 @@ CREATE TYPE nzlum0_lu_coden AS ENUM (
     --      to resolve it, by using it as a sort order.
     -- It can also be used as a type to enusre that no invalid classes are included
     --      in error.
-    '3.6.0', -- Transport overays (road, etc)
 
+    '1.1.1',
+    '1.1.2',
+    '1.1.3',
+    '1.1.4',
+    '1.1.5',
+    '1.1.6',
     '1.1.0',
     '1.2.0',
     '1.3.6',
     '1.3.0',
     '1.4.0',
+
+    '3.6.0', -- Transport overays (road, etc)
 
     '2.7.0', -- Prefer bringing forward water related features; NB this class is probably better left to water attribute 
     '2.1.0',
@@ -63,7 +70,24 @@ CREATE OR REPLACE FUNCTION nzsluc_v0_2_0_lu_description(lu_code_primary integer,
 
             WHEN lu_code_primary = 1
             THEN CASE
-                WHEN lu_code_secondary = 1 THEN 'Biodiversity protection'
+                WHEN lu_code_secondary = 1 THEN
+                    CASE
+                        WHEN lu_code_tertiary = 1
+                        THEN 'IUCN Ia'
+                        WHEN lu_code_tertiary = 2
+                        THEN 'IUCN Ib'
+                        WHEN lu_code_tertiary = 3
+                        THEN 'IUCN II'
+                        WHEN lu_code_tertiary = 4
+                        THEN 'IUCN III'
+                        WHEN lu_code_tertiary = 5
+                        THEN 'IUCN IV'
+                        WHEN lu_code_tertiary = 6
+                        THEN 'IUCN V'
+                        WHEN lu_code_tertiary = 7
+                        THEN 'Other conserved area'
+                        ELSE 'Nature conservation'
+                    END
                 WHEN lu_code_secondary = 2 THEN 'Cultural and natural heritage'
                 WHEN lu_code_secondary = 3 THEN
                     CASE
@@ -201,3 +225,16 @@ BEGIN
     );
 END;
 \$\$ LANGUAGE plpgsql;
+
+-- parse out 'Of', 'O', and 'And' and remove the Title Case
+-- This isn't possible: regexp_replace(managed_by, '\m(Of|And|O)\M', lower('\1'), 'gi') AS managed_by
+CREATE OR REPLACE FUNCTION lowercase_conjunctions(text_name TEXT)
+RETURNS text AS \$\$
+BEGIN
+  RETURN regexp_replace(
+           regexp_replace(
+             regexp_replace(text_name, '\mOf\M', 'of', 'gi'),
+             '\mAnd\M', 'and', 'gi'), 
+           '\mO\M', 'o', 'gi');
+END;
+\$\$ LANGUAGE plpgsql IMMUTABLE;
