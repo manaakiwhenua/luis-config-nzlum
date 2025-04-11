@@ -51,6 +51,20 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
                 ], NULL
             )))::int4range
         )::nzlum_type
+        WHEN hail_transport.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            CASE
+                WHEN hail_category_count = 1
+                    THEN 2
+                ELSE 4 -- Less confidence when there is a mixed HAIL classification
+            END,
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            ARRAY[hail_transport.source_data]::TEXT[],
+            hail_transport.source_date,
+            hail_transport.source_scale
+        )::nzlum_type
         WHEN (
             parcel_rail.h3_index IS NOT NULL
             OR parcel_road.h3_index IS NOT NULL
@@ -85,7 +99,7 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
                 WHEN dvr_transport.actual_property_use NOT IN ('03', '30')
-                THEN 8
+                THEN 7
                 ELSE 11
             END,
             ARRAY[]::TEXT[],
@@ -215,6 +229,15 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         WHERE actual_property_use LIKE '3%' -- Transport
         OR actual_property_use = '03' -- Multi-use within transport
     ) AS dvr_transport USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT *
+        FROM hail
+        WHERE hail_category_ids @> ARRAY[
+            'F1', -- Airports including fuel storage, workshops, washdown areas, or fire practice areas 
+            'F5', -- Port activities including dry docks or marine vessel maintenance facilities
+            'F6' -- Railway yards including goods-handling yards, workshops, refuelling facilities or maintenance areas
+        ]
+    ) AS hail_transport USING (h3_index)
     LEFT JOIN lcdb_ USING (h3_index)
     LEFT JOIN (
         SELECT

@@ -1,0 +1,100 @@
+__environment_southland_consents__: &es_public_consents
+  external_data_type: arcgis_rest
+  license: https://creativecommons.org/licenses/by/4.0/
+  host: https://maps.es.govt.nz/server/rest/services/Public/General/MapServer
+
+__environment_southland_general__: &es_public_general
+  external_data_type: arcgis_rest
+  license: https://creativecommons.org/licenses/by/4.0/
+  host: https://maps.es.govt.nz/server/rest/services/Public/General/MapServer
+
+external_data:
+  # The Selected Land Use Register is a list of land that has been used for any activity included in the Ministry for the Environment’s list of activities with the potential to result in soil contamination. The list is referred to as the Hazardous Activities and Industries List, or HAIL.
+  es_slu:
+    <<: *es_public_consents
+    description: Environment Southland Selected Land Use Sites (SLUS)
+    geom_type: multipolygon
+    layer: "42"
+    derived_columns:
+      - column: hail_category_count
+        datatype: int
+        set_query: regexp_count(HAILCategories::text, '\m[A-I]\d{0,2}\.'::text)
+      - column: hail_category_ids
+        datatype: text[]
+        set_query: |-
+          ARRAY(
+            SELECT match[1]
+            FROM regexp_matches(HAILCategories, '\m([A-I]\d{0,2})\M\.?'::text, 'g') AS match
+          )
+      - column: geom_area_ha
+        datatype: float8
+        set_query: ST_Area(geom::geography)/10000.0
+      - column: start_date
+        datatype: date
+        set_query: "StatusDate::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "'2024-12-01'::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange(StatusDate::DATE, '2024-12-01'::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'ES HAIL'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'(1,100)'::int4range"
+    indices:
+      - columns: [HAILCategories]
+        type: gin
+        name: idx_hailcategories
+      - columns: [hail_category_ids]
+        type: gin
+        name: idx_gin_hail_category_ids
+      - columns: [hail_category_count]
+        type: btree
+        name: idx_hail_category_count
+      - columns: [geom_area_ha]
+        type: btree
+        name: idx_geom_area_ha
+
+
+  es_winter_forage_2017:
+    <<: *es_public_general
+    description: Environment Southland winter forage 2017
+    geom_type: multipolygon
+    layer: "33"
+    derived_columns:
+      - column: start_date
+        datatype: date
+        set_query: "'2017-06-01'::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "'2017-08-31'::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange('2017-06-01'::DATE, '2017-08-31'::DATE::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'ES'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[10,60]'::int4range"
+      - column: manage
+        datatype: text
+        set_query: |-
+          (
+            CASE
+              WHEN (
+                Name ~ '^WF\M'
+                OR Name ~ '^Winter grazing\M'
+                OR Name IN (
+                  'Autumn-planted crop or pasture',
+                  'Crop residue and dead vegetation',
+                  'Hill-country bare soil'
+                )
+              )
+              THEN 'crop pasture rotation'
+              ELSE NULL
+            END
+          )

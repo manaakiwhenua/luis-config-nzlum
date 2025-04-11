@@ -65,7 +65,7 @@ external_data:
     where: \"lcorrclass\" IN (0, 7, 8)
 
   # TODO complete crop_type... management practices, commodities?
-  winter_forage_2022:
+  winter_forage_2022: &winter_forage
     <<: *lcr_wfs
     license: Copyright © MWLR 2025
     attribution: "Sourced from the Land Resource Information Systems (LRIS) Portal and used under permission"
@@ -120,3 +120,34 @@ external_data:
     #           ELSE NULL
     #         END
     #       )
+
+  winter_forage_2023:
+    <<: *winter_forage
+    description: NZ winter forage 2023
+    layer: layer-122036
+    derived_columns:
+      - column: start_date
+        datatype: date
+        set_query: "'2023-06-01'::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "'2023-08-31'::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange('2023-06-01'::DATE, '2023-08-31'::DATE::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'MWLR'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[10,60]'::int4range"
+      - column: manage
+        datatype: text
+        set_query: |-
+          (
+            CASE
+              WHEN (CertRating = 1 AND CR1Case = 2)
+              THEN NULL
+              ELSE 'crop pasture rotation'
+            END
+          )

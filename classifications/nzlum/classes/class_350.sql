@@ -76,6 +76,20 @@ CREATE TEMPORARY VIEW class_350 AS (
             linz_dvr_utility_.source_date,
             linz_dvr_utility_.source_scale
         )::nzlum_type
+        WHEN hail_electric.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            CASE
+                WHEN hail_category_count = 1
+                    THEN 1
+                ELSE 4 -- Less confidence when there is a mixed HAIL classification
+            END,
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            ARRAY[hail_electric.source_data]::TEXT[],
+            hail_electric.source_date,
+            hail_electric.source_scale
+        )::nzlum_type
     END AS nzlum_type
     FROM (
         SELECT *
@@ -126,10 +140,17 @@ CREATE TEMPORARY VIEW class_350 AS (
             'Lake Arapuni'
         )
     ) AS topo50_hydro_and_reservoirs USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT *
+        FROM hail
+        WHERE hail_category_ids @> ARRAY[
+            'B4' -- Power stations, substations or switchyards
+        ]
+    ) AS hail_electric USING (h3_index)
 );
--- TODO DVR use class 6 (all, except 69? 67 (postboxes) is odd and may fit under comm. services)
+-- DVR use class 6 (all, except 69? 67 (postboxes) is odd and may fit under comm. services)
 -- TODO what to do with actual use 67 postboxes
--- TODO category UR Rail nework corridors may be better under transport
+-- category UR Rail nework corridors are better under transport
 
 -- CROSL 'electricity substation' etc
 -- CROSL managed by
@@ -142,3 +163,5 @@ CREATE TEMPORARY VIEW class_350 AS (
 
 -- LINZ lakes purpose "hydro-electric" and "reservoir"
 -- LINZ lakes "Lake Moawhango" (hydro electric), Lake Rotoaira, Arapuni, Lake Otamangakau, Lake Te Whaiau, Lake Whakamaru, Lake Maraetai, Lake Arapuni
+
+-- HAIL for electricak substations etc. that may otherwise be absent

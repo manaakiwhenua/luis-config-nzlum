@@ -24,10 +24,14 @@ CREATE TEMPORARY VIEW roi AS (
 \ir data_views/linz_dvr.sql
 \ir data_views/lum.sql
 \ir data_views/irrigation.sql
-\ir data_views/dairy_effluent_discharge.sql
 \ir data_views/marine_farms.sql
+\ir data_views/crop_mapping.sql
+\ir data_views/hail.sql
+\ir data_views/winter_forage.sql
 \ir data_views/transitional_land.sql
+\ir data_views/consents/dairy_effluent_discharge.sql
 \ir data_views/consents/forestry.sql
+\ir data_views/consents/pastoral_farms.sql
 
 \ir classes/class_136.sql
 \ir classes/class_140.sql

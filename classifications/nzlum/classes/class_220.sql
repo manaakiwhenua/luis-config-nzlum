@@ -14,24 +14,31 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 ELSE ARRAY[]::TEXT[]
             END, -- lu_code_ancillary
             CASE
-                WHEN linz_dvr_.actual_property_use IN (
-                    '11', -- Dairy
-                    '12', -- Stock finishing
-                    '14' -- Store livestock
+                WHEN (
+                    pastoral_consents.h3_index IS NOT NULL
+                    OR linz_dvr_.actual_property_use IN (
+                        '11', -- Dairy
+                        '12', -- Stock finishing
+                        '14' -- Store livestock
+                    )
                 )
                 THEN
                     CASE
-                        WHEN dairy_effluent_discharge.ActualAnimalNumbers_int > 0
+                        WHEN dairy_effluent_discharge.animal_count > 0
+                        THEN 1
+                        WHEN linz_dvr_.category ~ '^D'
+                        THEN 1
+                        WHEN pasture_practices.h3_index IS NOT NULL
                         THEN 1
                         WHEN (
-                            winter_forage_2022.CertRating = 3 -- Good
+                            winter_forage_.CertRating = 3 -- Good
                             OR (
-                                winter_forage_2022.CertRating = 1
-                                AND winter_forage_2022.CR1Case = 2 -- Heavily grazed pasture
+                                winter_forage_.CertRating = 1
+                                AND winter_forage_.CR1Case = 2 -- Heavily grazed pasture
                             )
                         )
                         THEN 1
-                        WHEN winter_forage_2022.CertRating = 2 -- Medium
+                        WHEN winter_forage_.CertRating = 2 -- Medium
                         THEN 2
                         ELSE 3
                     END
@@ -44,9 +51,10 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                         linz_dvr_.actual_property_use = '19' -- Vacant within rural industry
                     ) OR linz_dvr_.category ~ '^(D|P)'
                     OR (
-                        winter_forage_2022.CertRating = 1
-                        AND winter_forage_2022.CR1Case = 2 -- Heavily grazed pasture
+                        winter_forage_.CertRating = 1
+                        AND winter_forage_.CR1Case = 2 -- Heavily grazed pasture
                     )
+                    OR pasture_practices.h3_index IS NOT NULL
                 )
                 THEN 5
 
@@ -68,7 +76,7 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                         '18' -- Mineral extraction
                     )
                     OR linz_dvr_.category ~ '^(LI|SD|SH|SX)'
-                    OR winter_forage_2022.h3_index IS NOT NULL
+                    OR winter_forage_.h3_index IS NOT NULL
                 )
                 THEN 11
 
@@ -132,35 +140,40 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 THEN 3
                 ELSE 0
             END, -- confidence
-            -- TODO specific commodities per case; this is just placeholder
-            -- TODO in this case, it will require moving the modifier to the later part of the query
-            CASE
-                WHEN (
-                    linz_dvr_.actual_property_use = '11'
-                    OR lum_.subid_2020 = '502 - Grazed - dairy'
-                    OR dairy_effluent_discharge.h3_index IS NOT NULL
-                )
-                THEN ARRAY['cattle dairy']::TEXT[]
-                WHEN linz_dvr_.category ~ '^SD' OR linz_dvr_.improvements_description ~ '\bDEER SHED(S)?\b'
-                THEN ARRAY['deer']::TEXT[]
-                ELSE ARRAY[]::TEXT[]
-            END, -- commod
+            (
+                CASE
+                    WHEN pastoral_consents.h3_index IS NOT NULL
+                    THEN pastoral_consents.commod::TEXT[]
+                    WHEN (
+                        linz_dvr_.actual_property_use = '11'
+                        OR lum_.subid_2020 = '502 - Grazed - dairy'
+                        OR dairy_effluent_discharge.h3_index IS NOT NULL
+                    )
+                    THEN ARRAY['cattle dairy']::TEXT[]
+                    WHEN linz_dvr_.category ~ '^SD' OR linz_dvr_.improvements_description ~ '\bDEER SHED(S)?\b'
+                    THEN ARRAY['deer']::TEXT[]
+                    ELSE ARRAY[]::TEXT[]
+                END
+            ) || COALESCE(pasture_practices.commod, ARRAY[]::TEXT[]), -- commod
             ARRAY_REMOVE(ARRAY[
                 GREATEST(
                     irrigation_.manage,
-                    dairy_effluent_discharge.effluent_irrigation_type
-                ), -- GREATEST is used to handle the {irrigation,irrigation spray} case, to retain only the option with the most detail
-                winter_forage_2022.manage
-            ]::TEXT[], NULL), -- manage
+                    dairy_effluent_discharge.manage
+                ) -- GREATEST is used to handle the {irrigation,irrigation spray} case, to retain only the option with the most detail
+            ], NULL)::TEXT[]
+            || COALESCE(ARRAY[winter_forage_.manage]::TEXT[], ARRAY[]::TEXT[])
+            || COALESCE(pasture_practices.manage, ARRAY[]::TEXT[]), -- manage
             ARRAY[
                 linz_dvr_.source_data,
                 lcdb_.source_data,
                 lum_.source_data,
                 irrigation_.source_data,
                 dairy_effluent_discharge.source_data,
-                winter_forage_2022.source_data,
+                winter_forage_.source_data,
                 nzlri_lowcapability.source_data,
-                consents_forestry.source_data
+                consents_forestry.source_data,
+                pasture_practices.source_data,
+                pastoral_consents.source_data
             ]::TEXT[], -- source_data
             range_merge(datemultirange(
                 VARIADIC ARRAY_REMOVE(ARRAY[
@@ -169,9 +182,11 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     lum_.source_date,
                     irrigation_.source_date,
                     dairy_effluent_discharge.source_date,
-                    winter_forage_2022.source_date,
+                    winter_forage_.source_date,
                     nzlri_lowcapability.source_date,
-                    consents_forestry.source_date
+                    consents_forestry.source_date,
+                    pasture_practices.source_date,
+                    pastoral_consents.source_date
                 ], NULL)
             ))::daterange, -- source_date
             range_merge(int4multirange(
@@ -181,9 +196,11 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     lum_.source_scale,
                     irrigation_.source_scale,
                     dairy_effluent_discharge.source_scale,
-                    winter_forage_2022.source_scale,
+                    winter_forage_.source_scale,
                     nzlri_lowcapability.source_scale,
-                    consents_forestry.source_scale
+                    consents_forestry.source_scale,
+                    pasture_practices.source_scale,
+                    pastoral_consents.source_scale
                 ], NULL)
             ))::int4range -- source_scale
         )::nzlum_type AS nzlum_type
@@ -200,19 +217,15 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             WHERE (
                 ts_notes IS NULL -- Very important
                 OR NOT ts_notes @@ to_tsquery('english', 'sports & field | golf & course')
-            ) AND "type" NOT LIKE 'Drip%'
+            ) AND irrigation_.irrigation_type NOT LIKE 'Drip%'
         ) irrigation_ USING (h3_index)
         FULL OUTER JOIN (
             SELECT *
             FROM dairy_effluent_discharge
             WHERE :parent::h3index = h3_partition
         ) AS dairy_effluent_discharge USING (h3_index)
-        FULL OUTER JOIN (
-            SELECT *
-            FROM winter_forage_2022
-            JOIN winter_forage_2022_h3 USING (ogc_fid)
-            WHERE :parent::h3index = h3_partition
-        ) AS winter_forage_2022 USING (h3_index)
+        FULL OUTER JOIN winter_forage_ USING (h3_index)
+        FULL OUTER JOIN pastoral_consents USING (h3_index)
         LEFT JOIN (
             SELECT *
             FROM topo50_sand_h3
@@ -232,6 +245,22 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             WHERE :parent::h3index = h3_partition 
         ) AS nzlri_lowcapability USING (h3_index)
         LEFT JOIN consents_forestry USING (h3_index)
+        LEFT JOIN (
+            SELECT h3_index, source_data, source_date, source_scale, manage, commod
+            FROM crop_maps
+            -- && is the overlap operator for TEXT[]
+            -- So this selects rows where at least one of these is in the manage array
+            -- TODO others will need to be added when available; could be better to use a type where these are defined?
+            WHERE manage && ARRAY[
+                'residues baled',
+                'crop pasture rotation',
+                'grazing rotational'
+            ]
+            OR (
+                source_data = 'GDC'
+                AND crop = 'Pasture/Unused'
+            )
+        ) AS pasture_practices USING (h3_index)
     )
     SELECT
         h3_index,

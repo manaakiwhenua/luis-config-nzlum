@@ -58,34 +58,59 @@ CREATE TEMPORARY VIEW class_380 AS (
                         THEN 2
                         WHEN category_evidence IS TRUE
                         THEN 3
-                        ELSE 4
+                        WHEN lcdb_mines_and_dumps.h3_index IS NOT NULL
+                        THEN 3
+                        ELSE 8
                     END,
                     ARRAY[]::TEXT[], -- commod
                     ARRAY[]::TEXT[], -- manage
-                    ARRAY[linz_dvr_sanitary.source_data]::TEXT[],
-                    linz_dvr_sanitary.source_date,
-                    linz_dvr_sanitary.source_scale
+                    ARRAY[linz_dvr_sanitary.source_data, lcdb_mines_and_dumps.source_data]::TEXT[],
+                    range_merge(datemultirange(
+                        VARIADIC ARRAY_REMOVE(ARRAY[
+                            lcdb_mines_and_dumps.source_date,
+                            linz_dvr_sanitary.source_date
+                        ], NULL)
+                    ))::daterange, -- source_date
+                    range_merge(int4multirange(
+                        VARIADIC ARRAY_REMOVE(ARRAY[
+                            lcdb_mines_and_dumps.source_scale,
+                            linz_dvr_sanitary.source_scale
+                        ], NULL)
+                    ))::int4range -- source_scale
                 )::nzlum_type
-                WHEN improvements_evidence IS TRUE
+                WHEN lcdb_mines_and_dumps.h3_index IS NOT NULL
                 THEN ROW(
                     ARRAY[]::TEXT[], -- lu_code_ancillary
                     CASE
                         WHEN category_evidence IS TRUE
-                        THEN 5
-                        ELSE 6
+                        THEN 4
+                        ELSE 8
                     END,
                     ARRAY[]::TEXT[], -- commod
                     ARRAY[]::TEXT[], -- manage
-                    ARRAY[linz_dvr_sanitary.source_data]::TEXT[],
-                    linz_dvr_sanitary.source_date,
-                    linz_dvr_sanitary.source_scale
+                    ARRAY[linz_dvr_sanitary.source_data, lcdb_mines_and_dumps.source_data]::TEXT[],
+                    range_merge(datemultirange(
+                        VARIADIC ARRAY_REMOVE(ARRAY[
+                            lcdb_mines_and_dumps.source_date,
+                            linz_dvr_sanitary.source_date
+                        ], NULL)
+                    ))::daterange, -- source_date
+                    range_merge(int4multirange(
+                        VARIADIC ARRAY_REMOVE(ARRAY[
+                            lcdb_mines_and_dumps.source_scale,
+                            linz_dvr_sanitary.source_scale
+                        ], NULL)
+                    ))::int4range -- source_scale
                 )::nzlum_type
                 ELSE NULL
             END
         WHEN linz_crosl_sanitary.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            4, -- Noting that preceding cases should have captured many high confidence cases
+            CASE
+                WHEN linz_crosl_sanitary.large = TRUE THEN 9 -- Larger parcels, lower confidence
+                ELSE 5 -- Noting that preceding cases should have captured many high confidence cases
+            END,
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_crosl_sanitary.source_data]::TEXT[],
@@ -146,10 +171,16 @@ CREATE TEMPORARY VIEW class_380 AS (
         OR category ~ '^UC'
     ) AS linz_dvr_sanitary USING (h3_index)
     FULL OUTER JOIN (
-        SELECT * 
+        SELECT *,
+        CASE WHEN area_ha > 400 THEN TRUE ELSE FALSE END AS large
         FROM linz_crosl_
         WHERE statutory_actions ~* '\m(rubbish\sdump|landfill|waste\srecovery|soild\swaste|refuse\stransfer(\sstation)?|sanitary|recyling|(waste|storm)\s?water(\sretention)?|sew(er)?(age)?|drainage)\M'
     ) AS linz_crosl_sanitary USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT *
+        FROM lcdb_
+        WHERE Class_2018 = '6' -- Surface Mine or Dump
+    ) AS lcdb_mines_and_dumps USING (h3_index)
 )
 
 -- LINZ landfill polyogons

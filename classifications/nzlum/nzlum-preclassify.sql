@@ -38,8 +38,8 @@ CREATE TYPE nzlum0_lu_coden AS ENUM (
 
     '2.7.0', -- Prefer bringing forward water related features; NB this class is probably better left to water attribute 
     '2.1.0',
-    '2.3.0', -- Prefer arable to grazing pasture if there is equal likelihood, as arable includes mixes with grazing
     '2.2.0',
+    '2.3.0',
     '2.4.0',
     '2.5.0',
     '2.6.0',

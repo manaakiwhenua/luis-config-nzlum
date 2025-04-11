@@ -293,7 +293,7 @@ external_data:
   topo50_mud:
     <<: *linz_topo50
     description: LINZ Topo 1:50k Mud Polygons
-    layer: layer-50335
+    layer: layer-50305
     geom_type: multipolygon
 
   topo50_chatham_mud:
@@ -305,7 +305,7 @@ external_data:
   topo50_exotic_polygons:
     <<: *linz_topo50
     description: LINZ Topo 1:50k Exotic Polygons
-    layer: layer-50305
+    layer: layer-50267
     geom_type: multipolygon
     # nb species: [empty] (i.e. coniferous) and "non-coniferous"
 

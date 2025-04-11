@@ -9,6 +9,8 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
     ROW(
         ARRAY[]::TEXT[], -- lu_code_ancillary
         LEAST(GREATEST(CASE
+            WHEN crop_nurseries.h3_index IS NOT NULL
+            THEN 1
             WHEN category ~ '^HG(A)'
             THEN 3
             WHEN category ~ '^HG(B)'
@@ -61,35 +63,52 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
             ELSE 0
         END, 1), 12), -- Confidence
         ARRAY[]::TEXT[], -- commod
-        ARRAY[irrigation_.manage]::TEXT[], -- manage
-        ARRAY[linz_dvr_.source_data, irrigation_.source_data]::TEXT[], -- source_data
-        CASE
-            WHEN irrigation_.h3_index IS NOT NULL
-            THEN range_merge(
+        ARRAY[irrigation_.manage]::TEXT[] || COALESCE(crop_nurseries.manage, ARRAY[]::TEXT[]), -- manage
+        ARRAY[
+            linz_dvr_.source_data,
+            irrigation_.source_data,
+            crop_nurseries.source_data
+        ]::TEXT[], -- source_data
+        range_merge(datemultirange(
+            VARIADIC ARRAY_REMOVE(ARRAY[
                 irrigation_.source_date,
-                linz_dvr_.source_date)
-            ELSE linz_dvr_.source_date
-        END, -- source_date
-        CASE
-            WHEN irrigation_.h3_index IS NOT NULL
-            THEN range_merge(
+                linz_dvr_.source_date,
+                crop_nurseries.source_date
+            ], NULL)
+        ))::daterange, -- source_date
+        range_merge(int4multirange(
+            VARIADIC ARRAY_REMOVE(ARRAY[
                 irrigation_.source_scale,
-                linz_dvr_.source_scale)
-            ELSE linz_dvr_.source_scale
-        END
+                linz_dvr_.source_scale,
+                crop_nurseries.source_scale
+            ], NULL)
+        ))::int4range -- source_scale
     )::nzlum_type AS nzlum_type
     FROM (
         SELECT *
         FROM linz_dvr_
-        WHERE category ~ '^H'
-        OR actual_property_use IN ('0', '00', '01', '1', '10', '15')
-        OR improvements_description ~ '\m(GREEN|GRN|SHADE|SHD|GLASS)\s?(HOUSE|HSE)\M'
-        OR improvements_description ~ '\mNURSERY\M'
+        WHERE
+            category ~ '^H'
+            OR actual_property_use IN ('0', '00', '01', '1', '10', '15')
+            OR improvements_description ~ '\m(GREEN|GRN|SHADE|SHD|GLASS)\s?(HOUSE|HSE)\M'
+            OR improvements_description ~ '\mNURSERY\M'
     ) linz_dvr_
+    FULL OUTER JOIN (
+        SELECT *
+        FROM crop_maps
+        WHERE (
+            source_data = 'GDC'
+            AND crop IN (
+                'Pine Nursery',
+                'Grape Nursery',
+                'Poplar/Willow Nursery'
+            )
+        )
+    ) AS crop_nurseries USING (h3_index)
     JOIN (
         SELECT *
         FROM irrigation_
-        WHERE "type" ~ '^Drip'
+        WHERE irrigation_type ~ '^Drip'
     ) irrigation_ USING (h3_index)
 );
 

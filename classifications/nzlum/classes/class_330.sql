@@ -37,12 +37,20 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
                     THEN 1
                     ELSE 4
                 END
+                WHEN (
+                    dvr_commercial.actual_property_use IS NULL 
+                    AND dvr_commercial.category ~ '^C'
+                )
+                THEN 9
                 WHEN
                     dvr_commercial.actual_property_use = '89' -- Vacant
                     OR dvr_commercial.improvements_description IS NULL
                     OR dvr_commercial.improvements_value = 0
                 THEN 11
-                ELSE 9
+
+                WHEN dvr_commercial.category ~ '^C'
+                THEN 10
+                ELSE NULL
             END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
@@ -57,7 +65,7 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
             actual_property_use ~ '^8'
             OR actual_property_use = '08'
             OR actual_property_use = '78' -- Industrial, depots and yards
-            OR category ~ '^CH' -- Commercial: Health operations of a small scale
+            OR category ~ '^C' -- Commercial
         )
         AND (
             improvements_description IS NULL

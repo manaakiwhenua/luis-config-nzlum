@@ -82,6 +82,16 @@ CREATE TEMPORARY VIEW class_280 AS (
             linz_dvr_.source_date,
             linz_dvr_.source_scale
         )::nzlum_type
+        WHEN crop_transitional.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            6,
+            ARRAY[]::TEXT[], -- commod
+            ARRAY[]::TEXT[], -- manage
+            ARRAY[crop_transitional.source_data]::TEXT[],
+            crop_transitional.source_date,
+            crop_transitional.source_scale
+        )::nzlum_type
     END AS nzlum_type
     FROM (
         SELECT *
@@ -130,6 +140,14 @@ CREATE TEMPORARY VIEW class_280 AS (
         WHERE :parent::h3index = h3_partition
     ) AS urban_rural_2025_ USING (h3_index)
     FULL OUTER JOIN transitional_land USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT *
+        FROM crop_maps
+        WHERE (
+            source_data = 'GDC'
+            AND crop = 'To Be Planted'
+        )
+    ) AS crop_transitional USING (h3_index)
 )
 
 -- Lower confidence in urban areas, raise confidence in rural areas

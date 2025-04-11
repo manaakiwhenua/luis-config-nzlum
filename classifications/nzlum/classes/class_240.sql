@@ -1,5 +1,29 @@
 CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
-    WITH base_classification AS (
+    With crop_perennial AS (
+        SELECT *
+            FROM crop_maps
+            WHERE commod && ARRAY[
+                'apples',
+                'avocados',
+                'feijoa'
+                'pears',
+                'kiwifruit',
+                'grapes',
+                'olives',
+                'persimmons',
+                'pinenuts',
+                'pomegranate',
+                'tamarillo'
+            ]::TEXT[]
+            OR (
+                source_data = 'GDC'
+                AND crop IN (
+                    'Citrus',
+                    'Stonefruit'
+                )
+            ) -- NB special cases for GDC data that don't map to specific commodities
+    ),
+    base_classification AS (
         SELECT h3_index,
         2 AS lu_code_primary,
         4 AS lu_code_secondary,
@@ -8,7 +32,7 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             WHEN (
                 lum_.h3_index IS NOT NULL
                 AND topo50_orchards_.h3_index IS NOT NULL
-            )
+            ) OR crop_perennial.h3_index IS NOT NULL
             THEN ROW(
                 ARRAY[]::TEXT[], -- lu_code_ancillary
                 CASE
@@ -18,12 +42,13 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                     THEN 2
                     WHEN linz_dvr_.category ~ '^H(C|K|P|S|V)(D|E|F)?'
                     THEN 5
-                    WHEN linz_dvr_.category ~ '^HX'
+                    WHEN linz_dvr_.category ~ '^HX(A|B)'
                     THEN 5
-                    WHEN linz_dvr_.category ~ '^H(B|F|M)'
+                    WHEN linz_dvr_.category ~ '^H(B|F|M|X)'
                     THEN 9
                     ELSE 4 -- confidence
                 END,
+                COALESCE(crop_perennial.commod, ARRAY[]::TEXT[]) ||
                 ARRAY[CASE
                     WHEN linz_dvr_.category ~ 'HK(A|B)'
                     THEN 'kiwifruit'
@@ -32,19 +57,21 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                     ELSE NULL
                 END]::TEXT[], -- commod
                 ARRAY[]::TEXT[], -- manage
-                ARRAY[lum_.source_data, topo50_orchards_.source_data, linz_dvr_.source_data]::TEXT[], -- source_data
+                ARRAY[lum_.source_data, topo50_orchards_.source_data, linz_dvr_.source_data, crop_perennial.source_data]::TEXT[], -- source_data
                 range_merge(datemultirange(
                     VARIADIC ARRAY_REMOVE(ARRAY[
                         topo50_orchards_.source_date,
                         lum_.source_date,
-                        linz_dvr_.source_date
+                        linz_dvr_.source_date,
+                        crop_perennial.source_date
                     ], NULL)
                 ))::daterange, -- source_date
                 range_merge(int4multirange(
                     VARIADIC ARRAY_REMOVE(ARRAY[
                         topo50_orchards_.source_scale,
                         lum_.source_scale,
-                        linz_dvr_.source_scale
+                        linz_dvr_.source_scale,
+                        crop_perennial.source_scale
                     ], NULL)
                 ))::int4range -- source_scale
             )::nzlum_type
@@ -75,7 +102,7 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                     ELSE NULL
                 END]::TEXT[], -- commod
                 ARRAY[]::TEXT[], -- manage
-                ARRAY[lcdb_.source_data, topo50_orchards_.source_data]::TEXT[], -- source_data
+                ARRAY[lcdb_.source_data, topo50_orchards_.source_data, linz_dvr_.source_data]::TEXT[], -- source_data
                 range_merge(datemultirange(
                     VARIADIC ARRAY_REMOVE(ARRAY[
                         topo50_orchards_.source_date,
@@ -279,6 +306,7 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             -- H(C|K|P|S|V) -- HIGH
             -- Consider H*(A|B|C|D|E|F) too (quality)
         ) linz_dvr_ USING (h3_index)
+        FULL OUTER JOIN crop_perennial USING (h3_index)
     )
     SELECT
         h3_index,
@@ -287,36 +315,46 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
         lu_code_tertiary,
         ROW(
             (nzlum_type).lu_code_ancillary,
-            -- Clamp the confidence value
-            LEAST(GREATEST(CASE
-                WHEN irrigation_.h3_index IS NOT NULL
-                THEN ((nzlum_type).confidence - 2)
-                ELSE (nzlum_type).confidence
-            END, 1), 12),
-            (nzlum_type).commod,
-            COALESCE((nzlum_type).manage, '{}') || irrigation_.manage,
-            (nzlum_type).source_data || irrigation_.source_data,
+            -- Clamp the confidence value, preserving nulls
             CASE
-                WHEN irrigation_.h3_index IS NOT NULL
-                THEN range_merge(
-                    irrigation_.source_date,
-                    (nzlum_type).source_date)
-                ELSE (nzlum_type).source_date
+                WHEN (nzlum_type).confidence IS NULL
+                THEN NULL
+                ELSE LEAST(GREATEST((nzlum_type).confidence
+                    + CASE
+                        WHEN irrigation_.h3_index IS NOT NULL
+                        THEN -2
+                        ELSE 0
+                    END
+                    + CASE
+                        WHEN crop_perennial.h3_index IS NOT NULL
+                        THEN -6
+                        ELSE 0
+                    END, 1), 12) -- confidence
             END,
-            CASE
-                WHEN irrigation_.h3_index IS NOT NULL
-                THEN range_merge(
+            COALESCE((nzlum_type).commod, ARRAY[]::TEXT[]) || COALESCE(crop_perennial.commod, ARRAY[]::TEXT[]),
+            COALESCE((nzlum_type).manage, ARRAY[]::TEXT[]) || COALESCE(ARRAY[irrigation_.manage], ARRAY[]::TEXT[]),
+            COALESCE((nzlum_type).source_data, ARRAY[]::TEXT[]) || COALESCE(ARRAY[irrigation_.source_data]::TEXT[], ARRAY[]::TEXT[]) || COALESCE(ARRAY[crop_perennial.source_data]::TEXT[], ARRAY[]::TEXT[]),
+            range_merge(datemultirange(
+                VARIADIC ARRAY_REMOVE(ARRAY[
+                    (nzlum_type).source_date,
+                    irrigation_.source_date,
+                    crop_perennial.source_date
+                ], NULL)
+            ))::daterange, -- source_date
+            range_merge(int4multirange(
+                VARIADIC ARRAY_REMOVE(ARRAY[
+                    (nzlum_type).source_scale,
                     irrigation_.source_scale,
-                    (nzlum_type).source_scale
-                )
-                ELSE (nzlum_type).source_scale
-            END
+                    crop_perennial.source_scale
+                ], NULL)
+            ))::int4range -- source_scale
         )::nzlum_type AS nzlum_type
     FROM base_classification
-    JOIN (
+    LEFT JOIN crop_perennial USING (h3_index)
+    LEFT JOIN (
         SELECT *
         FROM irrigation_
-        WHERE "type" IN (
+        WHERE irrigation_type IN (
             'Drip/micro',
             'Drip/Micro',
             'Drip/ Micro'

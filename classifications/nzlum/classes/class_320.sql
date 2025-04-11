@@ -84,6 +84,20 @@ CREATE TEMPORARY VIEW class_320 AS (
             nz_facilities_.source_date,
             nz_facilities_.source_scale
         )::nzlum_type
+        WHEN hail_gun_clubs.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            CASE
+                WHEN hail_gun_clubs.hail_category_count = 1
+                    THEN 1
+                ELSE 4 -- Less confidence when there is a mixed HAIL classification
+            END,
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            ARRAY[hail_gun_clubs.source_data]::TEXT[],
+            hail_gun_clubs.source_date,
+            hail_gun_clubs.source_scale
+        )::nzlum_type
         WHEN dvr_public_rec_and_services.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
@@ -96,7 +110,7 @@ CREATE TEMPORARY VIEW class_320 AS (
                     AND improvements_evidence IS TRUE
                     AND covenanted IS FALSE
                 )
-                THEN 1
+                THEN CASE WHEN category = 'OX' THEN 2 ELSE 1 END
                 WHEN (
                     actual_property_use ~ '^(04|05|4(?!5)|5)' 
                     AND improvements_evidence IS TRUE
@@ -113,10 +127,8 @@ CREATE TEMPORARY VIEW class_320 AS (
                     AND improvements_evidence IS TRUE
                     AND covenanted IS FALSE
                 )
-                THEN 4
-                WHEN covenanted IS FALSE
-                THEN 6
-                ELSE 10
+                THEN 9
+                ELSE NULL
             END, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
@@ -130,9 +142,9 @@ CREATE TEMPORARY VIEW class_320 AS (
             5, -- confidence (residual)
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
-            ARRAY[nz_facilities_.source_data]::TEXT[], -- source_data
-            nz_facilities_.source_date,
-            nz_facilities_.source_scale
+            ARRAY[lcdb_.source_data]::TEXT[], -- source_data
+            lcdb_.source_date,
+            lcdb_.source_scale
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -251,7 +263,7 @@ CREATE TEMPORARY VIEW class_320 AS (
         category,
         CASE
             WHEN improvements_description ~
-                '\m(SKIFIELD|RACECOURSE|DOMAIN|SPEEDWAY|STADIUM|PAVILION|GRAND\s(STD|STAND)|SHOW\s?(GROUND|GRD)|SKATE\s?RINK|PLAY\s?(GROUND|GRND|CTR|CENTRE)|(TENNIS|T/)\s?(COURT|CRT)|(FIRE|POLICE|AMBULANCE)\s?(STATION|STN)?|OFFICE|CHURCH|WRSHP|HALL|LIBRARY|POOL|(KINDY|CHILD\s?CARE|KINDERGARTEN|PRESCH|PRESCHOOL|DAY\s?CARE|CRECHE)|SCHOOL|UNIVERSITY|MARAE|RESERVE|GOLF\s(CLUB|CRSE|COURSE)|(CLUB\sROOMS?|CLBRMS?)|PARK|LODGE|CLINIC|HOSPITAL|HOSPICE|(TOILETS|ABLUT\sBLK|ECOLOO)|RESTROOM|WALKWAY|(COMMUN|COMMUNITY)\s(CENTRE|CENTER|CTR)|SQUASH\s(CT|CRT|COURT)|(SURF|SPORTS?)\s(CLB|CLUB)|CONVENT|MONASTERY|WAR\s?(MEMRL|MEMORIAL)|(MED|MEDICAL)\s(CTR|CENTER|CENTRE|SERVICES)|MEDCNS|INFO\s(CTR|CENTER|CENTRE)|(CAMP|CAMPING)|CEMETE?RY|URUPA|BOWLING|AMUSE\sPARK|(GYM|GYMNASIUM)|MONUMENT|REST\sHOME|SCOUT\sDEN|ARTS?\s(CTR|CENTRE)|SOUNDSHELL|COLLEGE|CHAPEL|CLASSRMS|BOWLING\sGR|KOHANGA\sREO|MUSEUM|TEMPLE|THEOSPOPHICAL|MOSQUE|PLUNKET|CHANGE\sRMS|PRISON|VELODROME|ED\sINST|EMBASSY|SOCIETY|THEATRE|CONSULTING\sROOMS?|PERGOLA|AQUATIC|HISTORIC|FUNERAL\s?(HM|HOME)?)\M'
+                '\m(SKIFIELD|RACECOURSE|DOMAIN|SPEEDWAY|STADIUM|PAVILION|GRAND\s(STD|STAND)|SHOW\s?(GROUND|GRD)|SKATE\s?RINK|PLAY\s?(GROUND|GRND|CTR|CENTRE)|(TENNIS|T/)\s?(COURT|CRT)|(FIRE|POLICE|AMBULANCE)\s?(STATION|STN)?|OFFICE|CHURCH|WRSHP|HALL|LIBRARY|POOL|(KINDY|CHILD\s?CARE|KINDERGARTEN|PRESCH|PRESCHOOL|DAY\s?CARE|CRECHE)|SCHOOL|UNIVERSITY|MARAE|RESERVE|GOLF\s(CLUB|CRSE|COURSE)|(CLUB\sROOMS?|CLBRMS?)|PARK|LODGE|CLINIC|HOSPITAL|HOSPICE|(TOILETS|ABLUT\sBLK|ECOLOO)|RESTROOM|WALKWAY|(COMMUN|COMMUNITY)\s(CENTRE|CENTER|CTR)|SQUASH\s(CT|CRT|COURT)|(SURF|SPORTS?)\s(CLB|CLUB)|CONVENT|MONASTERY|WAR\s?(MEMRL|MEMORIAL)|(MED|MEDICAL)\s(CTR|CENTER|CENTRE|SERVICES)|MEDCNS|INFO\s(CTR|CENTER|CENTRE)|(CAMP|CAMPING)|CEMETE?RY|URUPA|BOWLING|AMUSE(MENT)?\s?PARK|(GYM|GYMNASIUM)|MONUMENT|REST\sHOME|SCOUT\sDEN|ARTS?\s(CTR|CENTRE)|SOUNDSHELL|COLLEGE|CHAPEL|CLASSRMS|BOWLING\s?GR(EEN)?|KOHANGA\sREO|MUSEUM|TEMPLE|THEOSPOPHICAL|MOSQUE|PLUNKET|CHANGE\sRMS|PRISON|VELODROME|ED\sINST|EMBASSY|SOCIETY|THEATRE|CONSULTING\sROOMS?|PERGOLA|AQUATIC|HISTORIC|FUNERAL\s?(HM|HOME)?)\M'
             THEN TRUE
             ELSE FALSE
         END AS improvements_evidence,
@@ -263,7 +275,7 @@ CREATE TEMPORARY VIEW class_320 AS (
         FROM linz_dvr_
         WHERE (
             actual_property_use ~ '^(04|05|4(?!5)|5)'
-            OR category ~ '^O(A|H|M|R|S|X)'
+            OR category ~ '^O(A|H|M|R|S|X)' -- Other (assembly halls, health, Maori, religious, sports, other/multiple)
             OR actual_property_use IS NULL
         )
     ) AS dvr_public_rec_and_services USING (h3_index)
@@ -285,6 +297,13 @@ CREATE TEMPORARY VIEW class_320 AS (
         JOIN topo50_pond_h3 USING (ogc_fid)
         WHERE pond_use = 'ice skating'
     ) AS ice_skating USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT *
+        FROM hail
+        WHERE hail_category_ids @> ARRAY[
+            'C2' -- Gun clubs or rifle ranges, including clay targets clubs that use lead munitions outdoors
+        ]
+    ) AS hail_gun_clubs USING (h3_index)
 );
 
 -- TODO use EducationCounts' ECE and other facilities data (arbitrary JSON format)

@@ -5,7 +5,6 @@ region_of_interest:
 
 
 h3:
-  # resolution: 12
   resolution: 13
 
 external_data:
@@ -55,6 +54,10 @@ external_data:
       OR GridID LIKE 'E174%N542%'
       OR GridID LIKE 'E175%N543%'
       OR GridID LIKE 'E176%N543%'
+      OR GridID LIKE 'E202%N570%'
+      OR GridID LIKE 'E202%N571%'
+      OR GridID LIKE 'E203%N571%'
+      OR GridID LIKE 'E203%N570%'
 classifications:
   nzlum:
     depends:
@@ -124,21 +127,35 @@ classifications:
       - topo50_sportsfields
       - topo50_cemetery
       - topo50_chatham_cemetery
-      - hawkes_bay_land_categorisation
-      - cera_red_zoned_land
-      - fosal_areas_tairawhiti
       - topo50_landfill_polygons
       - topo50_residential_areas
       - winter_forage_2022
+      - winter_forage_2023
       - nzlri_lowcapability
 
+      - hawkes_bay_land_categorisation
       - hbrc_all_consent_polygons
+      - hbrc_hail_suitable_remediated
+      - hbrc_hail_suitable_natural_state
+      - hbrc_hail_risk_not_quantified
+      - hbrc_hail_managed_for_land_use
+      - hbrc_hail_contaminated_for_lu_human
+      - hbrc_hail_contaminated_for_lu_env
+      - hbrc_hail_background_natural_state
+
       - horizons_reg_act
-      # - ecan_irrig
+
       # - ecan_lakes
-      # - ecan_consented_activities_areas_active
+      - ecan_consented_activities_areas_active
       - ecan_effluent_dairy_discharge_area
       - ecan_braided_rivers
+      - cera_red_zoned_land
+
+      - sumcrop_2024_25_tairawhiti
+      - fosal_areas_tairawhiti
+      
+      - es_slu
+      - es_winter_forage_2017
     table_schema:
       unit_id: BIGINT
       lu_code_primary: INTEGER

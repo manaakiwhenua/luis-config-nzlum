@@ -5,42 +5,76 @@ __ecan__: &ecan
 
 
 external_data:
-  # ecan_consented_activities_areas_active:
-  #   <<: *ecan
-  #   host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/Resource_Consents_Active/MapServer
-  #   description: |-
-  #     Records showing a summary of a current consented activity as recorded within Environment Canterbury's Resource Management Act database. This layer contains features that are represented as area of a size 10,000ha or less, and includes feature types such as gravel excavation areas, burnoff areas, etc. Note: Prior to 2013 all actvivties were recorded as point features. Subsequent to this activities may have been captured as line or area features. This layer should be used in conjuction with the Consented Activities - Points, Consented Activities - Lines and Consented Activities - Global layers to get a full representation of all consented activity features. Depending on the nature and conditions of the consent, more than location area may be associated with a single consent. The feature type property indicates the nature of the recorded activity. The layer includes details on: The type of permit (land use consent, discharge permit, etc.), the section of the RMA underwhich the activity was permitted, the current status of the permit (active, in process, etc.), the name of the applicant, a description of the location where the activity related to the permit is undertaken, and if the permit was successfully issued, the period over which the permiitted activities apply. The layer also contains several sumary fields related to spatially defined regions the location lies with including: which territorial local authority(s); the Land and Water Regional Plan groundwater & surface water allocation zones and nutrient management zone; the Canterbury Water Management Strategy (CWMS) zone; the Ngai Tahu Runanga area of interest for Resource Consenting purposes; and the clean air zone.
-  #   layer: "29"
-  #   geom_type: multipolygon
-  #   derived_columns:
-  #     - column: current
-  #       datatype: boolean
-  #       set_query: |-
-  #         (
-  #           CASE
-  #             WHEN (
-  #               ConsentStatus = 'Issued - Active'
-  #               AND Expires > CURRENT_DATE
-  #             ) 
-  #             OR (
-  #               Expires <= CURRENT_DATE
-  #               AND ConsentStatus = 'Issued - s124 Continuance'
-  #             )
-  #             THEN TRUE
-  #             ELSE FALSE
-  #           END
-  #         )
-  #   indices:
-  #     - columns: [ConsentType]
-  #       type: btree
-  #       name: idx_btree_consenttype
-  #     - columns: [ActivityText]
-  #       type: gin
-  #       name: idx_gin_activitytext
-  #     - columns: [current]
-  #       type: btree
-  #       name: idx_current
-
+  ecan_consented_activities_areas_active:
+    <<: *ecan
+    host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/Resource_Consents_Active/MapServer
+    description: |-
+      Records showing a summary of a current consented activity as recorded within Environment Canterbury's Resource Management Act database. This layer contains features that are represented as area of a size 10,000ha or less, and includes feature types such as gravel excavation areas, burnoff areas, etc. Note: Prior to 2013 all actvivties were recorded as point features. Subsequent to this activities may have been captured as line or area features. This layer should be used in conjuction with the Consented Activities - Points, Consented Activities - Lines and Consented Activities - Global layers to get a full representation of all consented activity features. Depending on the nature and conditions of the consent, more than location area may be associated with a single consent. The feature type property indicates the nature of the recorded activity. The layer includes details on: The type of permit (land use consent, discharge permit, etc.), the section of the RMA underwhich the activity was permitted, the current status of the permit (active, in process, etc.), the name of the applicant, a description of the location where the activity related to the permit is undertaken, and if the permit was successfully issued, the period over which the permiitted activities apply. The layer also contains several sumary fields related to spatially defined regions the location lies with including: which territorial local authority(s); the Land and Water Regional Plan groundwater & surface water allocation zones and nutrient management zone; the Canterbury Water Management Strategy (CWMS) zone; the Ngai Tahu Runanga area of interest for Resource Consenting purposes; and the clean air zone.
+    layer: "29"
+    geom_type: multipolygon
+    derived_columns:
+      - column: current
+        datatype: boolean
+        set_query: |-
+          (
+            CASE
+              WHEN (
+                ConsentStatus = 'Issued - Active'
+                AND Expires > CURRENT_DATE
+              ) 
+              OR (
+                Expires <= CURRENT_DATE
+                AND ConsentStatus = 'Issued - s124 Continuance'
+              )
+              THEN TRUE
+              ELSE FALSE
+            END
+          )
+      - column: start_date
+        datatype: date
+        set_query: "fmDate::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "toDate::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange(fmDate::DATE, toDate::DATE::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'ECAN'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: |-
+          CASE FEATURE_ACCURACY
+            WHEN '1 metre to 5 metres'
+              THEN '[1,5]'::int4range
+            WHEN '5 metres to 20 metres'
+              THEN '[5,20]'::int4range
+            WHEN 'Greater than 50 metres'
+              THEN '(50,)'::int4range
+            WHEN 'Unknown'
+              THEN '(50,)'::int4range
+            ELSE '(50,)'::int4range
+          END
+    indices:
+      - columns: [FeatureType]
+        type: btree
+        name: idx_btree_featuretype
+      - columns: [ConsentType]
+        type: btree
+        name: idx_btree_consenttype
+      - columns: [ActivityText]
+        type: gin
+        name: idx_gin_activitytext
+      - columns: [current]
+        type: btree
+        name: idx_current
+      - columns:
+        - fmDate DESC NULLS LAST
+        - Expires DESC NULLS LAST
+        - Area_HA DESC NULLS LAST 
+        type: btree
+        name: idx_btree_sort_order
   # TODO use the point data too?
   ecan_effluent_dairy_discharge_area:
     <<: *ecan
@@ -51,11 +85,11 @@ external_data:
     geom_type: multipolygon
     layer: "37"
     indices:
-      - columns: [ActualAnimalNumbers_int]
+      - columns: [animal_count]
         type: btree
         name: idx_btree_ActualAnimalNumbers_int
     derived_columns:
-      - column: ActualAnimalNumbers_int
+      - column: animal_count
         datatype: integer
         set_query: ActualAnimalNumbers::INT
       - column: wintering_off
@@ -68,7 +102,7 @@ external_data:
             THEN false
             ELSE NULL
           END)
-      - column: effluent_irrigation_type
+      - column: manage
         datatype: TEXT
         set_query: |-
           (CASE
@@ -92,6 +126,32 @@ external_data:
             THEN 'irrigation'
             ELSE NULL
           END)
+      - column: start_date
+        datatype: date
+        set_query: "fmDate::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "toDate::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange(fmDate::DATE, toDate::DATE::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'ECAN'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: |-
+          (CASE FEATURE_ACCURACY
+            WHEN '1 metre to 5 metres'
+              THEN '[1,5]'::int4range
+            WHEN '5 metres to 20 metres'
+              THEN '[5,20]'::int4range
+            WHEN 'Greater than 50 metres'
+              THEN '(50,)'::int4range
+            WHEN 'Unknown'
+              THEN '(50,)'::int4range
+            ELSE '(50,)'::int4range
+          END)
 
   ecan_braided_rivers:
     <<: *ecan
@@ -112,20 +172,6 @@ external_data:
             THEN 'river'
             ELSE NULL
           END)
-
-  # ecan_irrig:
-  #   <<: *ecan
-  #   host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/Irrigation/MapServer
-  #   description: Irrigated Areas
-  #   geom_type: multipolygon
-  #   layer: "0"
-  #   indices:
-  #     - columns: [type]
-  #       type: btree
-  #       name: idx_irrig_type
-  #     - columns: [year_irr]
-  #       type: btree
-  #       name: idx_irrig_year
 
   # ecan_lakes:
   #   <<: *ecan

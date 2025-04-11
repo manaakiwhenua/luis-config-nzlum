@@ -27,35 +27,35 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
                         WHEN gt_half_acre = TRUE THEN 3
                         ELSE 1
                     END
-                WHEN actual_property_use LIKE '%0'  -- Multi-use within residential or lifestyle
-                THEN 5
-                WHEN category ~ '^(RA|RC|RD|RF|RH|RN|RR)'
-                THEN 5
                 WHEN (
-                    actual_property_use LIKE '0%' -- Multi-use at primary level; secondary use residential or lifestyle
-                    AND category LIKE 'R%'
+                    actual_property_use ~ '^0(2|3)'  -- Multi-use within residential or lifestyle
+                    AND category ~ '^R'
                 )
+                THEN 4
+                WHEN actual_property_use ~ '^0(2|3)' -- Multi-use at primary level; secondary use residential or lifestyle
+                THEN 6
+                WHEN category ~ '^R(A|C|D|F|H|N|R)'
                 THEN 8
-                WHEN category ~ '^(RB|RM|RP|RV)'
+                WHEN (
+                    actual_property_use IS NULL
+                    AND (
+                        category ~ '^L(B|I)'
+                        OR category ~ '^R(A|C|D|F|H|N|R)'
+                    )
+                )
+                THEN 9
+                WHEN category ~ '^(R(B|M|P|V))|(L(B|I|V))'
+                THEN 11
+                WHEN actual_property_use LIKE '%9' -- Vacant
                 THEN 11
                 ELSE 12
             END
             +
-            CASE -- Adjustment factor is LINZ records as residential
+            CASE -- Adjustment factor if LINZ records as residential
                 WHEN topo50_residential_areas_h3.h3_index IS NOT NULL
                 THEN -1
                 ELSE 0
             END, 12), 1),
-            ARRAY[]::TEXT[],
-            ARRAY[]::TEXT[],
-            ARRAY[linz_dvr_.source_data]::TEXT[],
-            linz_dvr_.source_date,
-            linz_dvr_.source_scale
-        )::nzlum_type
-        WHEN actual_property_use LIKE '%9' -- Vacant
-        THEN ROW(
-            ARRAY[]::TEXT[], -- lu_code_ancillary,
-            11,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
             ARRAY[linz_dvr_.source_data]::TEXT[],
@@ -85,17 +85,16 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
         WHERE (
             actual_property_use ~ '^9' -- Residential
             OR actual_property_use ~ '^2' -- Lifestyle
-            OR actual_property_use IN ('02', '09')
-        ) OR (
-            category ~ '^R' -- Residential
+            OR actual_property_use ~ '^0(2|9)'
+            OR category ~ '^(R|L)' -- Residential
         )
-    ) linz_dvr_
+    ) AS linz_dvr_
     LEFT JOIN irrigation_ USING (h3_index)
     FULL OUTER JOIN (
         SELECT *
         FROM linz_crosl_
         WHERE managed_by = 'Housing New Zealand'
-    ) hnz USING (h3_index)
+    ) AS hnz USING (h3_index)
     FULL OUTER JOIN (
         SELECT *
         FROM topo50_residential_areas_h3

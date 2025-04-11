@@ -18,7 +18,7 @@ external_data:
       - columns: [category] # NB string
         type: btree
         name: idx_btree_category
-  
+
   hbrc_all_consent_polygons:
     <<: *hbrc
     license: CC BY 4.0
@@ -38,6 +38,16 @@ external_data:
       - columns: [ActPrimaryPurpose]
         type: gin
         name: idx_gin_ActPrimaryPurpose
+      - columns: [AuthorisationActivityType]
+        type: btree
+        name: idx_gin_AuthorisationActivityType
+      - columns:
+        - DecisionServedDate DESC NULLS LAST
+        - ExpiryDate DESC NULLS LAST
+        - Area_m2 DESC NULLS LAST 
+        - DocumentLink DESC NULLS LAST
+        type: btree
+        name: idx_btree_sort_order
     derived_columns:
       - column: start_date
         datatype: date
@@ -74,3 +84,87 @@ external_data:
       - column: source_scale
         datatype: int4range
         set_query: "'[60,200)'::int4range"
+
+  __hbrc_contaminated_sites: &__hbrc_contaminated_sites
+    <<: *hbrc
+    description: HBRC Contaminated Land Use Sites (SLUS)
+    geom_type: multipolygon
+    layer: ''
+    host: https://gis.hbrc.govt.nz/server/rest/services/HazardPortal/Contaminated_Sites/MapServer
+    derived_columns:
+      - column: hail_category_count
+        datatype: int
+        set_query: regexp_count(HAILID::text, '\m[A-I]\d{0,2}\.?'::text)
+      - column: hail_category_ids
+        datatype: text[]
+        set_query: |-
+          ARRAY(
+            SELECT match[1]
+            FROM regexp_matches(HAILID, '\m([A-I]\d{0,2})\M\.?'::text, 'g') AS match
+          )
+      - column: geom_area_ha
+        datatype: float8
+        set_query: ST_Area(geom::geography)/10000.0
+      - column: start_date
+        datatype: date
+        set_query: CURRENT_DATE
+      - column: end_date
+        datatype: date
+        set_query: CURRENT_DATE
+      - column: source_date
+        datatype: daterange
+        set_query: daterange(CURRENT_DATE, CURRENT_DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'HBRC HAIL'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'(1,100)'::int4range"
+    indices:
+      - columns: [HAILID]
+        type: gin
+        name: idx_hailcategories
+      - columns: [hail_category_ids]
+        type: gin
+        name: idx_gin_hail_category_ids
+      - columns: [hail_category_count]
+        type: btree
+        name: idx_hail_category_count
+      - columns: [geom_area_ha]
+        type: btree
+        name: idx_geom_area_ha
+
+  hbrc_hail_suitable_remediated:
+    <<: *__hbrc_contaminated_sites
+    description: "HBRC HAIL: Suitable for land use: remediated"
+    layer: "21"
+
+  hbrc_hail_suitable_natural_state:
+    <<: *__hbrc_contaminated_sites
+    description: "HBRC HAIL: Suitable for land use: natural state"
+    layer: "20"
+
+  hbrc_hail_risk_not_quantified:
+    <<: *__hbrc_contaminated_sites
+    description: "HBRC HAIL: risk not quantified"
+    layer: "19"
+
+  hbrc_hail_managed_for_land_use:
+    <<: *__hbrc_contaminated_sites
+    description: "HBRC HAIL: managed for land use"
+    layer: "18"
+
+  hbrc_hail_contaminated_for_lu_human:
+    <<: *__hbrc_contaminated_sites
+    description: "HBRC HAIL: contaminated for land use: human health"
+    layer: "14"
+
+  hbrc_hail_contaminated_for_lu_env:
+    <<: *__hbrc_contaminated_sites
+    description: "HBRC HAIL: contaminated for land use: environment"
+    layer: "12"
+
+  hbrc_hail_background_natural_state:
+    <<: *__hbrc_contaminated_sites
+    description: "HBRC HAIL: at or below background: natural state"
+    layer: "17"

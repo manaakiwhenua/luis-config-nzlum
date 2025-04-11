@@ -2,6 +2,7 @@ CREATE TEMPORARY VIEW linz_crosl_ AS (
     SELECT DISTINCT ON (h3_index) h3_index,
     managed_by, -- e.g. "Housing New Zealand"
     statutory_actions,
+    area_ha,
     'LINZ CRoSL' AS source_data,
     daterange(
         LEAST(

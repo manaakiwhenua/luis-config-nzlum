@@ -21,3 +21,105 @@ external_data:
       - columns: [category] # NB string
         type: btree
         name: idx_btree_category
+  
+  # Created 2024-06-03T22:47:09.000Z
+  # Updated 2025-02-13T01:00:59.316Z
+  # NB special case crop types:
+    # Not Visible
+    # Other
+    # Pasture/Unused --> evidence for classifcation as pasture?
+    # To Be Planted --> evidence for classification as pasture? Or transitioning
+    # NULL
+    # Citrus --> not a commodity, but indicates class
+    # Pine Nursery --> nursery plants
+    # Grape Nursery --> nursery plants
+    # Poplar/Willow Nursery --> nursery plants
+    # Stonefruit --> not a commodity, but indicates class
+  sumcrop_2024_25_tairawhiti:
+    <<: *gdc
+    host: https://services7.arcgis.com/8G10QCd84QpdcTJ9/arcgis/rest/services/Summer_Crops_Annual_Survey_Public_View/FeatureServer
+    description: |-
+      Tairāwhiti Gisborne Summer Crops Annual Survey 2024/25. This is a public view of the data.
+    geom_type: multipolygon
+    layer: "0"
+    indices:
+      - columns: [crop]
+        type: btree
+        name: idx_btree_crop
+      - columns:
+        - area_ha DESC NULLS LAST
+        type: btree
+        name: idx_btree_area
+      - columns: [commod]
+        type: gin
+        name: idx_gin_commod
+      - columns: [manage]
+        type: gin
+        name: idx_gin_manage
+    derived_columns:
+      - column: area_ha
+        datatype: float8
+        set_query: ST_Area(geom::geography, false) / 10000
+      - column: commod
+        datatype: text[]
+        set_query: |-
+          (
+            CASE
+              WHEN crop = 'Apples and Pears' THEN ARRAY['apples','pears']
+              WHEN crop = 'Avocados' THEN ARRAY['avocados']
+              WHEN crop = 'Cauliflower/Broccoli' THEN ARRAY['broccoli','cauliflowers']
+              WHEN crop = 'Chamomile' THEN ARRAY['chamomile']
+              WHEN crop = 'Chicory' THEN ARRAY['chicory']
+              WHEN crop = 'Clover' THEN ARRAY['clover']
+              WHEN crop = 'Feijoa' THEN ARRAY['feijoa']
+              WHEN crop = 'Flowers' THEN ARRAY['flowers and foliage']
+              WHEN crop = 'Grape' THEN ARRAY['grapes']
+              WHEN crop = 'Kiwifruit' THEN ARRAY['kiwifruit']
+              WHEN crop = 'Leafy Turnip' THEN ARRAY['turnips forage']
+              WHEN crop = 'Lettuce/Cabbage' THEN ARRAY['lettuces','cabbages']
+              WHEN crop = 'Lucerne' THEN ARRAY['lucerne']
+              WHEN crop = 'Maize/Sweetcorn' THEN ARRAY['maize','sweetcorn']
+              WHEN crop = 'Melons' THEN ARRAY['melons']
+              WHEN crop = 'Olives' THEN ARRAY['olives']
+              WHEN crop = 'Persimmon' THEN ARRAY['persimmons']
+              WHEN crop = 'Pinenuts' THEN ARRAY['pinenuts']
+              WHEN crop = 'Plantain' THEN ARRAY['plantain']
+              WHEN crop = 'Plantain/Clover' THEN ARRAY['plantain','clover']
+              WHEN crop = 'Pomegranate' THEN ARRAY['pomegranate']
+              WHEN crop = 'Squash' THEN ARRAY['pumpkins']
+              WHEN crop = 'Tamarillo' THEN ARRAY['tamarillo']
+              ELSE NULL
+            END
+          )
+      - column: manage
+        datatype: text[]
+        set_query: |-
+          (
+            CASE
+              WHEN crop = 'Baleage' THEN ARRAY['residues baled']
+              WHEN crop = 'Chicory' THEN ARRAY['crop pasture rotation']
+              WHEN crop = 'Clover' THEN ARRAY['crop pasture rotation']
+              WHEN crop = 'Leafy Turnip' THEN ARRAY['crop pasture rotation']
+              WHEN crop = 'Lucerne' THEN ARRAY['crop pasture rotation','grazing rotational']
+              WHEN crop = 'Maize/Sweetcorn' THEN ARRAY['crop pasture rotation']
+              WHEN crop = 'Plantain' THEN ARRAY['crop pasture rotation']
+              WHEN crop = 'Plantain/Clover' THEN ARRAY['crop pasture rotation']
+              ELSE NULL
+            END
+          )
+      - column: start_date
+        datatype: date
+        set_query: "'2024-06-03'::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "'2025-02-13'::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange('2024-06-03'::DATE, '2025-02-13'::DATE::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'GDC'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[10,20]'::int4range"
+    

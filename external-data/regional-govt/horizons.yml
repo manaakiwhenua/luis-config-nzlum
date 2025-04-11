@@ -15,6 +15,12 @@ external_data:
       - columns: [Ath_IndPrim]
         type: btree
         name: idx_btree_AthIndPrim
+      - columns: [ATH_PURPRIM]
+        type: btree
+        name: idx_btree_ATH_PURPRIM
+      - columns: [ATH_PURSEC]
+        type: btree
+        name: idx_btree_ATH_PURSEC
       - columns: [Ath_IndPrim, Ath_PurPrim]
         type: btree
         name: idx_btree_Ath_IndPrim_Ath_PurPrim
@@ -24,6 +30,12 @@ external_data:
       - columns: [Ath_PurPrim]
         type: gin
         name: idx_gin_Ath_PurPrim
+      - columns: [Ath_PurSec]
+        type: trigram
+        name: idx_trgm_Ath_PurSec
+      - columns: [Ath_PurSec]
+        type: gin
+        name: idx_gin_Ath_PurSec
     derived_columns:
       - column: start_date
         datatype: date
@@ -46,13 +58,12 @@ external_data:
         set_query: |-
           CASE
             WHEN Ath_Granted IS NULL AND DataLastUpdated IS NULL
-            THEN NULL
+            THEN DATERANGE(DataLastUpdated::date, DataLastUpdated::date, '[]')
             WHEN Ath_Granted IS NOT NULL AND DataLastUpdated IS NOT NULL
             THEN daterange(Ath_Granted::DATE, DataLastUpdated::DATE, '[]')
             WHEN Ath_Granted IS NOT NULL
-            THEN daterange(Ath_Granted::DATE, NULL, '[]')
-            WHEN DataLastUpdated IS NOT NULL
-            THEN daterange(NULL, DataLastUpdated::DATE, '[]')
+            THEN daterange(Ath_Granted::DATE, Ath_Granted::DATE, '[]')
+            ELSE daterange(DataLastUpdated::DATE, DataLastUpdated::DATE, '[]')
           END
       - column: source_data
         datatype: text

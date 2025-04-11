@@ -49,14 +49,11 @@ external_data:
       - columns: [ts_common_name]
         type: gin
         name: idx_gin_ts_common_name
+      - columns:
+        - area_ha DESC
+        type: btree
+        name: idx_btree_area
     derived_columns:
-      - column: alum_source_date
-        datatype: date
-        set_query: "TO_DATE(date_updated, 'YYYYMMDD')"
-      - column: alum_comment
-        datatype: text
-        # set_query: "CONCAT_WS('|', CASE WHEN managed_by = 'To Be Determined' THEN NULL ELSE managed_by END, common_name, applicable_act, statutory_actions)"
-        set_query: coalesce(common_name, CASE WHEN managed_by = 'To Be Determined' THEN NULL ELSE managed_by END, applicable_act)
       - column: ts_statutory_actions_common_name
         datatype: tsvector
         set_query: "to_tsvector('english', CONCAT_WS(' ', statutory_actions, common_name))"
@@ -66,3 +63,6 @@ external_data:
       - column: ts_common_name
         datatype: tsvector
         set_query: to_tsvector('english', common_name)
+      - column: area_ha
+        datatype: float8
+        set_query: ST_Area(geom::geography, false) / 10000
