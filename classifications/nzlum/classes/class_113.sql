@@ -26,7 +26,10 @@ CREATE TEMPORARY VIEW class_113 AS (
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-        AND iucn_category = 'II'
+        AND (
+            iucn_category = 'II'
+            OR legislation_act = 'TE_UREWERA_ACT_2014' -- Continues to meet the IUCN criteria for a Category II National Park, though it isn't one.
+        )
         ORDER BY
             h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
