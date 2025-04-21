@@ -315,3 +315,5 @@ CREATE TEMPORARY VIEW land_status AS (
 -- 5 Public: Non-Core Crown, e.g. state-owned enterprise/hospital/education/administering body of Crown Land
 -- 6 Private: Māori - individual
 -- 7 Private: Māori - tribal/incorporations/many owners
+
+-- TODO Maori land court: https://api.service.maorilandcourt.govt.nz/geoserver/wfs/mlgis

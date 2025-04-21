@@ -105,7 +105,8 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
             JOIN urban_rural_2025 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) AS urban_rural_2025_ USING (h3_index)
-        WHERE nz_facilities.use_type NOT IN (
+        WHERE :parent::h3index = h3_partition
+        AND nz_facilities.use_type NOT IN (
             'NGO Hospital' -- Not public
         )
     ) private_hospitals USING (h3_index)

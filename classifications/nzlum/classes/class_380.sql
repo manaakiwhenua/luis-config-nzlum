@@ -129,6 +129,7 @@ CREATE TEMPORARY VIEW class_380 AS (
         ) AS source_date,
         '[1,100]'::int4range AS source_scale
         FROM topo50_landfill_polygons_h3
+        WHERE :parent::h3index = h3_partition
     ) AS topo50_landfill
     FULL OUTER JOIN (
         SELECT h3_index,
@@ -141,7 +142,8 @@ CREATE TEMPORARY VIEW class_380 AS (
         '[1,100]'::int4range AS source_scale
         FROM topo50_pond
         JOIN topo50_pond_h3 USING (ogc_fid)
-        WHERE pond_use IN (
+        WHERE :parent::h3index = h3_partition
+        AND pond_use IN (
             'sewage',
             'sewage treatment',
             'oxidation'

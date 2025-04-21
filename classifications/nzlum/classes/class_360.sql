@@ -161,7 +161,9 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         '[60,100)'::int4range AS source_scale
         FROM topo50_roads_h3
         WHERE :parent::h3index = h3_partition
+
         UNION ALL
+
         SELECT h3_index,
         'LINZ' AS source_data,
         DATERANGE(
@@ -184,7 +186,9 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         '[60,100)'::int4range AS source_scale
         FROM topo50_airports_h3
         WHERE :parent::h3index = h3_partition
+        
         UNION ALL
+
         SELECT h3_index,
         'LINZ' AS source_data,
         DATERANGE(
@@ -209,7 +213,9 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         FROM topo50_runways
         JOIN topo50_runways_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
+
         UNION ALL
+
         SELECT h3_index,
         "status",
         'LINZ' AS source_data,

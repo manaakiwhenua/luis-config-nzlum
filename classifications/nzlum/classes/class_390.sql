@@ -187,7 +187,8 @@ CREATE TEMPORARY VIEW class_390 AS (
             urban_rural_2025.IUR2025_V1_00
         FROM urban_rural_2025_h3
         JOIN urban_rural_2025 USING (ogc_fid)
-        WHERE urban_rural_2025.IUR2025_V1_00 <> '22' -- (non) "Rural other"
+        WHERE :parent::h3index = h3_partition
+        AND urban_rural_2025.IUR2025_V1_00 <> '22' -- (non) "Rural other"
     ) AS urban_rural_2025_ USING (h3_index)
 );
 

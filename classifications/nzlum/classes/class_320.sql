@@ -191,7 +191,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             JOIN urban_rural_2025 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) AS urban_rural_2025_ USING (h3_index)
-        WHERE nz_facilities.use IN (
+        WHERE :parent::h3index = h3_partition
+        AND nz_facilities.use IN (
             'Hospital', 'School'
         ) AND nz_facilities.use_type NOT IN (
             'NGO Hospital' -- Not public
@@ -221,7 +222,10 @@ CREATE TEMPORARY VIEW class_320 AS (
         '[60,100)'::int4range AS source_scale,
         'LINZ' AS source_data
         FROM topo50_golf_courses_h3
+        WHERE :parent::h3index = h3_partition
+
         UNION ALL
+        
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -231,6 +235,7 @@ CREATE TEMPORARY VIEW class_320 AS (
         '[60,100)'::int4range AS source_scale,
         'LINZ' AS source_data
         FROM topo50_chatham_golf_courses_h3
+        WHERE :parent::h3index = h3_partition
     ) AS golf_courses USING (h3_index)
     FULL OUTER JOIN (
         SELECT h3_index,
@@ -242,7 +247,10 @@ CREATE TEMPORARY VIEW class_320 AS (
         '[60,100)'::int4range AS source_scale,
         'LINZ' AS source_data
         FROM topo50_cemetery_h3
+        WHERE :parent::h3index = h3_partition
+
         UNION ALL
+
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -252,6 +260,7 @@ CREATE TEMPORARY VIEW class_320 AS (
         '[60,100)'::int4range AS source_scale,
         'LINZ' AS source_data
         FROM topo50_chatham_cemetery_h3
+        WHERE :parent::h3index = h3_partition
     ) AS cemeteries USING (h3_index)
     FULL OUTER JOIN (
         SELECT h3_index,
@@ -263,6 +272,7 @@ CREATE TEMPORARY VIEW class_320 AS (
         '[60,100)'::int4range AS source_scale,
         'LINZ' AS source_data
         FROM topo50_sportsfields_h3
+        WHERE :parent::h3index = h3_partition
     ) AS sportsfields USING (h3_index)
     FULL OUTER JOIN (
         SELECT h3_index,
@@ -305,7 +315,8 @@ CREATE TEMPORARY VIEW class_320 AS (
         'LINZ' AS source_data
         FROM topo50_pond
         JOIN topo50_pond_h3 USING (ogc_fid)
-        WHERE pond_use = 'ice skating'
+        WHERE :parent::h3index = h3_partition
+        AND pond_use = 'ice skating'
     ) AS ice_skating USING (h3_index)
     FULL OUTER JOIN (
         SELECT *
@@ -322,7 +333,8 @@ CREATE TEMPORARY VIEW class_320 AS (
         source_scale
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
-        WHERE legislation_act = 'RESERVES_ACT'
+        WHERE :parent::h3index = h3_partition
+        AND legislation_act = 'RESERVES_ACT'
         AND legislation_section = 'S16_11_RECREATION_RESERVE_RACECOURSE'
         ORDER BY
             h3_index,

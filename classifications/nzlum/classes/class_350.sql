@@ -144,7 +144,8 @@ CREATE TEMPORARY VIEW class_350 AS (
         '[1,100]'::int4range AS source_scale
         FROM topo50_lake
         JOIN topo50_lake_h3 USING (ogc_fid)
-        WHERE lake_use IN (
+        WHERE :parent::h3index = h3_partition
+        AND lake_use IN (
             'hydro-electric',
             'reservoir'
         ) OR "name" IN ( -- Hydro-electric dams that are not identified as such in the LINZ Topo50 lakes dataset

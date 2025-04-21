@@ -134,11 +134,11 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
         'LINZ' AS source_data
         FROM topo50_lake
         JOIN topo50_lake_h3 USING (ogc_fid)
-        WHERE (
+        WHERE :parent::h3index = h3_partition
+        AND (
             "name" ~* '\mreservoir\M'
             AND lake_use != 'hydro-electric'
         ) OR lake_use = 'reservoir'
-        AND :parent::h3index = h3_partition
     ) lakes USING (h3_index)
     FULL OUTER JOIN (
         SELECT h3_index,
@@ -151,8 +151,8 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
         'LINZ' AS source_data
         FROM topo50_canal
         JOIN topo50_canal_h3 USING (ogc_fid)
-        WHERE "name" = 'Rangitata Diversion Race'
-        AND :parent::h3index = h3_partition
+        WHERE :parent::h3index = h3_partition
+        AND "name" = 'Rangitata Diversion Race'
     ) irrigation_canals USING (h3_index)
     LEFT JOIN (
         SELECT
@@ -160,7 +160,8 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             urban_rural_2025.IUR2025_V1_00
         FROM urban_rural_2025_h3
         JOIN urban_rural_2025 USING (ogc_fid)
-        WHERE urban_rural_2025.IUR2025_V1_00 IN (
+        WHERE :parent::h3index = h3_partition
+        AND urban_rural_2025.IUR2025_V1_00 IN (
             '22', -- Rural other
             '31' -- Inland water
         ) -- Rural other

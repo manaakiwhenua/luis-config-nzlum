@@ -90,25 +90,23 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
         WHERE
             category ~ '^H'
             OR actual_property_use IN ('0', '00', '01', '1', '10', '15')
-            OR improvements_description ~ '\m(GREEN|GRN|SHADE|SHD|GLASS)\s?(HOUSE|HSE)\M'
-            OR improvements_description ~ '\mNURSERY\M'
+            OR improvements_description ~ '\m((GREEN|GRN|SHADE|SHD|GLASS)\s?(HOUSE|HSE))|NURSERY\M'
     ) linz_dvr_
     FULL OUTER JOIN (
         SELECT *
         FROM crop_maps
-        WHERE (
-            source_data = 'GDC'
-            AND crop IN (
-                'Pine Nursery',
-                'Grape Nursery',
-                'Poplar/Willow Nursery'
-            )
+        WHERE source_data = 'GDC'
+        AND crop IN (
+            'Pine Nursery',
+            'Grape Nursery',
+            'Poplar/Willow Nursery'
         )
     ) AS crop_nurseries USING (h3_index)
-    JOIN (
+    LEFT JOIN (
         SELECT *
         FROM irrigation_
-        WHERE irrigation_type ~ '^Drip'
+        WHERE :parent::h3index = h3_partition
+        AND irrigation_type ~ '^Drip'
     ) irrigation_ USING (h3_index)
 );
 

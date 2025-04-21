@@ -109,7 +109,7 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
     -- quarries.substance = NULL,clay,gravel,lime,limestone,metal,shingle,silica sand,stone,zeolite
     FROM (
         SELECT *,
-        daterange(CURRENT_DATE, CURRENT_DATE, '[]') AS source_date,
+        daterange('2011-05-22'::DATE, '2025-03-06'::DATE, '[]') AS source_date,
         'LINZ' AS source_data,
         '[60,100)'::int4range AS source_scale
         FROM topo50_mines
@@ -118,17 +118,15 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
     ) AS mines_
     FULL OUTER JOIN (
         SELECT *,
-        daterange(
-            '2011-05-22'::DATE,
-            '2024-01-03'::DATE,
-            '[]'
-        ) AS source_date,
+        daterange('2011-05-22'::DATE, '2024-01-03'::DATE, '[]') AS source_date,
         'LINZ' AS source_data,
         '[60,100)'::int4range AS source_scale
         FROM topo50_quarries
         JOIN topo50_quarries_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
+        
         UNION ALL
+
         SELECT *,
         daterange(
             '2011-05-22'::DATE,
@@ -139,11 +137,12 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
         '[60,100)'::int4range AS source_scale
         FROM topo50_chatham_quarries
         JOIN topo50_chatham_quarries_h3 USING (ogc_fid)
+        WHERE :parent::h3index = h3_partition
     ) AS quarries_ USING (h3_index)
     FULL OUTER JOIN (
         -- NB topo50 pond; pond_use = evaporation, i.e. Lake Grassmere solar salt production
         SELECT *,
-        daterange(CURRENT_DATE, CURRENT_DATE, '[]') AS source_date,
+        daterange('2011-05-22'::DATE, '2025-01-02'::DATE, '[]') AS source_date,
         'LINZ' AS source_data,
         '[60,100)'::int4range AS source_scale
         FROM topo50_pond
@@ -153,7 +152,7 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
     ) AS evaporation_ponds_ USING (h3_index)
     FULL OUTER JOIN (
         SELECT *,
-        daterange(CURRENT_DATE, CURRENT_DATE, '[]') AS source_date,
+        daterange('2011-05-22'::DATE, '2025-01-02'::DATE, '[]') AS source_date,
         'LINZ' AS source_data,
         '[60,100)'::int4range AS source_scale
         FROM topo50_pond
@@ -163,7 +162,7 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
     ) AS settling_ponds_ USING (h3_index)
     FULL OUTER JOIN (
         SELECT *,
-        daterange(CURRENT_DATE, CURRENT_DATE, '[]') AS source_date,
+        daterange('2011-05-22'::DATE, '2024-12-20'::DATE, '[]') AS source_date,
         'LINZ' AS source_data,
         '[60,100)'::int4range AS source_scale
         FROM topo50_dredge_tailing_centrelines
