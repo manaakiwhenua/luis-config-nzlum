@@ -16,6 +16,7 @@ CREATE TEMPORARY VIEW class_136 AS (
         WHEN (
             linz_crosl_nzdf.h3_index IS NOT NULL
             AND linz_dvr_.actual_property_use = '45' -- Defence
+            AND lcdb_built_up.h3_index IS NULL
         )
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
@@ -36,6 +37,7 @@ CREATE TEMPORARY VIEW class_136 AS (
             )::int4range
         )::nzlum_type
         WHEN linz_dvr_.actual_property_use = '45' -- Defence
+        AND lcdb_built_up.h3_index IS NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             1, -- confidence
@@ -49,11 +51,17 @@ CREATE TEMPORARY VIEW class_136 AS (
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
-                WHEN linz_dvr_.actual_property_use IN ('04', '40') -- Mixed use, including community services (which itself includes defence)
+                WHEN (
+                    linz_dvr_.actual_property_use IN ('04', '40') -- Mixed use, including community services (which itself includes defence)
+                    AND lcdb_built_up.h3_index IS NULL
+                )
                 THEN 1
-                WHEN linz_dvr_.actual_property_use ~ '^5' -- Recreational
+                WHEN (
+                    linz_dvr_.actual_property_use ~ '^5' -- Recreational
+                    AND lcdb_built_up.h3_index IS NULL
+                )
                 THEN 2
-                ELSE 12
+                ELSE 5
             END,
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
@@ -74,12 +82,16 @@ CREATE TEMPORARY VIEW class_136 AS (
         ELSE NULL
     END AS nzlum_type
     FROM (
-        SELECT *
+        SELECT
+        h3_index,
+        source_data,
+        source_date,
+        source_scale
         FROM linz_crosl_
         WHERE managed_by = 'New Zealand Defence Force'
     ) AS linz_crosl_nzdf
     FULL OUTER JOIN linz_dvr_ USING (h3_index)
-    INNER JOIN ( -- Exclude built-up areas from this class
+    LEFT JOIN ( -- Use to exclude or penalise built-up areas from this class
         SELECT * 
         FROM lcdb_
         WHERE Class_2018 NOT IN (

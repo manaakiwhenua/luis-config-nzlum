@@ -3,22 +3,47 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
     1 AS lu_code_primary,
     4 AS lu_code_secondary,
     0 AS lu_code_tertiary,
-    CASE 
+    CASE
+        WHEN pan_nz_public_works.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            8, -- confidence
+            ARRAY[]::TEXT[], -- commod
+            ARRAY[]::TEXT[], -- manage
+            ARRAY[pan_nz_public_works.source_data]::TEXT[],
+            pan_nz_public_works.source_date,
+            pan_nz_public_works.source_scale
+        )::nzlum_type
+        WHEN linz_dvr_vacant_other IS NOT NULL
+        THEN ROW (
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            CASE
+                WHEN linz_dvr_vacant_other.improvements_value > 100000
+                THEN 8
+                WHEN category ~ '^0' -- Designated or zoned reserve land
+                THEN 4
+                ELSE 6
+            END, -- confidence
+            ARRAY[]::TEXT[], -- commod
+            ARRAY[]::TEXT[], -- manage
+            ARRAY[linz_dvr_vacant_other.source_data]::TEXT[],
+            linz_dvr_vacant_other.source_date,
+            linz_dvr_vacant_other.source_scale
+        )::nzlum_type
         WHEN ecan_braided_rivers_.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1, -- confidence
+            4, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[ecan_braided_rivers_.source_data]::TEXT[],
             ecan_braided_rivers_.source_date,
             ecan_braided_rivers_.source_scale
         )::nzlum_type
-        -- TODO more land cover cases here, before considering 
         WHEN topo50_rocks_polygons.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1, -- confidence
+            12, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_rocks_polygons.source_data]::TEXT[],
@@ -28,7 +53,7 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         WHEN topo50_scree.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1, -- confidence
+            12, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_scree.source_data]::TEXT[],
@@ -38,7 +63,7 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         WHEN topo50_snow.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1, -- confidence
+            12, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_snow.source_data]::TEXT[],
@@ -48,7 +73,7 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         WHEN topo50_moraine_polygons.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1, -- confidence
+            12, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_moraine_polygons.source_data]::TEXT[],
@@ -58,7 +83,7 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         WHEN topo50_moraine_wall_polygons.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1, -- confidence
+            12, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_moraine_wall_polygons.source_data]::TEXT[],
@@ -68,7 +93,7 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         WHEN topo50_shingle_polygons.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1, -- confidence
+            12, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_shingle_polygons.source_data]::TEXT[],
@@ -81,19 +106,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             14, -- Permanent Snow and Ice
             15, -- Alpine Grass/Herbfield
             16, -- Gravel or Rock
-            43 -- Tall Tussock Grassland (Indigenous snow tussocks in mainly alpine mountain-lands and red tussock in the central North Island and locally in poorly-drained valley floors, terraces and basins of both islands.)
-        )
-        THEN ROW(
-            ARRAY[]::TEXT[], -- lu_code_ancillary
-            1, -- confidence
-            ARRAY[]::TEXT[], -- commod
-            ARRAY[]::TEXT[], -- manage
-            ARRAY[lcdb_.source_data]::TEXT[],
-            lcdb_.source_date,
-            lcdb_.source_scale
-        )::nzlum_type
-        WHEN lcdb_.class_2018 IN (
             21, -- River
+            43, -- Tall Tussock Grassland (Indigenous snow tussocks in mainly alpine mountain-lands and red tussock in the central North Island and locally in poorly-drained valley floors, terraces and basins of both islands.)
             44, -- Depleted Grassland
             45, -- Herbaceous Freshwater Vegetation 
             46, -- Herbaceous Saline Vegetation
@@ -113,42 +127,14 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         )
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            4, -- confidence
+            12, -- confidence
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[lcdb_.source_data]::TEXT[],
             lcdb_.source_date,
             lcdb_.source_scale
         )::nzlum_type
-        WHEN lcdb_.class_2018 IN (
-            64, -- Forest - Harvested
-            71 -- Exoticic Forest
-        )
-        THEN ROW(
-            ARRAY[]::TEXT[], -- lu_code_ancillary
-            7, -- confidence
-            ARRAY[]::TEXT[], -- commod
-            ARRAY[]::TEXT[], -- manage
-            ARRAY[lcdb_.source_data]::TEXT[],
-            lcdb_.source_date,
-            lcdb_.source_scale
-        )::nzlum_type
-        WHEN linz_dvr_vacant_other IS NOT NULL
-        THEN ROW (
-            ARRAY[]::TEXT[], -- lu_code_ancillary
-            CASE
-                WHEN linz_dvr_vacant_other.improvements_value > 100000
-                THEN 8
-                WHEN category ~ '^0' -- Designated or zoned reserve land
-                THEN 4
-                ELSE 6
-            END, -- confidence
-            ARRAY[]::TEXT[], -- commod
-            ARRAY[]::TEXT[], -- manage
-            ARRAY[linz_dvr_vacant_other.source_data]::TEXT[],
-            linz_dvr_vacant_other.source_date,
-            linz_dvr_vacant_other.source_scale
-        )::nzlum_type
+        ELSE NULL
     END AS nzlum_type
     FROM (
         SELECT h3_index,
@@ -273,6 +259,27 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         FROM topo50_chatham_shingle_polygons_h3
         WHERE :parent::h3index = h3_partition
     ) AS topo50_shingle_polygons USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT  DISTINCT ON (h3_index)
+        h3_index,
+        source_data,
+        source_date,
+        source_scale
+        FROM pan_nz_draft
+        JOIN pan_nz_draft_h3 USING (ogc_fid)
+        WHERE :parent::h3index = h3_partition
+        AND (
+            legislation_act = 'RESERVES_ACT'
+            AND (
+                legislation_section IS NULL 
+                OR legislation_section = 'Acquired for Public Works'
+            )
+        )
+        ORDER BY
+            h3_index,
+            source_date DESC NULLS LAST, -- Prefer more recent
+            source_id -- Tie-break
+    ) AS pan_nz_public_works USING (h3_index)
 )
 
 -- DVR: "category" = 'OV' AND "actual_property_use" LIKE '%9'

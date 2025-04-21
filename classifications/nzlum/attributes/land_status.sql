@@ -219,6 +219,7 @@ CREATE TEMPORARY VIEW land_status AS (
     ),
     pan_nz_draft_land_status AS (
         SELECT
+            DISTINCT ON (h3_index)
             h3_index,
             'PAN-NZ' AS _source,
             CASE
@@ -275,15 +276,42 @@ CREATE TEMPORARY VIEW land_status AS (
             -- Only if not present in CROSL
             SELECT 1 FROM crosl_land_status WHERE crosl_land_status.h3_index = pan_nz_draft_h3.h3_index
         )
+        ORDER BY
+            h3_index,
+            source_date DESC NULLS LAST, -- Prefer more recent
+            CASE
+                WHEN iucn_category = 'Ia' THEN 1
+                WHEN iucn_category = 'Ib' THEN 2
+                WHEN iucn_category = 'II' THEN 3
+                WHEN iucn_category = 'III' THEN 4
+                WHEN iucn_category = 'IV' THEN 5
+                WHEN iucn_category = 'V' THEN 6
+                WHEN iucn_category = 'Not IUCN' THEN 7
+                WHEN iucn_category = 'Not Mapped' THEN 9
+                ELSE NULL
+            END ASC NULLS LAST, -- Prefer greater protection status
+            source_id -- Tie-break
     )
     SELECT DISTINCT ON (h3_index) *
     FROM (
         SELECT * FROM crosl_land_status
+        WHERE land_status IS NOT NULL
         UNION ALL
         SELECT * FROM pan_nz_draft_land_status
+        WHERE land_status IS NOT NULL
     ) combined
+    
     ORDER BY h3_index, CASE
         WHEN _source = 'CRoSL' THEN 0
         WHEN _source = 'PAN-NZ' THEN 1
     END ASC NULLS LAST -- Prefer CRoSL if there's a conflict or duplicate
 );
+
+-- TODO https://data.linz.govt.nz/table/105627-nz-properties-ownership/
+-- this is already in linz_dvr as 'ownership code'
+-- BUt there are also values 0, 1, 2 etc. which mean ???
+-- 3 Public: Core Crown, e.g. ministry/department
+-- 4 Public: Local authority
+-- 5 Public: Non-Core Crown, e.g. state-owned enterprise/hospital/education/administering body of Crown Land
+-- 6 Private: Māori - individual
+-- 7 Private: Māori - tribal/incorporations/many owners

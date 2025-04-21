@@ -25,7 +25,8 @@ CREATE TEMPORARY VIEW class_113 AS (
         source_scale
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
-        WHERE iucn_category = 'II'
+        WHERE :parent::h3index = h3_partition
+        AND iucn_category = 'II'
         ORDER BY
             h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent

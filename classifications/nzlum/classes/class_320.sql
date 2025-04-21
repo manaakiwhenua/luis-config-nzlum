@@ -98,6 +98,16 @@ CREATE TEMPORARY VIEW class_320 AS (
             hail_gun_clubs.source_date,
             hail_gun_clubs.source_scale
         )::nzlum_type
+        WHEN pan_nz_draft_racecourses.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            1,
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            ARRAY[pan_nz_draft_racecourses.source_data]::TEXT[],
+            pan_nz_draft_racecourses.source_date,
+            pan_nz_draft_racecourses.source_scale
+        )::nzlum_type
         WHEN dvr_public_rec_and_services.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
@@ -304,6 +314,21 @@ CREATE TEMPORARY VIEW class_320 AS (
             'C2' -- Gun clubs or rifle ranges, including clay targets clubs that use lead munitions outdoors
         ]
     ) AS hail_gun_clubs USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT DISTINCT ON (h3_index)
+        h3_index,
+        source_data,
+        source_date,
+        source_scale
+        FROM pan_nz_draft
+        JOIN pan_nz_draft_h3 USING (ogc_fid)
+        WHERE legislation_act = 'RESERVES_ACT'
+        AND legislation_section = 'S16_11_RECREATION_RESERVE_RACECOURSE'
+        ORDER BY
+            h3_index,
+            source_date DESC NULLS LAST, -- Prefer more recent
+            source_id -- Tie-break
+    ) AS pan_nz_draft_racecourses USING (h3_index)
 );
 
 -- TODO use EducationCounts' ECE and other facilities data (arbitrary JSON format)

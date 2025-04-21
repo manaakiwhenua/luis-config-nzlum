@@ -30,7 +30,14 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
         WHEN lum_.subid_2020 = '122 - Wilding trees'
         THEN ROW(
             ARRAY[]::TEXT[],
-            5,
+            CASE
+                WHEN (
+                    pan_nz_draft_h3.h3_index IS NULL
+                    AND rural.h3_index IS NOT NULL
+                )
+                THEN 2
+                ELSE 12
+            END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
             ARRAY[lum_.source_data]::TEXT[], -- source_data
@@ -75,7 +82,13 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
         )
         THEN ROW (
             ARRAY[]::TEXT[],
-            2,
+            CASE
+                WHEN (
+                    pan_nz_draft_h3.h3_index IS NULL
+                    AND rural.h3_index IS NOT NULL
+                ) THEN 2
+                ELSE 12
+            END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
             ARRAY[topo50_exotic_polygons_.source_data, lum_.source_data]::TEXT[], -- source_data
@@ -137,6 +150,18 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
         WHERE :parent::h3index = h3_partition
     ) topo50_exotic_polygons_ USING (h3_index)
     FULL OUTER JOIN consents_forestry USING (h3_index)
+    LEFT JOIN pan_nz_draft_h3 USING (h3_index)
+    LEFT JOIN (
+        SELECT *
+        FROM urban_rural_2025
+        JOIN urban_rural_2025_h3 USING (ogc_fid)
+        WHERE urban_rural_2025.IUR2025_V1_00 IN (
+            '22', -- Rural other
+            '31', -- Inland water
+            '32', -- Inlet
+            '33' -- Oceanic
+        )
+    ) AS rural USING (h3_index)
 );
 -- TODO use CROSL
 -- TODO use DVR

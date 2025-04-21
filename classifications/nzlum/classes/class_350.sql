@@ -36,7 +36,11 @@ CREATE TEMPORARY VIEW class_350 AS (
         )
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1,
+            CASE
+                WHEN lcdb_unbuilt.h3_index IS NOT NULL
+                THEN 6 -- LCDB not in a settled area
+                ELSE 1
+            END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
             ARRAY[linz_dvr_utility_.source_data, linz_crosl_.source_data]::TEXT[],
@@ -52,7 +56,11 @@ CREATE TEMPORARY VIEW class_350 AS (
         WHEN linz_crosl_.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            1,
+            CASE
+                WHEN lcdb_unbuilt.h3_index IS NOT NULL
+                THEN 7 -- LCDB not in a settled area
+                ELSE 1
+            END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
             ARRAY[linz_crosl_.source_data]::TEXT[],
@@ -66,9 +74,19 @@ CREATE TEMPORARY VIEW class_350 AS (
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
-                WHEN linz_dvr_utility_.improvements_evidence
-                THEN 1
-                ELSE 2
+                WHEN lcdb_unbuilt.h3_index IS NOT NULL
+                THEN -- LCDB not in a settled area
+                    CASE
+                        WHEN linz_dvr_utility_.improvements_evidence
+                        THEN 7
+                        ELSE 8
+                    END
+                ELSE
+                    CASE
+                        WHEN linz_dvr_utility_.improvements_evidence
+                        THEN 1
+                        ELSE 2
+                    END
             END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
@@ -146,6 +164,15 @@ CREATE TEMPORARY VIEW class_350 AS (
             'B4' -- Power stations, substations or switchyards
         ]
     ) AS hail_electric USING (h3_index)
+    LEFT JOIN (
+        SELECT *
+        FROM lcdb_
+        WHERE Class_2018 NOT IN (
+            '1', -- Settlement
+            '2', -- Urban parkland open space
+            '5' -- Transport infrastructure
+        )
+    ) AS lcdb_unbuilt USING (h3_index)
 );
 -- DVR use class 6 (all, except 69? 67 (postboxes) is odd and may fit under comm. services)
 -- TODO what to do with actual use 67 postboxes
@@ -162,4 +189,4 @@ CREATE TEMPORARY VIEW class_350 AS (
 -- LINZ lakes purpose "hydro-electric" and "reservoir"
 -- LINZ lakes "Lake Moawhango" (hydro electric), Lake Rotoaira, Arapuni, Lake Otamangakau, Lake Te Whaiau, Lake Whakamaru, Lake Maraetai, Lake Arapuni
 
--- HAIL for electricak substations etc. that may otherwise be absent
+-- HAIL for electrical substations etc. that may otherwise be absent

@@ -1,18 +1,18 @@
-CREATE TEMPORARY VIEW class_111 AS (
+CREATE TEMPORARY VIEW class_130 AS (
     SELECT h3_index,
     1 AS lu_code_primary,
-    1 AS lu_code_secondary,
-    1 AS lu_code_tertiary,
+    3 AS lu_code_secondary,
+    0 AS lu_code_tertiary,
     CASE
-        WHEN pan_nz_draft_iucn_Ia.h3_index IS NOT NULL
+        WHEN pan_nz_draft_.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             1,
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
-            ARRAY[pan_nz_draft_iucn_Ia.source_data],
-            pan_nz_draft_iucn_Ia.source_date,
-            pan_nz_draft_iucn_Ia.source_scale
+            ARRAY[pan_nz_draft_.source_data],
+            pan_nz_draft_.source_date,
+            pan_nz_draft_.source_scale
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -26,10 +26,15 @@ CREATE TEMPORARY VIEW class_111 AS (
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-        AND iucn_category = 'Ia'
+        AND legislation_act = 'RESERVES_ACT'
+        AND designation IN (
+            'Water Supply',
+            'Water Supply and Recreation Purposes',
+            'Water Supply Reserve'
+        )
         ORDER BY
             h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break
-    ) pan_nz_draft_iucn_Ia
+    ) pan_nz_draft_
 )

@@ -46,3 +46,9 @@ external_data:
       - columns: [source_id]
         type: btree
         name: idx_btree_source_id
+      - columns: [source_date]
+        type: btree
+        name: idx_btree_source_date
+      - columns: [source_date, source_id]
+        type: btree
+        name: idx_btree_source_date_source_id

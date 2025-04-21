@@ -15,7 +15,7 @@ CREATE TEMPORARY VIEW class_230 AS (
                 lcdb_.h3_index IS NOT NULL
                 OR lum_.h3_index IS NOT NULL
                 OR seasonal_crops.h3_index IS NOT NULL
-                OR winter_forage_.h3_index IS NOT NULL
+                OR winter_forage_.manage IS NOT NULL
             ) AND linz_dvr_.improvements_description !~ '\m(ORCHARD|NURSERY)\M'
             AND linz_dvr_.improvements_description !~ '\m(GREEN|SHADE|GLASS)\s?(HOUSE|HSE)\M'
             -- TODO irrigation
@@ -103,7 +103,7 @@ CREATE TEMPORARY VIEW class_230 AS (
         CASE -- Boost confidence with seasonal crop evidence
             WHEN (
                 seasonal_crops.h3_index IS NOT NULL
-                OR winter_forage_.h3_index IS NOT NULL
+                OR winter_forage_.manage IS NOT NULL
             )
             THEN -1
             ELSE 0

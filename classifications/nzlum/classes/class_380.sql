@@ -109,7 +109,7 @@ CREATE TEMPORARY VIEW class_380 AS (
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
                 WHEN linz_crosl_sanitary.large = TRUE THEN 9 -- Larger parcels, lower confidence
-                ELSE 5 -- Noting that preceding cases should have captured many high confidence cases
+                ELSE 8 -- Noting that preceding cases should have captured many high confidence cases
             END,
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage

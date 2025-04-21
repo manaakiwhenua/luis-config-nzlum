@@ -86,10 +86,10 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
             ARRAY[]::TEXT[], -- lu_code_ancillary
             11,
             CASE
-                WHEN linz_dvr_.category = 'MC' THEN 'coal'
-                WHEN linz_dvr_.category = 'MG' THEN 'gas'
-                WHEN linz_dvr_.category = 'ML' THEN 'limestone'
-                WHEN linz_dvr_.category = 'MO' THEN 'oil'
+                WHEN linz_dvr_.category = 'MC' THEN ARRAY['coal']::TEXT[]
+                WHEN linz_dvr_.category = 'MG' THEN ARRAY['gas']::TEXT[]
+                WHEN linz_dvr_.category = 'ML' THEN ARRAY['limestone']::TEXT[]
+                WHEN linz_dvr_.category = 'MO' THEN ARRAY['oil']::TEXT[]
                 WHEN linz_dvr_.category = 'MP' THEN NULL -- TODO precious metal mines
                 WHEN linz_dvr_.category = 'MR' THEN NULL -- TODO rock, shingle, or sand pits and extraction
                 WHEN linz_dvr_.category = 'MX' THEN NULL -- TODO multiple mining activities, or otherwise not specified

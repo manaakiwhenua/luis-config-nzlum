@@ -89,9 +89,10 @@ external_data:
         type: btree
         name: idx_btree_ActualAnimalNumbers_int
     derived_columns:
+      # ::FLOAT::INT as column is TEXT and "0.0"::INT is invalid input syntax, must be "0.0"::FLOAT::INT (values are counts, but 0 is often recorded as 0.0)
       - column: animal_count
         datatype: integer
-        set_query: ActualAnimalNumbers::INT
+        set_query: ActualAnimalNumbers::FLOAT::INT
       - column: wintering_off
         datatype: boolean
         set_query: |-

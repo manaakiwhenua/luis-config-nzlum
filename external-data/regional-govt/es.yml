@@ -37,7 +37,20 @@ external_data:
         set_query: "'2024-12-01'::DATE"
       - column: source_date
         datatype: daterange
-        set_query: daterange(StatusDate::DATE, '2024-12-01'::DATE, '[]')
+        set_query: |-
+          (CASE 
+            WHEN StatusDate IS NOT NULL
+            THEN daterange(
+              LEAST(StatusDate::DATE, '2024-12-01'::DATE),
+              GREATEST(StatusDate::DATE, '2024-12-01'::DATE),
+              '[]'
+            )
+            ELSE daterange(
+              '2024-12-01'::DATE,
+              '2024-12-01'::DATE,
+              '[]'
+            )
+          END)
       - column: source_data
         datatype: text
         set_query: "'ES HAIL'::TEXT"

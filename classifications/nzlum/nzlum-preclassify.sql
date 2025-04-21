@@ -35,6 +35,7 @@ CREATE TYPE nzlum0_lu_coden AS ENUM (
     '1.1.4',
     '1.1.5',
     '1.1.6',
+    '1.1.7',
     '1.1.0',
     '1.2.0',
     '1.3.6',
@@ -73,17 +74,17 @@ CREATE OR REPLACE FUNCTION nzsluc_v0_2_0_lu_description(lu_code_primary integer,
                 WHEN lu_code_secondary = 1 THEN
                     CASE
                         WHEN lu_code_tertiary = 1
-                        THEN 'IUCN Ia'
+                        THEN 'Strict nature reserve'
                         WHEN lu_code_tertiary = 2
-                        THEN 'IUCN Ib'
+                        THEN 'Wilderness area'
                         WHEN lu_code_tertiary = 3
-                        THEN 'IUCN II'
+                        THEN 'National park'
                         WHEN lu_code_tertiary = 4
-                        THEN 'IUCN III'
+                        THEN 'Natural feature protection'
                         WHEN lu_code_tertiary = 5
-                        THEN 'IUCN IV'
+                        THEN 'Habitat or species management area'
                         WHEN lu_code_tertiary = 6
-                        THEN 'IUCN V'
+                        THEN 'Protected landscape'
                         WHEN lu_code_tertiary = 7
                         THEN 'Other conserved area'
                         ELSE 'Nature conservation'

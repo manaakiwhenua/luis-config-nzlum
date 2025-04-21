@@ -57,6 +57,7 @@ CREATE TEMPORARY VIEW winter_forage_ AS (
             FROM es_winter_forage_2017
             JOIN es_winter_forage_2017_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
+            AND manage IS NOT NULL
         ) AS unioned
     ) AS ranked
     WHERE rn = 1

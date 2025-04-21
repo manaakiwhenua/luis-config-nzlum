@@ -39,7 +39,9 @@ CREATE TEMPORARY VIEW roi AS (
 \ir classes/class_114.sql
 \ir classes/class_115.sql
 \ir classes/class_116.sql
-
+\ir classes/class_117.sql
+\ir classes/class_120.sql
+\ir classes/class_130.sql
 \ir classes/class_136.sql
 \ir classes/class_140.sql
 
@@ -62,9 +64,14 @@ CREATE TEMPORARY VIEW roi AS (
 \ir classes/class_380.sql
 \ir classes/class_390.sql
 
+-- water
 \ir attributes/water.sql
+-- land_status
 \ir attributes/land_status.sql
+ -- zone, land_estate
+\ir attributes/zone.sql
 
+-- TODO is the compact/uncompact cycle necessary for this classification?
 INSERT INTO :partition
 SELECT
     h3_cell_to_parent(h3_index_compact, :resolution) AS h3_parent,
@@ -92,23 +99,10 @@ FROM (
         lu_code_ancillary,
         commod,
         manage,
-        land_estate,
-        land_status_.land_status,
-        water_features_.feature AS water,
-        CASE -- TODO these could be refined, see Table 19 (https://environment.govt.nz/assets/publications/national-planning-standards-november-2019-updated-2022.pdf) and Section C.2 (https://www.linz.govt.nz/sites/default/files/30300-Rating%2520Valuations%2520Rules%25202008-%2520version%2520date%25201%2520October%25202010%2520-%2520LINZS30300_0.pdf)
-            WHEN linz_zone.zone = '0X' THEN null -- Land in more than one zone or designation
-            WHEN linz_zone.zone LIKE '0%' THEN null -- Designated or zoned reserve land
-            WHEN linz_zone.zone LIKE '1%' THEN 'General rural zone' -- Rural
-            WHEN linz_zone.zone LIKE '2%' THEN 'Rural lifestyle zone' -- Lifestyle
-            WHEN linz_zone.zone LIKE '3%' THEN 'Special purpose zones' -- Other specific zone - defined by territorial authority
-            WHEN linz_zone.zone LIKE '4%' THEN null -- Community uses
-            WHEN linz_zone.zone LIKE '5%' THEN 'Sport and active recreation zone' -- Recreational
-            WHEN linz_zone.zone LIKE '6%' THEN null -- Other broad zone - defined by territorial authority
-            WHEN linz_zone.zone LIKE '7%' THEN 'General industrial zone' -- Industrial
-            WHEN linz_zone.zone LIKE '8%' THEN 'Commercial zone' -- Commercial
-            WHEN linz_zone.zone LIKE '9%' THEN 'General residential zone' -- Residential
-            ELSE null
-        END AS zone, -- May be better to just take linz_zone.zone values?
+        land_zone.land_estate,
+        land_status.land_status,
+        water_features.feature AS water,
+        land_zone.zone,
         --CEIL(confidence/3.0) AS confidence, -- Collapse from range 1-12 to 1-4, after internal sorting in full range
         confidence,
         CURRENT_DATE AS luc_date,
@@ -168,6 +162,12 @@ FROM (
             UNION ALL
             SELECT * FROM class_116 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL
+            SELECT * FROM class_117 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_120 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_130 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
             SELECT * FROM class_136 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL
             SELECT * FROM class_140 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
@@ -209,22 +209,9 @@ FROM (
         RIGHT JOIN roi USING (h3_index)
         WHERE :parent::h3index = roi.h3_partition
     ) subq
-    FULL OUTER JOIN (
-        SELECT h3_index, zone, land_estate
-        FROM linz_dvr_
-        INNER JOIN roi USING (h3_index)
-        WHERE :parent::h3index = roi.h3_partition
-    ) AS linz_zone USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT h3_index, feature
-        FROM water_features
-        INNER JOIN roi USING (h3_index)
-        WHERE :parent::h3index = roi.h3_partition
-    ) AS water_features_ USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT h3_index, land_status
-        FROM land_status
-    ) AS land_status_ USING (h3_index)
+    FULL OUTER JOIN land_zone USING (h3_index)
+    FULL OUTER JOIN water_features USING (h3_index)
+    FULL OUTER JOIN land_status USING (h3_index)
     -- TODO consider a function for recording multiple uses
     WHERE rn = 1 -- Select best option after ranking in cases where multiple classes are possible
     --AND :parent::h3index = roi.h3_partition
