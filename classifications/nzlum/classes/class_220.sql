@@ -235,9 +235,21 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             FROM topo50_chatham_sand_h3
             WHERE :parent::h3index = h3_partition
         ) AS topo50_sand_h3 USING (h3_index)
-        LEFT JOIN topo50_land_h3 USING (h3_index)
-        LEFT JOIN topo50_pond_h3 USING (h3_index)
-        LEFT JOIN hydro_parcels_h3 USING (h3_index)
+        LEFT JOIN (
+            SELECT h3_index
+            FROM topo50_land_h3
+            WHERE :parent::h3index = h3_partition
+        ) AS topo50_land_h3 USING (h3_index)
+        LEFT JOIN (
+            SELECT h3_index
+            FROM topo50_pond_h3
+            WHERE :parent::h3index = h3_partition
+        ) AS topo50_pond_h3 USING (h3_index)
+        LEFT JOIN (
+            SELECT h3_index
+            FROM hydro_parcels_h3
+            WHERE :parent::h3index = h3_partition
+        ) AS hydro_parcels_h3 USING (h3_index)
         LEFT JOIN (
             SELECT h3_index, lcorrclass, source_data, source_date, source_scale
             FROM nzlri_lowcapability

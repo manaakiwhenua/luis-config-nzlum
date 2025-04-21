@@ -117,7 +117,8 @@ CREATE TEMPORARY VIEW class_117 AS (
         SELECT *
         FROM urban_rural_2025
         JOIN urban_rural_2025_h3 USING (ogc_fid)
-        WHERE urban_rural_2025.IUR2025_V1_00 IN (
+        WHERE :parent::h3index = h3_partition
+        AND urban_rural_2025.IUR2025_V1_00 IN (
             '22', -- Rural other
             '31', -- Inland water
             '32', -- Inlet

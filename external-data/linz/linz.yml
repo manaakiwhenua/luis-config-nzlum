@@ -43,3 +43,9 @@ external_data:
       - columns: [use_subtype]
         type: btree
         name: idx_use_subtype
+  
+  south_island_pastoral_leases:
+    <<: *linz
+    description: South Island Pastoral Leases
+    layer: layer-51572
+    geom_type: multipolygon

@@ -150,12 +150,17 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
         WHERE :parent::h3index = h3_partition
     ) topo50_exotic_polygons_ USING (h3_index)
     FULL OUTER JOIN consents_forestry USING (h3_index)
-    LEFT JOIN pan_nz_draft_h3 USING (h3_index)
+    LEFT JOIN (
+        SELECT h3_index
+        FROM pan_nz_draft_h3
+        WHERE :parent::h3index = h3_partition
+    ) AS pan_nz_draft_h3 USING (h3_index)
     LEFT JOIN (
         SELECT *
         FROM urban_rural_2025
         JOIN urban_rural_2025_h3 USING (ogc_fid)
-        WHERE urban_rural_2025.IUR2025_V1_00 IN (
+        WHERE :parent::h3index = h3_partition
+        AND urban_rural_2025.IUR2025_V1_00 IN (
             '22', -- Rural other
             '31', -- Inland water
             '32', -- Inlet
