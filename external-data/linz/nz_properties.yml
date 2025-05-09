@@ -18,7 +18,8 @@ _uop_local: &uop_local
   <<: *linz_nz_properties_local_restricted
   layer: NZ_Properties__Unit_of_Property
   file:
-    local: /home/lawr/dvr-restricted/nz-properties-unit-of-property.gdb
+    # local: /home/lawr/dvr-restricted/nz-properties-unit-of-property.gdb # June 2024
+    local: /home/lawr/dvr-restricted/nz-properties-unit-of-property-20250508.gdb
 
 _dvr_public: &dvr_public
   <<: *linz_nz_properties
@@ -28,7 +29,8 @@ _dvr_local: &dvr_local
   <<: *linz_nz_properties_local_restricted
   layer: NZ_Properties__National_District_Valuation_Roll__restricted_access_
   file:
-    local: /home/lawr/dvr-restricted/nz-properties-national-district-valuation-roll-restricted-ac.gdb
+    # local: /home/lawr/dvr-restricted/nz-properties-national-district-valuation-roll-restricted-ac.gdb # June 2024
+    local: /home/lawr/dvr-restricted/nz-properties-national-district-valuation-roll-restricted-ac-20250508.gdb
 
 external_data:
 
@@ -36,13 +38,7 @@ external_data:
     # <<: *uop_public
     <<: *uop_local
     description: |-
-      This pilot dataset provides a representation of the boundaries of all known properties in New Zealand. It consists of a unique identifier for a property, with spatial property boundaries, but no additional attribution.
-      Each spatial object in this table has an assigned unit_of_property_id, and is created using land parcels and the Landonline: Title Parcel Associations table. This dataset delivers spatial representations of property boundaries for use in mapping products where only a boundary needs to be displayed.
-      Initially this table is derived using records in the District Valuation Roll (DVR) that meet the requirements for a rated property, as defined by the Rating Valuation Rules 2008. However, in future it could be expanded to include other property perspectives, as listed in the Perspective table.
-      The table is updated on a weekly basis.
-      Related tables
-      Together with the NZ Properties: Property-Title Reference table, this dataset will provide a full replica of the National DVR.
-      Please refer to the NZ Properties Data Dictionary for detailed metadata and information about this table and its relationships to other tables in this collection.
+      This pilot dataset provides a representation of the boundaries of all known properties in New Zealand.
     geom_type: multipolygon
     indices:
       - columns: [unit_of_property_id]
@@ -62,9 +58,6 @@ external_data:
     <<: *dvr_local
     description: |-
       This pilot dataset provides a subset of the national collection of District Valuation Roll (DVR) data which is available under an open (CC:BY 4.0) licence. The data is based on DVR property audit files supplied to Toitū Te Whenua Land Information New Zealand by Territorial Authorities. The data is limited to that supplied by those Territorial Authorities that have given permission for their District Valuation Roll data to be made public by Toitū Te Whenua Land Information New Zealand.
-      National DVR data for all Territorial Authorities is accessible for government organisations only, from NZ Properties: National District Valuation Roll (Restricted Access).
-      This table is updated weekly.
-      Together with the NZ Properties: Unit of Property Subset, NZ Properties: Property Title Reference Subset, and associated look-up tables, this dataset will provide a subset of a replica of the national DVR.
     geom_type: null
     nlt: [NONE]
     indices:
@@ -91,7 +84,10 @@ external_data:
         name: idx_btree_zoning
       - columns: [actual_property_use]
         type: gin
-        name: idx_actual_property_use
+        name: idx_gin_actual_property_use
+      - columns: [actual_property_use]
+        type: btree
+        name: idx_btree_actual_property_use
       - columns: [current_effective_valuation_date]
         type: btree
         name: idx_btree_current_effective_valuation_date
@@ -119,6 +115,40 @@ external_data:
         - improvements_value_ratio
         type: btree
         name: idx_low_improvement_value_ratio
+      - columns: # Vacant lifestyle, without immediate subdivision potential
+        - actual_property_use
+        - property_category
+        type: btree
+        name: idx_btree_lv_no_subdivision
+        where: actual_property_use = '29' AND property_category LIKE 'LV%'
+      - columns:
+        - property_category
+        type: btree
+        name: idx_btree_vacant_category
+        where: property_category LIKE '_V%'
+      - columns:
+        - property_category
+        type: btree
+        name: idx_btree_adfhops_category
+        where: property_category ~ '^[ADFHOPS]'
+      - columns:
+        - zoning
+        type: btree
+        name: idx_btree_zone_0X1245
+        where: zoning ~ '^(0X|[1245][A-Z])'
+      - columns:
+        - improvements_description
+        type: btree
+        name: idx_btree_imp_desc_orchard
+        where: improvements_description ~ '\mORCHARDS?\M'
+      - columns:
+        - improvements_value
+        type: btree
+        name: idx_btree_low_value_imprvmnts
+        where: improvements_value < 100000
+      # - column: [zoning_description]
+      #   type: btree
+      #   name: idx_btree_zoning_description
     derived_columns:
       - column: ts_improvements_description
         datatype: tsvector
@@ -126,6 +156,27 @@ external_data:
       - column: improvements_value_ratio
         datatype: NUMERIC(3, 2)
         set_query: LEAST(COALESCE(improvements_value, 0) / NULLIF(capital_value,  0), 1)
+      # - column: zoning_description
+      #   datatype: text
+      #   set_query: |-
+      #     (
+      #       CASE
+      #         WHEN zoning = '0X' THEN 'Land in more than one zone or designation'
+      #         WHEN zoning = 'OX' THEN 'Land in more than one zone or designation'
+      #         WHEN zoning LIKE '0%' THEN 'Designated or zoned reserve land'
+      #         WHEN zoning LIKE 'O%' THEN 'Designated or zoned reserve land'
+      #         WHEN zoning LIKE '1%' THEN 'Rural'
+      #         WHEN zoning LIKE '2%' THEN 'Lifestyle'
+      #         WHEN zoning LIKE '3%' THEN 'Other specific zone'
+      #         WHEN zoning LIKE '4%' THEN 'Community uses'
+      #         WHEN zoning LIKE '5%' THEN 'Recreational'
+      #         WHEN zoning LIKE '6%' THEN 'Other broad zone'
+      #         WHEN zoning LIKE '7%' THEN 'Industrial'
+      #         WHEN zoning LIKE '8%' THEN 'Commercial'
+      #         WHEN zoning LIKE '9%' THEN 'Residential'
+      #         ELSE null
+      #       END
+      #     )
 
   property_title_reference:
     <<: *linz_nz_properties

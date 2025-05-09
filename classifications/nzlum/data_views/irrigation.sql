@@ -13,7 +13,7 @@ CREATE TEMPORARY VIEW irrigation_ AS (
                 '[]'
             ) AS source_date,
             'MfE' AS source_data,
-            '(0,1)'::int4range AS source_scale, -- 0.075 m to 0.3 m 
+            '(0,1]'::int4range AS source_scale, -- 0.075 m to 0.3 m 
             CASE
                 WHEN irrigation_type IN (
                     'Wild flooding',

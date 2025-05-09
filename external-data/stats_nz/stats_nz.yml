@@ -16,3 +16,25 @@ external_data:
       - columns: [IUR2025_V1_00]
         type: btree
         name: idx_btree_IUR2025_V1_00
+
+  rural_2025:
+    <<: *stats_nz
+    description: Urban Rural 2025 [Rural only]
+    layer: layer-120965
+    geom_type: multipolygon
+    where: IUR2025_V1_00_NAME IN ('Rural other', 'Oceanic', 'Inland water', 'Inlet')
+    indices:
+      - columns: [IUR2025_V1_00]
+        type: btree
+        name: idx_btree_IUR2025_V1_00
+
+  urban_2025:
+    <<: *stats_nz
+    description: Urban Rural 2025 [Urban only]
+    layer: layer-120965
+    geom_type: multipolygon
+    where: IUR2025_V1_00_NAME NOT IN ('Rural other', 'Oceanic', 'Inland water', 'Inlet')
+    indices:
+      - columns: [IUR2025_V1_00]
+        type: btree
+        name: idx_btree_IUR2025_V1_00

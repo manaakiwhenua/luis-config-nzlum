@@ -56,7 +56,7 @@ external_data:
         set_query: "'ES HAIL'::TEXT"
       - column: source_scale
         datatype: int4range
-        set_query: "'(1,100)'::int4range"
+        set_query: "'[1,100]'::int4range"
     indices:
       - columns: [HAILCategories]
         type: gin

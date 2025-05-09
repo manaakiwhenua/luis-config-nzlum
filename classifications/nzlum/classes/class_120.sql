@@ -12,7 +12,8 @@ CREATE TEMPORARY VIEW class_120 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[pan_nz_historic_reserves.source_data],
             pan_nz_historic_reserves.source_date,
-            pan_nz_historic_reserves.source_scale
+            pan_nz_historic_reserves.source_scale,
+            pan_nz_historic_reserves.source_protection_name
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -22,7 +23,8 @@ CREATE TEMPORARY VIEW class_120 AS (
         h3_index,
         source_data,
         source_date,
-        source_scale
+        source_scale,
+        source_protection_name
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
@@ -49,13 +51,13 @@ CREATE TEMPORARY VIEW class_120 AS (
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break
     ) pan_nz_historic_reserves
-        LEFT JOIN (
+    LEFT JOIN (
         SELECT *
         FROM lcdb_
         WHERE Class_2018 NOT IN (
-            '1', -- Settlement
-            '2', -- Urban parkland open space
-            '5' -- Transport infrastructure
+            1, -- Settlement
+            2, -- Urban parkland open space
+            5 -- Transport infrastructure
         )
     ) AS lcdb_unbuilt USING (h3_index)
 )

@@ -1,27 +1,31 @@
 CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
     With crop_perennial AS (
-        SELECT *
-            FROM crop_maps
-            WHERE commod && ARRAY[
-                'apples',
-                'avocados',
-                'feijoa'
-                'pears',
-                'kiwifruit',
-                'grapes',
-                'olives',
-                'persimmons',
-                'pinenuts',
-                'pomegranate',
-                'tamarillo'
-            ]::TEXT[]
-            OR (
-                source_data = 'GDC'
-                AND crop IN (
-                    'Citrus',
-                    'Stonefruit'
-                )
-            ) -- NB special cases for GDC data that don't map to specific commodities
+        SELECT h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            commod
+        FROM crop_maps
+        WHERE commod && ARRAY[
+            'apples',
+            'avocados',
+            'feijoa'
+            'pears',
+            'kiwifruit',
+            'grapes',
+            'olives',
+            'persimmons',
+            'pinenuts',
+            'pomegranate',
+            'tamarillo'
+        ]::TEXT[]
+        OR (
+            source_data = 'GDC'
+            AND crop IN (
+                'Citrus',
+                'Stonefruit'
+            )
+        ) -- NB special cases for GDC data that don't map to specific commodities
     ),
     base_classification AS (
         SELECT h3_index,
@@ -73,7 +77,8 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                         linz_dvr_.source_scale,
                         crop_perennial.source_scale
                     ], NULL)
-                ))::int4range -- source_scale
+                ))::int4range, -- source_scale
+                NULL
             )::nzlum_type
             WHEN (
                 lcdb_.h3_index IS NOT NULL
@@ -116,7 +121,8 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                         lcdb_.source_scale,
                         linz_dvr_.source_scale
                     ], NULL)
-                ))::int4range -- source_scale
+                ))::int4range, -- source_scale
+                NULL
             )::nzlum_type
             WHEN topo50_orchards_.h3_index IS NOT NULL
             THEN ROW(
@@ -156,7 +162,8 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                         topo50_orchards_.source_scale,
                         linz_dvr_.source_scale
                     ], NULL)
-                ))::int4range -- source_scale
+                ))::int4range, -- source_scale
+                NULL
             )::nzlum_type
             WHEN lum_.h3_index IS NOT NULL
             THEN ROW(
@@ -196,7 +203,8 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                         lum_.source_scale,
                         linz_dvr_.source_scale
                     ], NULL)
-                ))::int4range
+                ))::int4range,
+                NULL
             )::nzlum_type
             WHEN lcdb_.h3_index IS NOT NULL
             THEN ROW(
@@ -236,7 +244,8 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                         lcdb_.source_scale,
                         linz_dvr_.source_scale
                     ], NULL)
-                ))::int4range
+                ))::int4range,
+                NULL
             )::nzlum_type
             WHEN linz_dvr_.improvements_description ~ '\mORCHARD\M'
             THEN ROW(
@@ -266,12 +275,17 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                 ARRAY[]::TEXT[], -- manage
                 ARRAY[linz_dvr_.source_data]::TEXT[], -- source_data
                 linz_dvr_.source_date,
-                linz_dvr_.source_scale
+                linz_dvr_.source_scale,
+                NULL
             )::nzlum_type
             ELSE NULL
         END AS nzlum_type
         FROM (
-            SELECT *
+            SELECT
+                h3_index,
+                source_data,
+                source_date,
+                source_scale
             FROM lum_
             WHERE lucid_2020 = '77 - Cropland - Orchards and vineyards (perennial)'
         ) AS lum_
@@ -288,12 +302,23 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             WHERE :parent::h3index = h3_partition
         ) topo50_orchards_ USING (h3_index)
         FULL OUTER JOIN (
-            SELECT *
+            SELECT
+                h3_index,
+                source_data,
+                source_date,
+                source_scale
             FROM lcdb_
             WHERE lcdb_.Class_2018 = 33 -- Orchard, Vineyard or Other Perennial Crop
         ) lcdb_ USING (h3_index)
         FULL OUTER JOIN (
-            SELECT *
+            SELECT
+                h3_index,
+                source_data,
+                source_scale,
+                source_date,
+                actual_property_use,
+                category,
+                improvements_description
             FROM linz_dvr_
             WHERE actual_property_use IN (
                 '01', -- Mixed, rural
@@ -347,12 +372,18 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                     irrigation_.source_scale,
                     crop_perennial.source_scale
                 ], NULL)
-            ))::int4range -- source_scale
+            ))::int4range, -- source_scale
+            (nzlum_type).comment
         )::nzlum_type AS nzlum_type
     FROM base_classification
     LEFT JOIN crop_perennial USING (h3_index)
     LEFT JOIN (
-        SELECT *
+        SELECT 
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            manage
         FROM irrigation_
         WHERE irrigation_type IN (
             'Drip/micro',
@@ -373,8 +404,8 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
 -- TODO winter cover (see NRC), e.g. 522 (kiwifruit), 131 (Crop covers/bird nets/glass or plastic houses... there are perhaps class 2.5.0)
 
 -- TODO Regional data
--- NRC qa_avocado_property; title NA981/87 (QA)
 -- NRC olives_2023, macadamias_2023, nrc_kumara_growers_2023
 
 -- TODO Special case data
+-- NRC qa_avocado_property; title NA981/87 (QA)
 -- title_no <> '524866' -- https://github.com/manaakiwhenua/luis-config/issues/5 (QA: gross error in the ratings database; a large forest block assigned 15 and HKD)

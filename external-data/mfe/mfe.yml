@@ -4,10 +4,6 @@ __publisher_mfe: &mfe
   external_data_type: wfs
   license: https://creativecommons.org/licenses/by/4.0/
 
-# TODO add https://data.mfe.govt.nz/layer/52374-environmental-limiting-factors-2012/
-
-# TODO LUCAS? https://data.mfe.govt.nz/layer/52375-lucas-nz-land-use-map-1990-2008-2012-2016-v008/
-
 external_data:
 
   irrigation_2020:
@@ -33,7 +29,7 @@ external_data:
               WHEN irrigation_2020.confidence = 'High' THEN 1
               WHEN irrigation_2020.confidence = 'Medium' THEN 2
               WHEN irrigation_2020.confidence = 'Low' THEN 3
-              ELSE 3 -- TODO 3.5?
+              ELSE 3
             END
           )
       - column: is_current

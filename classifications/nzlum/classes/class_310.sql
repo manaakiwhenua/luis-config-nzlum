@@ -12,9 +12,10 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             ARRAY[]::TEXT[],
             ARRAY[hnz.source_data]::TEXT[],
             hnz.source_date,
-            hnz.source_scale
+            hnz.source_scale,
+            NULL
         )::nzlum_type
-        WHEN improvements_value > 0
+        WHEN linz_dvr_.improvements_value > 0
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             GREATEST(LEAST(CASE
@@ -60,7 +61,8 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             ARRAY[]::TEXT[],
             ARRAY[linz_dvr_.source_data]::TEXT[],
             linz_dvr_.source_date,
-            linz_dvr_.source_scale
+            linz_dvr_.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
                 linz_dvr_.h3_index IS NOT NULL -- Residual housing
@@ -76,12 +78,22 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             ARRAY[]::TEXT[],
             ARRAY[irrigation_.source_data, linz_dvr_.source_data]::TEXT[],
             range_merge(irrigation_.source_date,linz_dvr_.source_date),
-            range_merge(irrigation_.source_scale,linz_dvr_.source_scale)
+            range_merge(irrigation_.source_scale,linz_dvr_.source_scale),
+            NULL
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
     FROM (
-        SELECT * FROM linz_dvr_
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use,
+            category,
+            improvements_value,
+            gt_half_acre
+        FROM linz_dvr_
         WHERE (
             actual_property_use ~ '^9' -- Residential
             OR actual_property_use ~ '^2' -- Lifestyle
@@ -89,14 +101,26 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             OR category ~ '^(R|L)' -- Residential
         )
     ) AS linz_dvr_
-    LEFT JOIN irrigation_ USING (h3_index)
+    LEFT JOIN (
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            status
+        FROM irrigation_
+    ) AS irrigation_ USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
         FROM linz_crosl_
         WHERE managed_by = 'Housing New Zealand'
     ) AS hnz USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT h3_index
         FROM topo50_residential_areas_h3
         WHERE :parent::h3index = h3_partition
     ) AS topo50_residential_areas_h3 USING (h3_index)

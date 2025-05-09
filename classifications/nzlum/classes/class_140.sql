@@ -12,7 +12,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[pan_nz_public_works.source_data]::TEXT[],
             pan_nz_public_works.source_date,
-            pan_nz_public_works.source_scale
+            pan_nz_public_works.source_scale,
+            pan_nz_public_works.source_protection_name
         )::nzlum_type
         WHEN linz_dvr_vacant_other IS NOT NULL
         THEN ROW (
@@ -28,7 +29,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_dvr_vacant_other.source_data]::TEXT[],
             linz_dvr_vacant_other.source_date,
-            linz_dvr_vacant_other.source_scale
+            linz_dvr_vacant_other.source_scale,
+            NULL
         )::nzlum_type
         WHEN ecan_braided_rivers_.h3_index IS NOT NULL
         THEN ROW(
@@ -38,7 +40,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[ecan_braided_rivers_.source_data]::TEXT[],
             ecan_braided_rivers_.source_date,
-            ecan_braided_rivers_.source_scale
+            ecan_braided_rivers_.source_scale,
+            NULL
         )::nzlum_type
         WHEN topo50_rocks_polygons.h3_index IS NOT NULL
         THEN ROW(
@@ -48,7 +51,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_rocks_polygons.source_data]::TEXT[],
             topo50_rocks_polygons.source_date,
-            topo50_rocks_polygons.source_scale
+            topo50_rocks_polygons.source_scale,
+            NULL
         )::nzlum_type
         WHEN topo50_scree.h3_index IS NOT NULL
         THEN ROW(
@@ -58,7 +62,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_scree.source_data]::TEXT[],
             topo50_scree.source_date,
-            topo50_scree.source_scale
+            topo50_scree.source_scale,
+            NULL
         )::nzlum_type
         WHEN topo50_snow.h3_index IS NOT NULL
         THEN ROW(
@@ -68,7 +73,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_snow.source_data]::TEXT[],
             topo50_snow.source_date,
-            topo50_snow.source_scale
+            topo50_snow.source_scale,
+            NULL
         )::nzlum_type
         WHEN topo50_moraine_polygons.h3_index IS NOT NULL
         THEN ROW(
@@ -78,7 +84,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_moraine_polygons.source_data]::TEXT[],
             topo50_moraine_polygons.source_date,
-            topo50_moraine_polygons.source_scale
+            topo50_moraine_polygons.source_scale,
+            NULL
         )::nzlum_type
         WHEN topo50_moraine_wall_polygons.h3_index IS NOT NULL
         THEN ROW(
@@ -88,7 +95,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_moraine_wall_polygons.source_data]::TEXT[],
             topo50_moraine_wall_polygons.source_date,
-            topo50_moraine_wall_polygons.source_scale
+            topo50_moraine_wall_polygons.source_scale,
+            NULL
         )::nzlum_type
         WHEN topo50_shingle_polygons.h3_index IS NOT NULL
         THEN ROW(
@@ -98,7 +106,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_shingle_polygons.source_data]::TEXT[],
             topo50_shingle_polygons.source_date,
-            topo50_shingle_polygons.source_scale
+            topo50_shingle_polygons.source_scale,
+            NULL
         )::nzlum_type
         WHEN lcdb_.class_2018 IN (
             10, -- Sand or Gravel
@@ -132,7 +141,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             ARRAY[]::TEXT[], -- manage
             ARRAY[lcdb_.source_data]::TEXT[],
             lcdb_.source_date,
-            lcdb_.source_scale
+            lcdb_.source_scale,
+            NULL
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -176,7 +186,9 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         '[60,100)'::int4range AS source_scale
         FROM topo50_rocks_polygons_h3
         WHERE :parent::h3index = h3_partition
+
         UNION ALL
+
         SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
@@ -247,7 +259,9 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         '[60,100)'::int4range AS source_scale
         FROM topo50_shingle_polygons_h3
         WHERE :parent::h3index = h3_partition
+
         UNION ALL
+
         SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
@@ -264,7 +278,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         h3_index,
         source_data,
         source_date,
-        source_scale
+        source_scale,
+        source_protection_name
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition

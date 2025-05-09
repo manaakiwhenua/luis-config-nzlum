@@ -40,7 +40,8 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             range_merge(
                 unspecified_waterbodies.source_scale,
                 linz_dvr_rural.source_scale
-            )
+            ),
+            NULL
         )::nzlum_type
         WHEN lakes.h3_index IS NOT NULL
         THEN ROW(
@@ -50,7 +51,8 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             ARRAY[]::TEXT[], -- manage
             ARRAY[lakes.source_data]::TEXT[],
             lakes.source_date,
-            lakes.source_scale
+            lakes.source_scale,
+            NULL
         )::nzlum_type
         WHEN irrigation_canals.h3_index IS NOT NULL
         THEN ROW(
@@ -60,7 +62,8 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             ARRAY[]::TEXT[], -- manage
             ARRAY[irrigation_canals.source_data]::TEXT[],
             irrigation_canals.source_date,
-            irrigation_canals.source_scale
+            irrigation_canals.source_scale,
+            NULL
         )::nzlum_type
         WHEN dairy_effluent_discharge.h3_index IS NOT NULL
         THEN ROW(
@@ -70,7 +73,8 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             ARRAY[]::TEXT[], -- manage
             ARRAY[dairy_effluent_discharge.source_data]::TEXT[],
             dairy_effluent_discharge.source_date,
-            dairy_effluent_discharge.source_scale
+            dairy_effluent_discharge.source_scale,
+            NULL
         )::nzlum_type
     END AS nzlum_type
     FROM (
@@ -87,39 +91,51 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             FROM topo50_pond
             JOIN topo50_pond_h3 USING (ogc_fid)
             WHERE
-                pond_use IS NULL
+                :parent::h3index = h3_partition
+                AND pond_use IS NULL
                 AND "name" IS NULL
                 AND :parent::h3index = h3_partition
+
             UNION ALL
+
             SELECT h3_index
             FROM topo50_lake
             JOIN topo50_lake_h3 USING (ogc_fid)
             WHERE
-                lake_use IS NULL
+                :parent::h3index = h3_partition
+                AND lake_use IS NULL
                 AND "name" IS NULL
                 AND "grp_name" IS NULL
                 AND :parent::h3index = h3_partition
         ) topo50_water
     ) unspecified_waterbodies
     FULL OUTER JOIN(
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
         FROM linz_dvr_
         WHERE actual_property_use ~ '^0?[012]' -- Rural industry or lifestyle, including multi-use at primary level, or vacant
         AND actual_property_use != '18' -- Mineral extraction
     ) linz_dvr_rural USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT h3_index
         FROM lcdb_
         WHERE class_2018 IN (
-            '20', -- Lake or pond
-            '30', -- Short-rotation cropland
-            '33', -- Orchards, Vineyards or Other Perennial Crops
-            '40', -- High Producing Grassland
-            '41' -- Low Producing Grassland
+            20, -- Lake or pond
+            30, -- Short-rotation cropland
+            33, -- Orchards, Vineyards or Other Perennial Crops
+            40, -- High Producing Grassland
+            41 -- Low Producing Grassland
         )
     ) AS lcdb_ USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
         FROM dairy_effluent_discharge
         WHERE :parent::h3index = h3_partition
     ) AS dairy_effluent_discharge USING (h3_index)

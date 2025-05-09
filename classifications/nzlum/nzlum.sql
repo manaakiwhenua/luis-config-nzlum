@@ -52,7 +52,8 @@ CREATE TEMPORARY VIEW roi AS (
 \ir classes/class_250.sql
 \ir classes/class_260.sql
 \ir classes/class_270.sql
-\ir classes/class_280.sql
+-- \ir classes/class_280.sql
+\ir classes/class_280_v2.sql
 
 \ir classes/class_310.sql
 \ir classes/class_320.sql
@@ -108,7 +109,8 @@ FROM (
         CURRENT_DATE AS luc_date,
         source_data,
         source_date, -- type DATERANGE
-        source_scale -- type INT4RANGE
+        source_scale, -- type INT4RANGE
+        comment
     FROM (
         SELECT
             roi.h3_index,
@@ -133,13 +135,23 @@ FROM (
                 ARRAY[]::TEXT[]
             ) AS source_data,
             (nzlum_type).source_date AS source_date,
-            -- TODO many layers without a date field could still have a recorded publication date, e.g. using kart or Koordinates API; use of CURRENT_DATE is current behaviour and will (TODO) cause some issues if a large query processes overnight
+            -- TODO many layers without a date field could still have a recorded publication date, e.g. using kart or Koordinates API; use of CURRENT_DATE is current behaviour and will cause incongruity if a large query processes overnight
             (nzlum_type).source_scale AS source_scale, -- NB use range_union to combine ranges from input if appropriate
+            (nzlum_type).comment AS comment,
             ROW_NUMBER() OVER (
                 PARTITION BY roi.h3_index
                 ORDER BY
                     (nzlum_type).confidence ASC NULLS LAST, -- Prefer more confident
-                    (nzlum_type).source_date DESC NULLS LAST, -- Prefer more recent, with DESC ranges with a later upper bound will come BEFORE those with an earlier upper bound. The lower bound is used as a tiebreaker, with those ranges with an earlier lower bound placed AFTER those with a later lower bound.
+                    CASE
+                        WHEN (
+                            lu_code_primary = 1
+                            AND lu_code_secondary = 1
+                        )
+                        THEN lu_code_tertiary
+                        ELSE NULL
+                    END ASC NULLS LAST, -- Overlapping protected areas with equal confidence; prefer more protected, ignoring dates and scales. All others consider equally and defer to other sort criteria
+                    upper((nzlum_type).source_date) DESC NULLS FIRST,  -- Sort by upper bound, with nulls (unbounded) first, then latest stated
+                    lower((nzlum_type).source_date) ASC NULLS LAST, -- Sort by lower bound, with nulls (unbounded) first, then earliest stated
                     (nzlum_type).source_scale ASC NULLS LAST, -- NB rules for int4range sorting, open ends are infinite
                     CAST(
                         CASE
@@ -214,7 +226,6 @@ FROM (
     FULL OUTER JOIN land_status USING (h3_index)
     -- TODO consider a function for recording multiple uses
     WHERE rn = 1 -- Select best option after ranking in cases where multiple classes are possible
-    --AND :parent::h3index = roi.h3_partition
     GROUP BY
         unit_id,
         lu_code_primary,
@@ -232,7 +243,8 @@ FROM (
         luc_date,
         source_data,
         source_date,
-        source_scale
+        source_scale,
+        comment
     ORDER BY h3_index_compact DESC
 ) q;
 

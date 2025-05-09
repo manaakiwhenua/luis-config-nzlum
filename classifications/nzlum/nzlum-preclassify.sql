@@ -17,7 +17,8 @@ CREATE TYPE nzlum_type AS (
     manage TEXT[],  -- TODO controlled vocab
     source_data TEXT[],
     source_date DATERANGE, -- For evergreen data with no information, recommend [CURRENT_DATE,CURRENT_DATE], rather than NULL or [CURRENT_DATE,) unless there is good reason to do so
-    source_scale INT4RANGE -- precision in metres
+    source_scale INT4RANGE, -- precision in metres
+    comment TEXT
 );
 
 DROP TYPE IF EXISTS nzlum0_lu_coden CASCADE;
@@ -36,13 +37,14 @@ CREATE TYPE nzlum0_lu_coden AS ENUM (
     '1.1.5',
     '1.1.6',
     '1.1.7',
+
+    '3.6.0', -- Transport overays (road, etc)
+
     '1.1.0',
     '1.2.0',
     '1.3.6',
     '1.3.0',
     '1.4.0',
-
-    '3.6.0', -- Transport overays (road, etc)
 
     '2.7.0', -- Prefer bringing forward water related features; NB this class is probably better left to water attribute 
     '2.1.0',

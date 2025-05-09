@@ -1,5 +1,6 @@
 CREATE TEMPORARY VIEW linz_dvr_ AS (
     SELECT DISTINCT ON (h3_index) h3_index,
+    h3_partition,
     improvements_value,
     improvements_value_ratio,
     legal_description,
@@ -15,6 +16,7 @@ CREATE TEMPORARY VIEW linz_dvr_ AS (
     ts_improvements_description,
     zoning AS "zone",
     nzptl.type AS land_estate,
+    ownership_code,
     CASE
         WHEN urban_rural_2025_.IUR2025_V1_00 IN (
             '11', -- major urban
@@ -72,10 +74,10 @@ CREATE TEMPORARY VIEW linz_dvr_ AS (
         land_estate ASC NULLS LAST
 );
 
---TODO this may work better materialised, and partitioned by h3_parent
+--TODO this may resolve faster if materialised, and partitioned by h3_parent
 -- Actually, all of the 'data views' probably would.
 
--- NB some improvement codes:
+-- NB some list of improvement codes:
 -- www.aucklandcouncil.govt.nz/property-rates-valuations/our-valuation-of-your-property/Pages/description-of-improvement-codes.aspx
 -- eservices.kapiticoast.govt.nz/rates/improvements
 -- www.tauranga.govt.nz/living/property-and-rates/property-search/nature-of-improvements

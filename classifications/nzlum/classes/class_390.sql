@@ -26,7 +26,8 @@ CREATE TEMPORARY VIEW class_390 AS (
                 ARRAY[]::TEXT[], -- manage
                 ARRAY[transitional_land.source_data]::TEXT[],
                 transitional_land.source_date,
-                transitional_land.source_scale
+                transitional_land.source_scale,
+                NULL
             )::nzlum_type
             WHEN (
                 linz_dvr_full_.actual_property_use ~ '[1-9]9$' -- Vacant
@@ -43,7 +44,8 @@ CREATE TEMPORARY VIEW class_390 AS (
                 ARRAY[]::TEXT[], -- manage
                 ARRAY[transitional_land.source_data, linz_dvr_full_.source_data]::TEXT[],
                 range_merge(transitional_land.source_date, linz_dvr_full_.source_date),
-                range_merge(transitional_land.source_scale, linz_dvr_full_.source_scale)
+                range_merge(transitional_land.source_scale, linz_dvr_full_.source_scale),
+                NULL
             )::nzlum_type
             WHEN linz_dvr_full_.category ~ '\wV'
             THEN
@@ -67,7 +69,8 @@ CREATE TEMPORARY VIEW class_390 AS (
                             transitional_land.source_scale,
                             linz_dvr_full_.source_scale
                         ], NULL)
-                    ))::int4range -- source_scale
+                    ))::int4range, -- source_scale
+                    NULL
                 )::nzlum_type
                 ELSE ROW(
                     ARRAY[]::TEXT[], -- lu_code_ancillary
@@ -82,7 +85,8 @@ CREATE TEMPORARY VIEW class_390 AS (
                     range_merge(
                         transitional_land.source_scale,
                         linz_dvr_full_.source_scale
-                    )
+                    ),
+                    NULL
                 )::nzlum_type
                 END 
             END
@@ -138,7 +142,8 @@ CREATE TEMPORARY VIEW class_390 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_dvr_vacant_built.source_data]::TEXT[],
             linz_dvr_vacant_built.source_date,
-            linz_dvr_vacant_built.source_scale
+            linz_dvr_vacant_built.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
             linz_crosl_indeterminate.h3_index IS NOT NULL 
@@ -151,55 +156,86 @@ CREATE TEMPORARY VIEW class_390 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_crosl_indeterminate.source_data]::TEXT[],
             linz_crosl_indeterminate.source_date,
-            linz_crosl_indeterminate.source_scale
+            linz_crosl_indeterminate.source_scale,
+            NULL
         )::nzlum_type
     END AS nzlum_type
     FROM (
-        SELECT *,
-        (improvements_value_ratio < 0.1) AS low_ratio_improvements
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use,
+            category,
+            "zone",
+            (improvements_value_ratio < 0.1) AS low_ratio_improvements
         FROM linz_dvr_
-        WHERE actual_property_use IN (
-            '00', -- Multi-use at primary level: Vacant or intermediate
-            '19',
-            '29', -- Lifestyle: vacant
-            '39', -- Transport: vacant
-            '49', -- Community services: vacant
-            '59', -- Recreational: vacant
-            '69', -- Utility services: vacant
-            '79', -- Industrial: vacant
-            '89', -- Commercial: vacant
-            '99' -- Residential: vacant
-        )
-        OR "zone" ~ '^[24789].*' -- Lifestyle, community use, recreational, industrial, commercial or residential zones
-        OR "zone" = '0X' -- Land in more than one zone or designation -- TODO lower confidence; and check ratio of improvement to capital value
+        WHERE
+            actual_property_use IN (
+                '00', -- Multi-use at primary level: Vacant or intermediate
+                '19',
+                '29', -- Lifestyle: vacant
+                '39', -- Transport: vacant
+                '49', -- Community services: vacant
+                '59', -- Recreational: vacant
+                '69', -- Utility services: vacant
+                '79', -- Industrial: vacant
+                '89', -- Commercial: vacant
+                '99' -- Residential: vacant
+            )
+            OR "zone" ~ '^[24789].*' -- Lifestyle, community use, recreational, industrial, commercial or residential zones
+            OR "zone" = '0X' -- Land in more than one zone or designation
     ) AS linz_dvr_vacant_built
-    FULL OUTER JOIN linz_dvr_ AS linz_dvr_full_ USING (h3_index)
-    FULL OUTER JOIN transitional_land USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use,
+            category
+        FROM linz_dvr_
+    ) AS linz_dvr_full_ USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
+        FROM transitional_land
+    ) AS transitional_land USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
         FROM linz_crosl_
-        WHERE managed_by = 'To Be Determined'
-        AND statutory_actions IS NULL
+        WHERE
+            managed_by = 'To Be Determined'
+            AND statutory_actions IS NULL
     ) linz_crosl_indeterminate USING (h3_index)
     LEFT JOIN (
         SELECT
-            urban_rural_2025_h3.h3_index,
-            urban_rural_2025.IUR2025_V1_00
+            h3_index,
+            IUR2025_V1_00
         FROM urban_rural_2025_h3
         JOIN urban_rural_2025 USING (ogc_fid)
-        WHERE :parent::h3index = h3_partition
-        AND urban_rural_2025.IUR2025_V1_00 <> '22' -- (non) "Rural other"
+        WHERE
+            :parent::h3index = h3_partition
+            AND urban_rural_2025.IUR2025_V1_00 <> '22' -- (non) "Rural other"
     ) AS urban_rural_2025_ USING (h3_index)
 );
 
-
--- TODO actual use in rural (vacant) but category R or LV and zoned residential - very high confidence
 
 -- \d9 land that is L = high confidence
 -- NB : L --> Lifestyle land, generally in a rural area, where the predominant use is for a residence and, if vacant, there **is a right to build a dwelling.** (therefore this should be class 3)
 
 -- CROSL land that is indeterminate
 
--- TODO hail (contaminated brownfield?)
+-- Chch/Gisborne Red Zone in urban areas
 
--- TODO Chch/Gisborne Red Zone in urban areas
+-- TODO actual use in rural (vacant) but category R or LV and zoned residential - very high confidence
+
+-- TODO hail (contaminated brownfield?)

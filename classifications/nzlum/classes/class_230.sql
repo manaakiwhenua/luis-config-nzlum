@@ -18,7 +18,6 @@ CREATE TEMPORARY VIEW class_230 AS (
                 OR winter_forage_.manage IS NOT NULL
             ) AND linz_dvr_.improvements_description !~ '\m(ORCHARD|NURSERY)\M'
             AND linz_dvr_.improvements_description !~ '\m(GREEN|SHADE|GLASS)\s?(HOUSE|HSE)\M'
-            -- TODO irrigation
             THEN CASE
                 WHEN linz_dvr_.actual_property_use = '13' -- Arable farming
                 THEN CASE
@@ -158,21 +157,37 @@ CREATE TEMPORARY VIEW class_230 AS (
                 seasonal_crops.source_scale,
                 winter_forage_.source_scale
             ], NULL)
-        ))::int4range -- source_scale
+        ))::int4range, -- source_scale
+        NULL
     )::nzlum_type AS nzlum_type
     -- commodity type?
     FROM (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_scale,
+            source_date
         FROM lcdb_
-        WHERE class_2018 = '30' -- Short-rotation Cropland
+        WHERE class_2018 = 30 -- Short-rotation Cropland
     ) lcdb_
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_scale,
+            source_date
         FROM lum_
         WHERE lucid_2020 = '78 - Cropland - Annual'
     ) lum_ USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_scale,
+            source_date,
+            actual_property_use,
+            category,
+            improvements_description
         FROM linz_dvr_
         WHERE actual_property_use IN (
             '10', -- Multi-use within rural industry
@@ -188,13 +203,24 @@ CREATE TEMPORARY VIEW class_230 AS (
         OR category ~ '^H(B|F|M|X)(A|B|C|D|E|F)?' -- Berry fruits, flowers, market gardens, other hort/mixed
     ) linz_dvr_ USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_scale,
+            source_date,
+            manage
         FROM irrigation_
         WHERE ts_notes IS NULL -- Very important 
         OR NOT (ts_notes @@ to_tsquery('english', 'sports & field | golf & course'))
     ) irrigation_ USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_scale,
+            source_date,
+            manage,
+            commod
         FROM crop_maps
         WHERE commod && ARRAY[
             'broccoli',
@@ -218,7 +244,16 @@ CREATE TEMPORARY VIEW class_230 AS (
             'grazing rotational'
         ]
     ) AS seasonal_crops USING (h3_index)
-    FULL OUTER JOIN winter_forage_ USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT
+            h3_index,
+            source_data,
+            source_scale,
+            source_date,
+            manage
+        FROM winter_forage_
+        WHERE manage IS NOT NULL
+    ) AS winter_forage_ USING (h3_index)
 );
 -- LCDB and LUM are good
 -- DVR helps too; for places in grass that are actually part of an arable rotation, LCDB will not have captured, so DVR actual use is key

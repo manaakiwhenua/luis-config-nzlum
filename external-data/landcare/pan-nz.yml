@@ -2,13 +2,13 @@ external_data:
   pan_nz_draft:
     layer: PAN-NZ_Draft
     description: |-
-      PAN-NZ Draft (2025)
+      PAN-NZ Draft H3 12 (2025)
     license: https://creativecommons.org/licenses/by/4.0/
-    attribution: NULL # TODO
-    external_data_type: file
-    file:
-      # local: /home/lawr/PAN-NZ/PAN-NZ_Draft.gpkg # NB has erroneous data from Waikato region in incorrect projection
-      local: /home/lawr/PAN-NZ/PAN-NZ_Draft-v0-0-2.gpkg # Corrected
+    attribution: # TODO
+    external_data_type: wfs
+    host: https://lris.scinfo.org.nz/services;key={key}/wfs
+    key: LRIS_KEY
+    layer: layer-122065
     geom_type: multipolygon
     derived_columns:
       - column: source_data
@@ -19,13 +19,13 @@ external_data:
         set_query: |-
           (CASE
             WHEN source_start_date IS NOT NULL AND source_end_date IS NOT NULL
-              THEN daterange(source_start_Date::DATE, source_end_date::DATE, '[]')
+              THEN daterange(source_start_date::DATE, source_end_date::DATE, '[]')
             WHEN source_start_date IS NULL AND source_end_date IS NULL
-              THEN daterange(NULL, '2025-03-31', '(]')
+              THEN daterange(NULL, '2025-04-15'::DATE, '(]')
             WHEN source_start_date IS NOT NULL
-              THEN daterange(source_start_date::DATE, NULL, '[)')
+              THEN daterange(source_start_date::DATE, GREATEST(source_start_date::DATE, '2025-04-15'::DATE), '[]')
             WHEN source_end_date IS NOT NULL
-              THEN daterange(NULL, source_end_date::DATE, '(]')
+              THEN daterange(LEAST(source_end_date::DATE, '2025-04-15'::DATE), source_end_date::DATE, '[]')
           END)
       - column: source_scale
         datatype: int4range

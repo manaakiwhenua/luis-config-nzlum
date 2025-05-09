@@ -1,6 +1,6 @@
 __mpi__: &mpi
   external_data_type: arcgis_rest
-  license: null # Open data, no license
+  license: 'MPI: "The data is available to view on a map, and can also be downloaded for use in Geographic Information Systems.'
   attribution: Ministry for Primary Industries
 
 external_data:

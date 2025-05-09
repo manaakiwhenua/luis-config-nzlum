@@ -1,4 +1,4 @@
--- TODO handle overlapping features
+-- NB ensure to handle overlapping features
 CREATE TEMPORARY VIEW consents_forestry AS
 WITH forestry_hbrc AS (
     SELECT

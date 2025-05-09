@@ -1,5 +1,4 @@
 CREATE TEMPORARY VIEW water_features AS (
-    -- TODO record scale of water featuere? 1:50000
     SELECT * FROM (
         SELECT h3_index,
         COALESCE(
@@ -25,6 +24,8 @@ CREATE TEMPORARY VIEW water_features AS (
             ice.feature,
 
             mud.feature,
+
+            reefs.feature,
 
             CASE
                 WHEN (
@@ -177,9 +178,17 @@ CREATE TEMPORARY VIEW water_features AS (
             WHERE :parent::h3index = h3_partition
         ) AS fenz_lakes_
         USING (h3_index)
-    -- TODO topo50_river (i.e. centrelines),,
+        LEFT JOIN (
+            SELECT h3_index, 'reef' AS feature
+            FROM topo50_reefs_h3
+            WHERE :parent::h3index = h3_partition
+            UNION ALL
+            SELECT h3_index, 'reef' AS feature
+            FROM topo50_chatham_reefs_h3
+            WHERE :parent::h3index = h3_partition
+        ) AS reefs
+        USING (h3_index)
     -- TODO estuary?
-    -- TODO hydro parcels?
     )
     WHERE feature IS NOT NULL
 );

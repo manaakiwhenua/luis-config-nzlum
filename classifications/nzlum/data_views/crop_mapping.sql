@@ -2,6 +2,7 @@ CREATE TEMPORARY VIEW crop_maps AS (
     SELECT
         DISTINCT ON (h3_index)
         h3_index,
+        h3_partition,
         crop, -- Source input, TEXT
         commod, -- Controlled vocab, TEXT[]
         manage, -- Controlled vocab, TEXT[]

@@ -12,7 +12,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
             ARRAY[]::TEXT[],
             ARRAY[topo_airport.source_data]::TEXT[],
             topo_airport.source_date,
-            topo_airport.source_scale
+            topo_airport.source_scale,
+            NULL
         )::nzlum_type
         WHEN topo50_runways.h3_index IS NOT NULL
         THEN ROW(
@@ -26,7 +27,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
             ARRAY[]::TEXT[],
             ARRAY[topo50_runways.source_data]::TEXT[],
             topo50_runways.source_date,
-            topo50_runways.source_scale
+            topo50_runways.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
             topo_rail.h3_index IS NOT NULL
@@ -49,13 +51,14 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
                     topo_rail.source_scale,
                     topo_road.source_scale
                 ], NULL
-            )))::int4range
+            )))::int4range,
+            NULL
         )::nzlum_type
         WHEN hail_transport.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
-                WHEN hail_category_count = 1
+                WHEN hail_transport.hail_category_count = 1
                     THEN 2
                 ELSE 4 -- Less confidence when there is a mixed HAIL classification
             END,
@@ -63,7 +66,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
             ARRAY[]::TEXT[],
             ARRAY[hail_transport.source_data]::TEXT[],
             hail_transport.source_date,
-            hail_transport.source_scale
+            hail_transport.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
             parcel_rail.h3_index IS NOT NULL
@@ -78,21 +82,20 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
             END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
-            ARRAY[lcdb_.source_data, parcel_rail.source_data, parcel_road.source_data]::TEXT[],
+            ARRAY[parcel_rail.source_data, parcel_road.source_data]::TEXT[],
             range_merge(datemultirange(
                 VARIADIC ARRAY_REMOVE(ARRAY[
                     parcel_rail.source_date,
-                    parcel_road.source_date,
-                    lcdb_.source_date
+                    parcel_road.source_date
                 ], NULL)
             ))::daterange,
             range_merge(int4multirange(
                 VARIADIC ARRAY_REMOVE(ARRAY[
                     parcel_rail.source_scale,
-                    parcel_road.source_scale,
-                    lcdb_.source_scale
+                    parcel_road.source_scale
                 ], NULL)
-            ))::int4range
+            ))::int4range,
+            NULL
         )::nzlum_type
         WHEN dvr_transport.h3_index IS NOT NULL
         THEN ROW(
@@ -106,7 +109,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
             ARRAY[]::TEXT[],
             ARRAY[dvr_transport.source_data]::TEXT[],
             dvr_transport.source_date,
-            dvr_transport.source_scale
+            dvr_transport.source_scale,
+            NULL
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -230,13 +234,23 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         WHERE :parent::h3index = h3_partition
     ) AS topo50_runways USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use
         FROM linz_dvr_
         WHERE actual_property_use LIKE '3%' -- Transport
         OR actual_property_use = '03' -- Multi-use within transport
     ) AS dvr_transport USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            hail_category_count
         FROM hail
         WHERE hail_category_ids @> ARRAY[
             'F1', -- Airports including fuel storage, workshops, washdown areas, or fire practice areas 
@@ -244,15 +258,14 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
             'F6' -- Railway yards including goods-handling yards, workshops, refuelling facilities or maintenance areas
         ]
     ) AS hail_transport USING (h3_index)
-    LEFT JOIN lcdb_ USING (h3_index)
     LEFT JOIN (
         SELECT
-            urban_rural_2025_h3.h3_index,
-            urban_rural_2025.IUR2025_V1_00
+            h3_index,
+            IUR2025_V1_00
         FROM urban_rural_2025_h3
         JOIN urban_rural_2025 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
     ) AS urban_rural_2025_ USING (h3_index)
 );
 
--- TODO CROSL Ports of Auckland, Airways, etc.
+-- TODO CROSL Ports of Auckland, Airways, etc.?

@@ -26,7 +26,8 @@ CREATE TEMPORARY VIEW class_380 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_landfill.source_data]::TEXT[],
             topo50_landfill.source_date,
-            topo50_landfill.source_scale
+            topo50_landfill.source_scale,
+            NULL
         )::nzlum_type
         WHEN topo50_pond.h3_index IS NOT NULL
         THEN ROW(
@@ -36,27 +37,28 @@ CREATE TEMPORARY VIEW class_380 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[topo50_pond.source_data]::TEXT[],
             topo50_pond.source_date,
-            topo50_pond.source_scale
+            topo50_pond.source_scale,
+            NULL
         )::nzlum_type
         WHEN linz_dvr_sanitary.h3_index IS NOT NULL
         THEN
             CASE
                 WHEN (
-                        actual_property_use IN (
+                        linz_dvr_sanitary.actual_property_use IN (
                         '06', -- Multi-use at primary level - utility services
                         '60', -- Multi-use within utility services
                         '65' -- Utility services - sanitary
                     )
-                    OR improvements_evidence IS TRUE
+                    OR linz_dvr_sanitary.improvements_evidence IS TRUE
                 )
                 THEN ROW(
                     ARRAY[]::TEXT[], -- lu_code_ancillary
                     CASE
-                        WHEN improvements_evidence IS TRUE AND category_evidence IS TRUE
+                        WHEN linz_dvr_sanitary.improvements_evidence IS TRUE AND category_evidence IS TRUE
                         THEN 1
-                        WHEN improvements_evidence IS TRUE
+                        WHEN linz_dvr_sanitary.improvements_evidence IS TRUE
                         THEN 2
-                        WHEN category_evidence IS TRUE
+                        WHEN linz_dvr_sanitary.category_evidence IS TRUE
                         THEN 3
                         WHEN lcdb_mines_and_dumps.h3_index IS NOT NULL
                         THEN 3
@@ -76,13 +78,14 @@ CREATE TEMPORARY VIEW class_380 AS (
                             lcdb_mines_and_dumps.source_scale,
                             linz_dvr_sanitary.source_scale
                         ], NULL)
-                    ))::int4range -- source_scale
+                    ))::int4range, -- source_scale
+                    NULL
                 )::nzlum_type
                 WHEN lcdb_mines_and_dumps.h3_index IS NOT NULL
                 THEN ROW(
                     ARRAY[]::TEXT[], -- lu_code_ancillary
                     CASE
-                        WHEN category_evidence IS TRUE
+                        WHEN linz_dvr_sanitary.category_evidence IS TRUE
                         THEN 4
                         ELSE 8
                     END,
@@ -100,7 +103,8 @@ CREATE TEMPORARY VIEW class_380 AS (
                             lcdb_mines_and_dumps.source_scale,
                             linz_dvr_sanitary.source_scale
                         ], NULL)
-                    ))::int4range -- source_scale
+                    ))::int4range, -- source_scale
+                    NULL
                 )::nzlum_type
                 ELSE NULL
             END
@@ -115,7 +119,8 @@ CREATE TEMPORARY VIEW class_380 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_crosl_sanitary.source_data]::TEXT[],
             linz_crosl_sanitary.source_date,
-            linz_crosl_sanitary.source_scale
+            linz_crosl_sanitary.source_scale,
+            NULL
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -142,46 +147,61 @@ CREATE TEMPORARY VIEW class_380 AS (
         '[1,100]'::int4range AS source_scale
         FROM topo50_pond
         JOIN topo50_pond_h3 USING (ogc_fid)
-        WHERE :parent::h3index = h3_partition
-        AND pond_use IN (
-            'sewage',
-            'sewage treatment',
-            'oxidation'
-            -- TODO settling, sludge?
-            -- TODO join to parcel?
-        )
+        WHERE
+            :parent::h3index = h3_partition
+            AND pond_use IN (
+                'sewage',
+                'sewage treatment',
+                'oxidation'
+                -- TODO settling, sludge?
+                -- TODO join to parcel?
+            )
     ) topo50_pond USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *,
-        CASE
-            WHEN improvements_description ~ '\m(SEWER(AGE)?\s?PONDS?|(OX|OXIDATION)\s?PONDS?)\M'
-            THEN TRUE
-            ELSE FALSE
-        END AS improvements_evidence,
-        CASE
-            WHEN category ~ '^UC' -- Utility assets - civic, including storm water, sewerage, and water reticulation
-            THEN TRUE
-            ELSE FALSE
-        END AS category_evidence
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use,
+            CASE
+                WHEN improvements_description ~ '\m(SEWER(AGE)?\s?PONDS?|(OX|OXIDATION)\s?PONDS?)\M'
+                THEN TRUE
+                ELSE FALSE
+            END AS improvements_evidence,
+            CASE
+                WHEN category ~ '^UC' -- Utility assets - civic, including storm water, sewerage, and water reticulation
+                THEN TRUE
+                ELSE FALSE
+            END AS category_evidence
         FROM linz_dvr_
-        WHERE actual_property_use IN (
-            '06', -- Multi-use at primary level - utility services
-            '60', -- Multi-use within utility services
-            '65' -- Utility services - sanitary
-        )
-        OR improvements_description ~ '\m(SEWER(AGE)?\s?PONDS?|(OX|OXIDATION)\s?PONDS?)\M'
-        OR category ~ '^UC'
+        WHERE
+            actual_property_use IN (
+                '06', -- Multi-use at primary level - utility services
+                '60', -- Multi-use within utility services
+                '65' -- Utility services - sanitary
+            )
+            OR improvements_description ~ '\m(SEWER(AGE)?\s?PONDS?|(OX|OXIDATION)\s?PONDS?)\M'
+            OR category ~ '^UC'
     ) AS linz_dvr_sanitary USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *,
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
         CASE WHEN area_ha > 400 THEN TRUE ELSE FALSE END AS large
         FROM linz_crosl_
         WHERE statutory_actions ~* '\m(rubbish\sdump|landfill|waste\srecovery|soild\swaste|refuse\stransfer(\sstation)?|sanitary|recyling|(waste|storm)\s?water(\sretention)?|sew(er)?(age)?|drainage)\M'
     ) AS linz_crosl_sanitary USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
         FROM lcdb_
-        WHERE Class_2018 = '6' -- Surface Mine or Dump
+        WHERE Class_2018 = 6 -- Surface Mine or Dump
     ) AS lcdb_mines_and_dumps USING (h3_index)
 )
 

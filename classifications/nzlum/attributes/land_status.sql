@@ -209,8 +209,13 @@ CREATE TEMPORARY VIEW land_status AS (
                             managed_by
                         ]
 
-                    -- TODO 
-                    -- "The Wellington Regional Stadium Trust Incorporated" (charitable trust)
+                    WHEN managed_by IN (
+                        'Wellington Regional Stadium Trust' -- (Charitable Trust; BoT appointed by WCC and GWRC)
+                    )
+                        THEN ARRAY[
+                            'Charitable Trusts',
+                            managed_by
+                        ]
                 END
             END AS land_status
         FROM cleaned_crosl
@@ -244,7 +249,8 @@ CREATE TEMPORARY VIEW land_status AS (
                 WHEN legislation_act = 'TE_TURE_WHENUA_MAORI_ACT' AND legislation_section = 'MAORI_RESERVATION'
                     THEN ARRAY[
                         'Private',
-                        'Māori Reservation'
+                        'Māori',
+                        'Reservation'
                     ]
                 
                 WHEN legislation_act = 'LOCAL_GOVERNMENT_ACT' AND legislation_section IN ('S139_REGIONAL_PARKS', 'S139_REGIONAL_PARK')
@@ -291,6 +297,50 @@ CREATE TEMPORARY VIEW land_status AS (
                 ELSE NULL
             END ASC NULLS LAST, -- Prefer greater protection status
             source_id -- Tie-break
+    ),
+    linz_dvr_ownership_codes AS (
+        -- https://data.linz.govt.nz/table/105627-nz-properties-ownership/
+        -- this is in linz_dvr as 'ownership code'
+        -- 0: Not listed
+        -- 1: Individual ownership
+        -- 2: Company ownership (not Crown-owned)
+        -- 3 Public: Core Crown, e.g. ministry/department
+        -- 4 Public: Local authority
+        -- 5 Public: Non-Core Crown, e.g. state-owned enterprise/hospital/education/administering body of Crown Land
+        -- 6 Private: Māori - individual
+        -- 7 Private: Māori - tribal/incorporations/many owners
+        SELECT
+            DISTINCT ON (h3_index)
+            h3_index,
+            'DVR' AS _source,
+            CASE
+                WHEN ownership_code = 1
+                    THEN ARRAY['Private', 'Individual']
+                WHEN ownership_code = 2
+                    THEN ARRAY['Private', 'Company']
+                WHEN ownership_code = 3
+                    THEN ARRAY['Public Service', 'Departments'] -- Crown - ministries or departments
+                WHEN ownership_code = 4
+                    THEN ARRAY['Territorial Local Authorities']
+                WHEN ownership_code = 5
+                    THEN ARRAY['Crown entities']
+                WHEN ownership_code = 6
+                    THEN ARRAY['Private', 'Māori', 'Individual']
+                WHEN ownership_code = 7
+                    THEN ARRAY['Private', 'Māori', 'Corporate']
+                WHEN ownership_code = 0
+                    THEN NULL -- Not listed, NB often overlaps other valid codes
+                ELSE NULL
+            END AS land_status
+        FROM linz_dvr_
+        WHERE NOT EXISTS (
+            -- Only if not present in CROSL
+            SELECT 1 FROM crosl_land_status WHERE crosl_land_status.h3_index = linz_dvr_.h3_index
+        ) AND NOT EXISTS (
+            -- Only if not present in PAN-NZ
+            SELECT 1 FROM pan_nz_draft_land_status WHERE pan_nz_draft_land_status.h3_index = linz_dvr_.h3_index
+        )
+        ORDER BY h3_index
     )
     SELECT DISTINCT ON (h3_index) *
     FROM (
@@ -299,21 +349,17 @@ CREATE TEMPORARY VIEW land_status AS (
         UNION ALL
         SELECT * FROM pan_nz_draft_land_status
         WHERE land_status IS NOT NULL
+        UNION ALL
+        SELECT * FROM linz_dvr_ownership_codes
+        WHERE land_status IS NOT NULL
     ) combined
     
     ORDER BY h3_index, CASE
+        -- Preferential order for conflicts/duplicates
         WHEN _source = 'CRoSL' THEN 0
         WHEN _source = 'PAN-NZ' THEN 1
-    END ASC NULLS LAST -- Prefer CRoSL if there's a conflict or duplicate
+        WHEN _source = 'DVR' THEN 2
+    END ASC NULLS LAST
 );
-
--- TODO https://data.linz.govt.nz/table/105627-nz-properties-ownership/
--- this is already in linz_dvr as 'ownership code'
--- BUt there are also values 0, 1, 2 etc. which mean ???
--- 3 Public: Core Crown, e.g. ministry/department
--- 4 Public: Local authority
--- 5 Public: Non-Core Crown, e.g. state-owned enterprise/hospital/education/administering body of Crown Land
--- 6 Private: Māori - individual
--- 7 Private: Māori - tribal/incorporations/many owners
 
 -- TODO Maori land court: https://api.service.maorilandcourt.govt.nz/geoserver/wfs/mlgis

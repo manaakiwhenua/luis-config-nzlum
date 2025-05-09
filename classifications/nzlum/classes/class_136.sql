@@ -34,7 +34,8 @@ CREATE TEMPORARY VIEW class_136 AS (
             range_merge(
                 linz_crosl_nzdf.source_scale,
                 linz_dvr_.source_scale
-            )::int4range
+            )::int4range,
+            NULL
         )::nzlum_type
         WHEN linz_dvr_.actual_property_use = '45' -- Defence
         AND lcdb_built_up.h3_index IS NULL
@@ -45,7 +46,8 @@ CREATE TEMPORARY VIEW class_136 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_dvr_.source_data]::TEXT[],
             linz_dvr_.source_date,
-            linz_dvr_.source_scale
+            linz_dvr_.source_scale,
+            NULL
         )::nzlum_type
         WHEN linz_crosl_nzdf.h3_index IS NOT NULL
         THEN ROW(
@@ -77,7 +79,8 @@ CREATE TEMPORARY VIEW class_136 AS (
                     linz_crosl_nzdf.source_scale,
                     linz_dvr_.source_scale
                 ], NULL)
-            ))::int4range -- source_scale
+            ))::int4range, -- source_scale
+            NULL
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type

@@ -12,7 +12,8 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
             ARRAY[]::TEXT[], -- manage
             ARRAY[private_hospitals.source_data]::TEXT[],
             private_hospitals.source_date,
-            private_hospitals.source_scale
+            private_hospitals.source_scale,
+            NULL
         )::nzlum_type
         WHEN dvr_commercial.h3_index IS NOT NULL
         THEN ROW(
@@ -56,11 +57,21 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
             ARRAY[]::TEXT[],
             ARRAY[dvr_commercial.source_data]::TEXT[],
             dvr_commercial.source_date,
-            dvr_commercial.source_scale
+            dvr_commercial.source_scale,
+            NULL
         )::nzlum_type
     END AS nzlum_type
     FROM (
-        SELECT * FROM linz_dvr_
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use,
+            category,
+            improvements_value,
+            improvements_description
+        FROM linz_dvr_
         WHERE (
             actual_property_use ~ '^8'
             OR actual_property_use = '08'
@@ -73,28 +84,29 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
         )
     ) dvr_commercial
     FULL OUTER JOIN (
-        SELECT *,
-        'LINZ' AS source_data,
-        daterange(
-            last_modified::DATE,
-            last_modified::DATE,
-            '[]'
-        ) AS source_date, -- source_date
-        CASE
-            WHEN urban_rural_2025_.IUR2025_V1_00 IN (
-                '11', -- major urban
-                '12', -- large urban
-                '13', -- medium urban
-                '14' -- small urban
-            ) -- 0.1 - 1 m in urban areas
-            THEN '(0,1]'::int4range
-            WHEN urban_rural_2025_.IUR2025_V1_00 IN (
-                '21', -- rural settlement
-                '22' -- rural other
-            ) -- 1 - 100 m in rural areas
-            THEN '[1,100]'::int4range
-            ELSE 'empty'::int4range
-        END AS source_scale-- source_scale
+        SELECT
+            h3_index,
+            'LINZ' AS source_data,
+            daterange(
+                last_modified::DATE,
+                last_modified::DATE,
+                '[]'
+            ) AS source_date, -- source_date
+            CASE
+                WHEN urban_rural_2025_.IUR2025_V1_00 IN (
+                    '11', -- major urban
+                    '12', -- large urban
+                    '13', -- medium urban
+                    '14' -- small urban
+                ) -- 0.1 - 1 m in urban areas
+                THEN '(0,1]'::int4range
+                WHEN urban_rural_2025_.IUR2025_V1_00 IN (
+                    '21', -- rural settlement
+                    '22' -- rural other
+                ) -- 1 - 100 m in rural areas
+                THEN '[1,100]'::int4range
+                ELSE 'empty'::int4range
+            END AS source_scale
         FROM nz_facilities
         JOIN nz_facilities_h3 USING (ogc_fid)
         LEFT JOIN (

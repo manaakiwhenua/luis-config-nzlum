@@ -114,7 +114,7 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     topo50_sand_h3.h3_index IS NOT NULL
                     OR topo50_land_h3.h3_index IS NULL
                 ) THEN NULL -- Impossible
-                WHEN lcdb_.Class_2018 IN (10, 12, 15, 16, 20, 21, 30, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
+                WHEN lcdb_.h3_index IS NOT NULL
                 THEN 0 -- Neutral evidence
                 ELSE 1 -- Negative evidence
             END
@@ -202,17 +202,42 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     pasture_practices.source_scale,
                     pastoral_consents.source_scale
                 ], NULL)
-            ))::int4range -- source_scale
+            ))::int4range, -- source_scale
+            NULL
         )::nzlum_type AS nzlum_type
         FROM lum_
         FULL OUTER JOIN (
-            SELECT * FROM linz_dvr_
+            SELECT 
+                h3_index,
+                source_data,
+                source_date,
+                source_scale,
+                improvements_description,
+                actual_property_use,
+                category
+            FROM linz_dvr_
             WHERE linz_dvr_.actual_property_use ~ '^1' -- Rural industry
             OR linz_dvr_.actual_property_use = '01' -- Multi-use at primary level, rural-industry
         ) linz_dvr_ USING (h3_index)
-        FULL OUTER JOIN lcdb_ USING (h3_index)
         FULL OUTER JOIN (
-            SELECT *
+            SELECT
+                h3_index,
+                source_data,
+                source_date,
+                source_scale
+            FROM lcdb_
+            WHERE Class_2018 IN (10, 12, 15, 16, 20, 21, 30, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
+        ) AS lcdb_ USING (h3_index)
+        FULL OUTER JOIN (
+            SELECT
+                h3_index,
+                source_data,
+                source_date,
+                source_scale,
+                confidence,
+                manage,
+                "status",
+                ts_notes
             FROM irrigation_
             WHERE (
                 ts_notes IS NULL -- Very important
@@ -220,18 +245,41 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             ) AND irrigation_.irrigation_type NOT LIKE 'Drip%'
         ) irrigation_ USING (h3_index)
         FULL OUTER JOIN (
-            SELECT *
+            SELECT
+                h3_index,
+                source_data,
+                source_date,
+                source_scale,
+                manage,
+                animal_count
             FROM dairy_effluent_discharge
-            WHERE :parent::h3index = h3_partition
         ) AS dairy_effluent_discharge USING (h3_index)
-        FULL OUTER JOIN winter_forage_ USING (h3_index)
-        FULL OUTER JOIN pastoral_consents USING (h3_index)
+        FULL OUTER JOIN (
+            SELECT
+                h3_index,
+                source_data,
+                source_date,
+                source_scale,
+                manage,
+                CertRating,
+                CR1Case
+            FROM winter_forage_
+        ) AS winter_forage_ USING (h3_index)
+        FULL OUTER JOIN (
+            SELECT
+                h3_index,
+                source_date,
+                source_scale,
+                source_data,
+                commod
+            FROM pastoral_consents
+        ) AS pastoral_consents USING (h3_index)
         LEFT JOIN (
-            SELECT *
+            SELECT h3_index
             FROM topo50_sand_h3
             WHERE :parent::h3index = h3_partition 
             UNION ALL
-            SELECT * 
+            SELECT h3_index
             FROM topo50_chatham_sand_h3
             WHERE :parent::h3index = h3_partition
         ) AS topo50_sand_h3 USING (h3_index)
@@ -256,9 +304,23 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             JOIN nzlri_lowcapability_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition 
         ) AS nzlri_lowcapability USING (h3_index)
-        LEFT JOIN consents_forestry USING (h3_index)
         LEFT JOIN (
-            SELECT h3_index, source_data, source_date, source_scale, manage, commod
+            SELECT
+                h3_index,
+                source_data,
+                source_date,
+                source_scale,
+                afforestation_flag
+            FROM consents_forestry
+        ) AS consents_forestry USING (h3_index)
+        LEFT JOIN (
+            SELECT
+                h3_index,
+                source_data,
+                source_date,
+                source_scale,
+                manage,
+                commod
             FROM crop_maps
             -- && is the overlap operator for TEXT[]
             -- So this selects rows where at least one of these is in the manage array
@@ -290,7 +352,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             (nzlum_type).manage,
             (nzlum_type).source_data,
             (nzlum_type).source_date,
-            (nzlum_type).source_scale
+            (nzlum_type).source_scale,
+            (nzlum_type).comment
         )::nzlum_type AS nzlum_type
     FROM unclamped_confidence
 );
@@ -308,8 +371,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
 
 -- MfE irrigation, considering status (i.e. current) and confidence; type as mgmt practice; notes as comment?
 
--- TODO NZLRI LUC lower confidence for luc 0 or 8, even a small lower confidence for class 7
+-- NZLRI LUC lower confidence for luc 0 or 8, even a small lower confidence for class 7?
 
--- NB CROSL does -not- directly identify crown pastoral leases
+-- NB CROSL does -not- directly identify Crown pastoral leases
 
--- TODO lower confidence with hydro parcel
+-- lower confidence with hydro parcel?

@@ -28,7 +28,8 @@ CREATE TEMPORARY VIEW class_350 AS (
             ARRAY[]::TEXT[],
             ARRAY[topo50_hydro_and_reservoirs.source_data]::TEXT[],
             topo50_hydro_and_reservoirs.source_date,
-            topo50_hydro_and_reservoirs.source_scale
+            topo50_hydro_and_reservoirs.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
             linz_dvr_utility_.h3_index IS NOT NULL
@@ -51,7 +52,8 @@ CREATE TEMPORARY VIEW class_350 AS (
             range_merge(
                 linz_dvr_utility_.source_scale,
                 linz_crosl_.source_scale
-            )::int4range
+            )::int4range,
+            NULL
         )::nzlum_type
         WHEN linz_crosl_.h3_index IS NOT NULL
         THEN ROW(
@@ -65,7 +67,8 @@ CREATE TEMPORARY VIEW class_350 AS (
             ARRAY[]::TEXT[],
             ARRAY[linz_crosl_.source_data]::TEXT[],
             linz_crosl_.source_date,
-            linz_crosl_.source_scale
+            linz_crosl_.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
             linz_dvr_utility_.actual_property_use ~ '6[01234678]'
@@ -92,13 +95,14 @@ CREATE TEMPORARY VIEW class_350 AS (
             ARRAY[]::TEXT[],
             ARRAY[linz_dvr_utility_.source_data]::TEXT[],
             linz_dvr_utility_.source_date,
-            linz_dvr_utility_.source_scale
+            linz_dvr_utility_.source_scale,
+            NULL
         )::nzlum_type
         WHEN hail_electric.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
-                WHEN hail_category_count = 1
+                WHEN hail_electric.hail_category_count = 1
                     THEN 1
                 ELSE 4 -- Less confidence when there is a mixed HAIL classification
             END,
@@ -106,11 +110,16 @@ CREATE TEMPORARY VIEW class_350 AS (
             ARRAY[]::TEXT[],
             ARRAY[hail_electric.source_data]::TEXT[],
             hail_electric.source_date,
-            hail_electric.source_scale
+            hail_electric.source_scale,
+            NULL
         )::nzlum_type
     END AS nzlum_type
     FROM (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
         FROM linz_crosl_
         WHERE managed_by IN (
             'Transpower New Zealand Limited',
@@ -121,12 +130,17 @@ CREATE TEMPORARY VIEW class_350 AS (
         ) OR statutory_actions ~* '\m(substation|electricity|water\s?power|pump\s?station|water\s?works)\M'
     ) AS linz_crosl_
     FULL OUTER JOIN (
-        SELECT *,
-        CASE
-            WHEN improvements_description ~ '\m(RESERVOIRS?)\M'
-            THEN TRUE
-            ELSE FALSE
-        END AS improvements_evidence
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use,
+            CASE
+                WHEN improvements_description ~ '\m(RESERVOIRS?)\M'
+                THEN TRUE
+                ELSE FALSE
+            END AS improvements_evidence
         FROM linz_dvr_
         WHERE
             actual_property_use ~ '6[01234678]' -- 65 is sanitary (better as 3.8.X) and 69 is vacant (3.9.X)
@@ -134,44 +148,51 @@ CREATE TEMPORARY VIEW class_350 AS (
             OR category ~ '^U[CEGT]' -- UP (postboxes) and UR (rail network corridors) excluded
     ) AS linz_dvr_utility_ USING (h3_index)
     FULL OUTER JOIN (
-        SELECT h3_index,
-        'LINZ' AS source_data,
-        daterange(
-            '2011-05-22'::DATE,
-            '2025-01-02'::DATE,
-            '[]'
-        ) AS source_date,
-        '[1,100]'::int4range AS source_scale
+        SELECT
+            h3_index,
+            'LINZ' AS source_data,
+            daterange(
+                '2011-05-22'::DATE,
+                '2025-01-02'::DATE,
+                '[]'
+            ) AS source_date,
+            '[1,100]'::int4range AS source_scale
         FROM topo50_lake
         JOIN topo50_lake_h3 USING (ogc_fid)
-        WHERE :parent::h3index = h3_partition
-        AND lake_use IN (
-            'hydro-electric',
-            'reservoir'
-        ) OR "name" IN ( -- Hydro-electric dams that are not identified as such in the LINZ Topo50 lakes dataset
-            'Lake Moawhango',
-            'Lake Rotoaira',
-            'Lake Otamangakau',
-            'Lake Te Whaiau',
-            'Lake Whakamaru',
-            'Lake Maraetai',
-            'Lake Arapuni'
-        )
+        WHERE
+            :parent::h3index = h3_partition
+            AND lake_use IN (
+                'hydro-electric',
+                'reservoir'
+            ) OR "name" IN ( -- Hydro-electric dams that are not identified as such in the LINZ Topo50 lakes dataset
+                'Lake Moawhango',
+                'Lake Rotoaira',
+                'Lake Otamangakau',
+                'Lake Te Whaiau',
+                'Lake Whakamaru',
+                'Lake Maraetai',
+                'Lake Arapuni'
+            )
     ) AS topo50_hydro_and_reservoirs USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            hail_category_count
         FROM hail
         WHERE hail_category_ids @> ARRAY[
             'B4' -- Power stations, substations or switchyards
         ]
     ) AS hail_electric USING (h3_index)
     LEFT JOIN (
-        SELECT *
+        SELECT h3_index
         FROM lcdb_
         WHERE Class_2018 NOT IN (
-            '1', -- Settlement
-            '2', -- Urban parkland open space
-            '5' -- Transport infrastructure
+            1, -- Settlement
+            2, -- Urban parkland open space
+            5 -- Transport infrastructure
         )
     ) AS lcdb_unbuilt USING (h3_index)
 );

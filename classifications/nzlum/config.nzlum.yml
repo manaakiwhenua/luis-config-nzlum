@@ -129,6 +129,9 @@ classifications:
       - topo50_chatham_cemetery
       - topo50_landfill_polygons
       - topo50_residential_areas
+      - topo50_fish_farms
+      - topo50_reefs
+      - topo50_chatham_reefs
       - winter_forage_2022
       - winter_forage_2023
       - nzlri_lowcapability
@@ -180,8 +183,8 @@ classifications:
       source_data: TEXT
       # source_data_doi: URI # requires https://github.com/petere/pguri
       source_date: DATERANGE
-      source_scale: INT4RANGE # TODO propose change to INTEGER and use precision as metres, e.g. 10 for 0-10 m accuracy.
-      # comments: TEXT # TODO absent from https://github.com/manaakiwhenua/nzsluc/tree/main/classification-systems/nzlum#data-structure
+      source_scale: INT4RANGE
+      comment: TEXT # TODO absent from https://github.com/manaakiwhenua/nzsluc/tree/main/classification-systems/nzlum#data-structure
     outputs:
       nzlum:
         publish: true
@@ -199,7 +202,7 @@ classifications:
           # - commod_ancillary
           - manage
           # - manage_ancillary
-          - land_estate # TODO mapping to terms in NZLUM standard, or leave as-is?
+          - land_estate
           - land_status
           - water
           - zone
@@ -210,6 +213,7 @@ classifications:
           # - source_data_doi
           - source_date
           - source_scale
+          - comment
         format: gpkg
     preclassify: luis-config-nzlum/classifications/nzlum/nzlum-preclassify.sql
     query: luis-config-nzlum/classifications/nzlum/nzlum.sql

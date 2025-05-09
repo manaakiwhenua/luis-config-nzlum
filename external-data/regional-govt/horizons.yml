@@ -6,7 +6,7 @@ __horizons__: &horizons
 external_data:
   horizons_reg_act:
     <<: *horizons
-    license: CC BY 4.0
+    license: https://creativecommons.org/licenses/by/4.0/
     description: Horizons RC regulatory activities (polygon only)
     host: https://services1.arcgis.com/VuN78wcRdq1Oj69W/arcgis/rest/services/OpenData_RegulatoryActivity/FeatureServer
     layer: "1"

@@ -1,10 +1,10 @@
--- TODO handle overlapping features
+-- NB ensure to handle overlapping features
 CREATE TEMPORARY VIEW pastoral_consents AS
 WITH hbrc_pastoral AS (
     SELECT
         DISTINCT ON (h3_index)
         h3_index,
-        source_date, -- TODO many have no or incomplete date information?
+        source_date,
         source_data,
         source_scale,
         CASE

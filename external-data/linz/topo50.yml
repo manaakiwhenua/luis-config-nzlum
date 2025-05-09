@@ -203,6 +203,7 @@ external_data:
     description: LINZ Topo 1:50k Road Centrelines
     layer: layer-50329
     geom_type: multipolygon
+    # clip: false
     replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 1.5 * lane_count + 1.5, 'endcap=round join=round')::geometry AS geom
     indices:
       - columns: [geom]
@@ -382,6 +383,24 @@ external_data:
     layer: layer-50325
     geom_type: multipolygon
 
-  # TODO reefs?
-  # https://data.linz.govt.nz/layer/50094-nz-chatham-island-reef-polygons-topo-150k/
-  # https://data.linz.govt.nz/layer/50323-nz-reef-polygons-topo-150k/
+  topo50_reefs:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Reef Polygons
+    layer: layer-50323
+    geom_type: multipolygon
+
+  topo50_chatham_reefs:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Chatham Island Reef Polygons
+    layer: layer-50094
+    geom_type: multipolygon
+
+  topo50_fish_farms:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k Fish Farm Polygons
+    layer: layer-50270
+    geom_type: multipolygon
+    indices:
+      - columns: [species]
+        type: btree
+        name: idx_species

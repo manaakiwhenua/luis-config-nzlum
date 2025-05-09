@@ -30,7 +30,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[recreational_ponds.source_data]::TEXT[],
             recreational_ponds.source_date,
-            recreational_ponds.source_scale
+            recreational_ponds.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
             golf_courses.h3_index IS NOT NULL AND dvr_public_rec_and_services.h3_index IS NOT NULL -- Clipping
@@ -52,7 +53,8 @@ CREATE TEMPORARY VIEW class_320 AS (
                     golf_courses.source_scale,
                     dvr_public_rec_and_services.source_scale
                 ], NULL
-            )))::int4range
+            )))::int4range,
+            NULL
         )::nzlum_type
         WHEN cemeteries.h3_index IS NOT NULL
         THEN ROW(
@@ -62,7 +64,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[cemeteries.source_data]::TEXT[],
             cemeteries.source_date,
-            cemeteries.source_scale
+            cemeteries.source_scale,
+            NULL
         )::nzlum_type
         WHEN sportsfields.h3_index IS NOT NULL
         THEN ROW(
@@ -72,7 +75,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[sportsfields.source_data]::TEXT[],
             sportsfields.source_date,
-            sportsfields.source_scale
+            sportsfields.source_scale,
+            NULL
         )::nzlum_type
         WHEN nz_facilities_.h3_index IS NOT NULL
         THEN ROW(
@@ -82,7 +86,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[nz_facilities_.source_data]::TEXT[], -- source_data
             nz_facilities_.source_date,
-            nz_facilities_.source_scale
+            nz_facilities_.source_scale,
+            NULL
         )::nzlum_type
         WHEN hail_gun_clubs.h3_index IS NOT NULL
         THEN ROW(
@@ -96,7 +101,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             ARRAY[]::TEXT[],
             ARRAY[hail_gun_clubs.source_data]::TEXT[],
             hail_gun_clubs.source_date,
-            hail_gun_clubs.source_scale
+            hail_gun_clubs.source_scale,
+            NULL
         )::nzlum_type
         WHEN pan_nz_draft_racecourses.h3_index IS NOT NULL
         THEN ROW(
@@ -106,7 +112,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             ARRAY[]::TEXT[],
             ARRAY[pan_nz_draft_racecourses.source_data]::TEXT[],
             pan_nz_draft_racecourses.source_date,
-            pan_nz_draft_racecourses.source_scale
+            pan_nz_draft_racecourses.source_scale,
+            NULL
         )::nzlum_type
         WHEN dvr_public_rec_and_services.h3_index IS NOT NULL
         THEN ROW(
@@ -144,7 +151,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[dvr_public_rec_and_services.source_data]::TEXT[], -- source_data
             dvr_public_rec_and_services.source_date,
-            dvr_public_rec_and_services.source_scale
+            dvr_public_rec_and_services.source_scale,
+            NULL
         )::nzlum_type
         WHEN lcdb_.h3_index IS NOT NULL
         THEN ROW(
@@ -154,7 +162,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[lcdb_.source_data]::TEXT[], -- source_data
             lcdb_.source_date,
-            lcdb_.source_scale
+            lcdb_.source_scale,
+            NULL
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -300,7 +309,11 @@ CREATE TEMPORARY VIEW class_320 AS (
         )
     ) AS dvr_public_rec_and_services USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
         FROM lcdb_
         WHERE Class_2018 = 2 -- Urban Parkland/Open Space
     ) lcdb_ USING (h3_index)
@@ -319,7 +332,12 @@ CREATE TEMPORARY VIEW class_320 AS (
         AND pond_use = 'ice skating'
     ) AS ice_skating USING (h3_index)
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            hail_category_count
         FROM hail
         WHERE hail_category_ids @> ARRAY[
             'C2' -- Gun clubs or rifle ranges, including clay targets clubs that use lead munitions outdoors
@@ -343,14 +361,7 @@ CREATE TEMPORARY VIEW class_320 AS (
     ) AS pan_nz_draft_racecourses USING (h3_index)
 );
 
--- TODO use EducationCounts' ECE and other facilities data (arbitrary JSON format)
-
--- TODO use CROSL
-
 -- use DVR
     -- improvement "FIRE STN" "HOSPITAL", etc.
 
-
-
-
-
+-- TODO use CROSL?

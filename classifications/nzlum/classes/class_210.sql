@@ -25,7 +25,8 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
                     topo50_exotic_polygons_.source_scale,
                     lum_.source_scale
                 ], NULL)
-            ))::int4range -- source_scale
+            ))::int4range, -- source_scale
+            NULL
         )::nzlum_type
         WHEN lum_.subid_2020 = '122 - Wilding trees'
         THEN ROW(
@@ -42,7 +43,8 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
             ARRAY[]::TEXT[],
             ARRAY[lum_.source_data]::TEXT[], -- source_data
             lum_.source_date,
-            lum_.source_scale
+            lum_.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
             consents_forestry.h3_index IS NOT NULL
@@ -51,7 +53,6 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
                 OR lum_.h3_index IS NOT NULL
             )
         )
-        -- TODO lower confidence with hydro parcels?
         THEN ROW (
             ARRAY[]::TEXT[],
             1,
@@ -71,7 +72,8 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
                     consents_forestry.source_scale,
                     lum_.source_scale
                 ], NULL)
-            ))::int4range -- source_date
+            ))::int4range, -- source_date
+            NULL
         )::nzlum_type
         WHEN (
             consents_forestry.h3_index IS NULL
@@ -103,7 +105,8 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
                     topo50_exotic_polygons_.source_scale,
                     lum_.source_scale
                 ], NULL)
-            ))::int4range
+            ))::int4range,
+            NULL
         )::nzlum_type
         WHEN consents_forestry.afforestation_flag IS TRUE
         THEN ROW ( -- Very recent forests?
@@ -113,13 +116,19 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
             ARRAY[]::TEXT[],
             ARRAY[consents_forestry.source_data]::TEXT[],
             consents_forestry.source_date,
-            consents_forestry.source_scale
+            consents_forestry.source_scale,
+            NULL
         )::nzlum_type
     END AS nzlum_type
     -- commodity type? pinus radiata, douglas fir (lum_.subid_2020)
     -- species (topo50: empty=coniferous, and "non-coniferous")
     FROM (
-        SELECT *
+        SELECT 
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            subid_2020
         FROM lum_
         WHERE lum_.lucid_2020 IN (
             '72 - Planted Forest - Pre 1990',
@@ -127,36 +136,48 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
         )
     ) AS lum_
     FULL OUTER JOIN (
-        SELECT *,
-        DATERANGE(
-            '2011-05-22',
-            '2025-03-07',
-            '[]'
-        ) AS source_date,
-        'LINZ' AS source_data,
-        '[60,100)'::int4range AS source_scale
+        SELECT
+            h3_index,
+            DATERANGE(
+                '2011-05-22',
+                '2025-03-07',
+                '[]'
+            ) AS source_date,
+            'LINZ' AS source_data,
+            '[60,100)'::int4range AS source_scale
         FROM topo50_exotic_polygons_h3
         WHERE :parent::h3index = h3_partition
+
         UNION ALL
-        SELECT *,
-        DATERANGE(
-            '2011-05-22',
-            '2024-03-20',
-            '[]'
-        ) AS source_date,
-        'LINZ' AS source_data,
-        '[60,100)'::int4range AS source_scale
+
+        SELECT
+            h3_index,
+            DATERANGE(
+                '2011-05-22',
+                '2024-03-20',
+                '[]'
+            ) AS source_date,
+            'LINZ' AS source_data,
+            '[60,100)'::int4range AS source_scale
         FROM topo50_chatham_exotic_polygons_h3
         WHERE :parent::h3index = h3_partition
     ) topo50_exotic_polygons_ USING (h3_index)
-    FULL OUTER JOIN consents_forestry USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            afforestation_flag
+        FROM consents_forestry
+    ) AS consents_forestry USING (h3_index)
     LEFT JOIN (
         SELECT h3_index
         FROM pan_nz_draft_h3
         WHERE :parent::h3index = h3_partition
     ) AS pan_nz_draft_h3 USING (h3_index)
     LEFT JOIN (
-        SELECT *
+        SELECT h3_index
         FROM urban_rural_2025
         JOIN urban_rural_2025_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
@@ -168,5 +189,3 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
         )
     ) AS rural USING (h3_index)
 );
--- TODO use CROSL
--- TODO use DVR

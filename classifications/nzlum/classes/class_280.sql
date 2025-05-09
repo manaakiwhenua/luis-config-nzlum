@@ -17,8 +17,8 @@ CREATE TEMPORARY VIEW class_280 AS (
     CASE
         WHEN
             -- "Red Zone" etc., abandoned land (not in a settlement)
-            transitional_land.h3_index IS NOT NULL
-            AND urban_rural_2025_.IUR2025_V1_00 = '22' -- Rural other
+            rural_other.h3_index IS NOT NULL
+            AND transitional_land.h3_index IS NOT NULL
         THEN ROW (
             ARRAY[]::TEXT[], -- lu_code_ancillary
             1,
@@ -26,18 +26,21 @@ CREATE TEMPORARY VIEW class_280 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[transitional_land.source_data]::TEXT[],
             transitional_land.source_date,
-            transitional_land.source_scale
+            transitional_land.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
-            linz_dvr_.actual_property_use = '19' -- Rural vacant
+            lcdb_.h3_index IS NOT NULL
+            AND linz_dvr_.actual_property_use = '19' -- Rural vacant
             AND linz_dvr_.category ~ '^[ADFHOPS]'
         )
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
-                WHEN linz_dvr_.category ~ '^.V' -- Vacant category
-                THEN 1
-                WHEN improvements_value < 100000
+                WHEN (
+                    linz_dvr_.category LIKE '_V%' -- Vacant category
+                    OR improvements_value < 100000
+                )
                 THEN 1
                 ELSE 2
             END, -- confidence
@@ -45,17 +48,19 @@ CREATE TEMPORARY VIEW class_280 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_dvr_.source_data]::TEXT[],
             linz_dvr_.source_date,
-            linz_dvr_.source_scale
+            linz_dvr_.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
-            linz_dvr_.actual_property_use = '29' -- Lifestyle vacant
-            AND linz_dvr_.category ~ '^LV' -- i.e. without immediate subdivision potential
-            AND urban_rural_2025_.IUR2025_V1_00 = '22' -- Rural other
+            lcdb_.h3_index IS NOT NULL
+            AND rural_other.h3_index IS NOT NULL
+            AND linz_dvr_.actual_property_use = '29' -- Lifestyle vacant
+            AND linz_dvr_.category LIKE 'LV%' -- i.e. without immediate subdivision potential
         )
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
-                WHEN improvements_description ~'\mORCHARD\M'
+                WHEN improvements_description ~ '\mORCHARDS?\M'
                 THEN 5
                 ELSE 1
             END, -- confidence
@@ -63,16 +68,18 @@ CREATE TEMPORARY VIEW class_280 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_dvr_.source_data]::TEXT[],
             linz_dvr_.source_date,
-            linz_dvr_.source_scale
+            linz_dvr_.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
-            linz_dvr_.actual_property_use = '00' ---- Multi-use at primary level: vacant or intermediate
-            AND urban_rural_2025_.IUR2025_V1_00 = '22' -- Rural other
+            lcdb_.h3_index IS NOT NULL
+            AND rural_other.h3_index IS NOT NULL
+            AND linz_dvr_.actual_property_use = '00' ---- Multi-use at primary level: vacant or intermediate
         )
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             CASE
-                WHEN linz_dvr_.category ~ '^.V'
+                WHEN linz_dvr_.category LIKE '_V%'
                 THEN 1
                 ELSE 2
             END, -- confidence
@@ -80,7 +87,8 @@ CREATE TEMPORARY VIEW class_280 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_dvr_.source_data]::TEXT[],
             linz_dvr_.source_date,
-            linz_dvr_.source_scale
+            linz_dvr_.source_scale,
+            NULL
         )::nzlum_type
         WHEN crop_transitional.h3_index IS NOT NULL
         THEN ROW(
@@ -90,64 +98,86 @@ CREATE TEMPORARY VIEW class_280 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[crop_transitional.source_data]::TEXT[],
             crop_transitional.source_date,
-            crop_transitional.source_scale
+            crop_transitional.source_scale,
+            NULL
         )::nzlum_type
     END AS nzlum_type
     FROM (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use,
+            category,
+            improvements_value,
+            improvements_description
         FROM linz_dvr_
-        WHERE actual_property_use IN (
-            '00', 
-            '19', -- Rural industry: vacant
-            '29' -- Lifestyle: vacant
-            -- '39', -- Transport: vacant
-            -- '49', -- Community services: vacant
-            -- '59', -- Recreational: vacant
-            -- '69', -- Utility services: vacant
-            -- '79', -- Industrial: vacant
-            -- '89', -- Commercial: vacant
-            -- '99' -- Residential: vacant
-        )
-        AND (
-            "zone" ~ '^(0X|[1245][A-Z])'
-            OR linz_dvr_.category ~ '^[ADFHLOPS]V?'
-        )
+        WHERE
+            :parent::h3index = h3_partition
+            AND actual_property_use IN (
+                '00', 
+                '19', -- Rural industry: vacant
+                '29' -- Lifestyle: vacant
+            )
+            AND (
+                "zone" ~ '^(0X|[1245][A-Z])'
+                OR category ~ '^[ADFHLOPS]'
+            )
     ) AS linz_dvr_
-    INNER JOIN (
-        SELECT *
+    LEFT JOIN (
+        SELECT h3_index
         FROM lcdb_
-        WHERE lcdb_.class_2018 IN (
-            '10',
-            '12',
-            '16',
-            '30',
-            '33',
-            '40',
-            '41',
-            '44',
-            '51',
-            '56',
-            '64',
-            '71'
-        )
+        WHERE 
+            :parent::h3index = h3_partition
+            AND lcdb_.Class_2018 IN (
+                10,
+                12,
+                16,
+                30,
+                33,
+                40,
+                41,
+                44,
+                51,
+                56,
+                64,
+                71
+            )
     ) AS lcdb_ USING (h3_index)
     FULL OUTER JOIN (
         SELECT
-            urban_rural_2025_h3.h3_index,
-            urban_rural_2025.IUR2025_V1_00
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
+        FROM transitional_land
+        WHERE :parent::h3index = h3_partition
+    ) AS transitional_land USING (h3_index)
+    FULL OUTER JOIN (
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
+        FROM crop_maps
+        WHERE 
+            :parent::h3index = h3_partition
+            AND (
+                source_data = 'GDC'
+                AND crop = 'To Be Planted'
+            )
+    ) AS crop_transitional USING (h3_index)
+    LEFT JOIN (
+        SELECT
+            h3_index,
+            IUR2025_V1_00
         FROM urban_rural_2025_h3
         JOIN urban_rural_2025 USING (ogc_fid)
-        WHERE :parent::h3index = h3_partition
-    ) AS urban_rural_2025_ USING (h3_index)
-    FULL OUTER JOIN transitional_land USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT *
-        FROM crop_maps
-        WHERE (
-            source_data = 'GDC'
-            AND crop = 'To Be Planted'
-        )
-    ) AS crop_transitional USING (h3_index)
+        WHERE
+            :parent::h3index = h3_partition
+            AND IUR2025_V1_00 = '22' -- Rural other
+    ) AS rural_other USING (h3_index)
 )
 
 -- Lower confidence in urban areas, raise confidence in rural areas
@@ -155,13 +185,6 @@ CREATE TEMPORARY VIEW class_280 AS (
     -- 00 Multi-use at primary level: vacant or intermediate
     -- 19 Rural industry: vacant
     -- 29 Lifestyle: vacant
-    -- 39 Transport: vacant
-    -- 49 Community services: vacant
-    -- 59 Recreational: vacant
-    -- 69 Utility services: vacant
-    -- 79 Industrial: vacant
-    -- 89 Commercial: vacant
-    -- 99 Residential: vacant
 -- DVR zones:
     -- 0X land in more than one zone or designation
     -- 1[A-Z] rural
@@ -172,10 +195,10 @@ CREATE TEMPORARY VIEW class_280 AS (
 -- DVR category codes:
     -- [ADFHPS]
     -- NB : L --> Lifestyle land, generally in a rural area, where the predominant use is for a residence and, if vacant, there **is a right to build a dwelling.** (therefore this shuold be class 3)
-    -- NB : FP - protected forests of any type (TODO so exclude from consideration)
+    -- NB : FP - protected forests of any type (TODO so exclude from consideration?)
     -- NB: FV (vacant)
     -- NB : LV (Vacant or substantially unimproved land **without immediate subdivision potential**)
 -- DVR land with very low improvement value (rural zone etc)
+-- Chch/Gisborne Red Zone in rural areas
 
--- TODO HAIL contaminated land
--- TODO Chch/Gisborne Red Zone in rural areas
+-- TODO HAIL contaminated land?

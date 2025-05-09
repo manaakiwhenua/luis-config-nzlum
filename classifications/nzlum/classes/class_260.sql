@@ -12,7 +12,8 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
             marine_farms.manage,
             marine_farms.source_data,
             marine_farms.source_date,
-            marine_farms.source_scale
+            marine_farms.source_scale,
+            NULL
         )::nzlum_type
         WHEN (
             linz_dvr_.actual_property_use IN ('0', '00', '01', '1', '10', '16')
@@ -26,9 +27,13 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
             CASE
                 WHEN (
                     linz_dvr_.improvements_description ~ '\m(ANML|ANIMAL)\s?(SHLTR|SHELTER)S?\M'
-                    OR linz_dvr_.improvements_description ~ '\mSTABLES?\M'
-                    OR linz_dvr_.improvements_description ~ '\mDEER\M'
-                    OR linz_dvr_.improvements_description ~ '\mKENNELS?\M'
+                    OR linz_dvr_.improvements_description ~ '\m(STABLE|KENNEL)S?\M'
+                    OR linz_dvr_.improvements_description ~ '\m(EQUES|EQUESTRIAN)\s?(CTR|CENTER|CENTRE)?\M'
+                    -- OR linz_dvr_.improvements_description ~ '\mDEER\M'
+                    OR linz_dvr_.improvements_description ~ '\mPIGGERY\M'
+                    OR linz_dvr_.improvements_description ~ '\m(BROIL(ER)?|FOWL)\s?(HSE|HOUSE)S?\M'
+                    OR linz_dvr_.improvements_description ~ '\mPOULTRY\M'
+                    OR linz_dvr_.improvements_description ~ '\mEGG\sLAYING\M'
                 )
                 THEN 3
                 WHEN linz_dvr_.category ~ '[AB]$'
@@ -41,11 +46,15 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
             END, -- confidence
             ARRAY[
                 CASE
-                    WHEN linz_dvr_.category ~ '^SH' OR linz_dvr_.improvements_description ~ '\mSTABLES?\M'
+                    WHEN linz_dvr_.category ~ '^SH' OR linz_dvr_.improvements_description ~ '\m(STABLES?|((EQUES|EQUESTRIAN)\s?(CTR|CENTER|CENTRE)?))\M'
                     THEN 'horses'
-                    -- WHEN linz_dvr_.category ~ '^SP'
-                    -- THEN 'poultry'
-                    WHEN linz_dvr_.category ~ '^SS'
+                    WHEN linz_dvr_.improvements_description ~ '\mEGG\sLAYING\M'
+                    THEN 'chickens eggs'
+                    WHEN linz_dvr_.category ~ '^SP'
+                        OR linz_dvr_.improvements_description ~ '\m(BROIL(ER)?|FOWL)\s?(HSE|HOUSE)S?\M'
+                        OR linz_dvr_.improvements_description ~ '\mPOULTRY\M'
+                    THEN 'chickens'
+                    WHEN linz_dvr_.category ~ '^SS' OR linz_dvr_.improvements_description ~ '\mPIGGERY\M'
                     THEN 'pigs'
                     ELSE NULL
                 END
@@ -53,17 +62,25 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_dvr_.source_data]::TEXT[],
             linz_dvr_.source_date,
-            linz_dvr_.source_scale
+            linz_dvr_.source_scale,
+            NULL
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
     FROM marine_farms
     FULL OUTER JOIN (
-        SELECT *
+        SELECT 
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            improvements_description,
+            actual_property_use,
+            category,
+            zone
         FROM linz_dvr_
         WHERE category ~ '^PS'
         OR category ~ '^S(A|H|P|S|X)' -- Specialist types except deer: aquaculture, horse studs and training operations, poultry, pigs, all other specialist livestock
         OR actual_property_use IN ('0', '00', '01', '1', '10', '16')
-        -- TODO any other improvements codes that could be useful? PIGGERY?
     ) linz_dvr_ USING (h3_index)
 );

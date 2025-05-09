@@ -12,7 +12,8 @@ CREATE TEMPORARY VIEW class_116 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[pan_nz_draft_iucn_V.source_data],
             pan_nz_draft_iucn_V.source_date,
-            pan_nz_draft_iucn_V.source_scale
+            pan_nz_draft_iucn_V.source_scale,
+            pan_nz_draft_iucn_V.source_protection_name
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -22,7 +23,8 @@ CREATE TEMPORARY VIEW class_116 AS (
         h3_index,
         source_data,
         source_date,
-        source_scale
+        source_scale,
+        source_protection_name
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition

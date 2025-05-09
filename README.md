@@ -108,7 +108,7 @@ CREATE TEMPORARY VIEW transitional_land AS (
                 '[]'
             ) AS source_date,
             'HBRC'::TEXT AS source_data,
-        '(1,100)'::int4range AS source_scale --  -- Unstated precision, assume parcel scale equivalent
+        '(1,100]'::int4range AS source_scale --  -- Unstated precision, assume parcel scale equivalent
         FROM hawkes_bay_land_categorisation_h3
         INNER JOIN hawkes_bay_land_categorisation USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
@@ -126,7 +126,7 @@ CREATE TEMPORARY VIEW transitional_land AS (
                 '[]'
             ) AS source_date,
             'CERA'::TEXT AS source_data,
-        '(1,100)'::int4range AS source_scale -- Unstated precision, assume parcel scale equivalent
+        '(1,100]'::int4range AS source_scale -- Unstated precision, assume parcel scale equivalent
         FROM cera_red_zoned_land_h3
         WHERE :parent::h3index = h3_partition
         ORDER BY
@@ -141,7 +141,7 @@ CREATE TEMPORARY VIEW transitional_land AS (
                 '[]'
             ) AS source_date,
             'GDC'::TEXT AS source_data,
-        '(1,100)'::int4range AS source_scale -- Unstated precision, assume parcel scale equivalent
+        '(1,100]'::int4range AS source_scale -- Unstated precision, assume parcel scale equivalent
         FROM fosal_areas_tairawhiti
         JOIN fosal_areas_tairawhiti_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
@@ -189,7 +189,8 @@ CREATE TEMPORARY VIEW class_136 AS (
             range_merge(
                 linz_crosl_nzdf.source_scale,
                 linz_dvr_.source_scale
-            )::int4range
+            )::int4range,
+            NULL
         )::nzlum_type
         WHEN linz_dvr_.actual_property_use = '45' -- Defence
         THEN ROW(
@@ -199,7 +200,8 @@ CREATE TEMPORARY VIEW class_136 AS (
             ARRAY[]::TEXT[], -- manage
             ARRAY[linz_dvr_.source_data]::TEXT[],
             linz_dvr_.source_date,
-            linz_dvr_.source_scale
+            linz_dvr_.source_scale,
+            NULL
         )::nzlum_type
         WHEN linz_crosl_nzdf.h3_index IS NOT NULL
         THEN ROW(
@@ -225,7 +227,8 @@ CREATE TEMPORARY VIEW class_136 AS (
                     linz_crosl_nzdf.source_scale,
                     linz_dvr_.source_scale
                 ], NULL)
-            ))::int4range -- source_scale
+            ))::int4range, -- source_scale
+            NULL -- comment
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -250,3 +253,13 @@ CREATE TEMPORARY VIEW class_136 AS (
 This defines a temporary view (limited to one H3 partition) that uses the Central Record of State Land (CRoSL) for the identification of NZDF managed land, but confirmed against actual use as recorded in the District Valuation Roll (DVR) where possible, in order to exclude from the CRoSL set NZDF-managed land that is residential, and offer a lower-confidence classification where the DVR indicates that the land is "passive recreational".
 
 Independently of CRoSL, the DVR also has an identification of land as being for defence purposes (`actual_property_use = 45`). But since there is also an `INNER JOIN ` with a subset of LCDB, any land that is _also_ part of a built-up area, urban parkland or transport infrastructure, is _not_ included for consideration. For instance, this excludes Ōhakea Airbase for consideration as class 1.3.6, as it is not a natural area—whereas the Waiouru New Zealand Army training camp _is_ still included.
+
+<!-- 
+TODO Land status notes 
+
+- https://www.publicservice.govt.nz/system/central-government-organisations
+- https://en.wikipedia.org/wiki/Crown_entity
+- https://en.wikipedia.org/wiki/Crown_Research_Institute
+- https://en.wikipedia.org/wiki/List_of_state-owned_enterprises_of_New_Zealand
+- https://en.wikipedia.org/wiki/List_of_public_sector_organisations_in_New_Zealand
+ -->

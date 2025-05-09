@@ -60,10 +60,19 @@ CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
                 hail_manufacturing_and_industrial.source_scale,
                 linz_dvr_industrial.source_scale
             ], NULL)
-        ))::int4range -- source_scale
+        ))::int4range, -- source_scale
+        NULL
     )::nzlum_type AS nzlum_type
     FROM (
-        SELECT * FROM linz_dvr_
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            actual_property_use,
+            improvements_value,
+            improvements_description
+        FROM linz_dvr_
         WHERE (
             actual_property_use LIKE '7%'
             OR actual_property_use = '07'
@@ -71,7 +80,11 @@ CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
     ) AS linz_dvr_industrial
     FULL OUTER JOIN (
         -- As the manufacture, use, storage and disposal of contaminants is confused (and often historical), HAIL itself offers strong supplementary evidence but weak primary evidence
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale
         FROM hail
         WHERE hail_category_ids @> ARRAY[
             'A1', -- Agrichemicals

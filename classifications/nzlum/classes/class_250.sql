@@ -1,4 +1,4 @@
--- TODO validation area over E17605N58855
+-- NB validation area over E17605N58855
 -- Production nurseries
 -- Glasshouses/shadehouses
 CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
@@ -82,10 +82,19 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
                 linz_dvr_.source_scale,
                 crop_nurseries.source_scale
             ], NULL)
-        ))::int4range -- source_scale
+        ))::int4range, -- source_scale
+        NULL
     )::nzlum_type AS nzlum_type
     FROM (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            category,
+            actual_property_use,
+            improvements_description,
+            "zone"
         FROM linz_dvr_
         WHERE
             category ~ '^H'
@@ -93,7 +102,12 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
             OR improvements_description ~ '\m((GREEN|GRN|SHADE|SHD|GLASS)\s?(HOUSE|HSE))|NURSERY\M'
     ) linz_dvr_
     FULL OUTER JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            manage
         FROM crop_maps
         WHERE source_data = 'GDC'
         AND crop IN (
@@ -103,7 +117,12 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
         )
     ) AS crop_nurseries USING (h3_index)
     LEFT JOIN (
-        SELECT *
+        SELECT
+            h3_index,
+            source_data,
+            source_date,
+            source_scale,
+            manage
         FROM irrigation_
         WHERE :parent::h3index = h3_partition
         AND irrigation_type ~ '^Drip'
