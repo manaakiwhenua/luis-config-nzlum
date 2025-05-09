@@ -2,7 +2,7 @@ use-conda: true
 conda-frontend: conda
 printshellcmds: true
 use-envmodules: true
-cores: 24
+cores: 28
 rerun-incomplete: true
 configfiles:
   - luis-config-nzlum/external-data/landcare/landcare.yml
