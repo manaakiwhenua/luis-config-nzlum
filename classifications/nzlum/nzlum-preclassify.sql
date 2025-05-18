@@ -156,9 +156,7 @@ CREATE OR REPLACE FUNCTION earliest_date(p_input DATE[])
     FROM unnest(p_input) AS x(v)
     ORDER BY x.v NULLS LAST
     LIMIT 1
-\$\$
-LANGUAGE SQL
-IMMUTABLE;
+\$\$ LANGUAGE SQL IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION latest_date(p_input DATE[])
   RETURNS DATE AS \$\$
@@ -166,9 +164,7 @@ CREATE OR REPLACE FUNCTION latest_date(p_input DATE[])
     FROM unnest(p_input) AS x(v)
     ORDER BY x.v DESC NULLS LAST
     LIMIT 1
-\$\$
-LANGUAGE SQL
-IMMUTABLE;
+\$\$ LANGUAGE SQL IMMUTABLE;
 
 CREATE OR REPLACE FUNCTION convert_to_daterange(date_array DATE[])
 RETURNS DATERANGE AS \$\$
@@ -241,3 +237,29 @@ BEGIN
            '\mO\M', 'o', 'gi');
 END;
 \$\$ LANGUAGE plpgsql IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION daterange_span(ranges daterange[])
+RETURNS daterange AS \$\$
+  SELECT daterange(
+    min(lower(r)), 
+    max(upper(r)), 
+    '[]'
+  )
+  FROM unnest(ranges) r;
+\$\$ LANGUAGE SQL IMMUTABLE;
+
+CREATE OR REPLACE FUNCTION int4range_span(ranges int4range[])
+RETURNS int4range AS \$\$
+  SELECT int4range(
+    min(lower(r)), 
+    max(upper(r)), 
+    '[]'
+  )
+  FROM unnest(ranges) r;
+\$\$ LANGUAGE SQL IMMUTABLE;
+
+-- Clamp to 1 to 12 range, but don't clamp values over 12, exclude them instead
+CREATE OR REPLACE FUNCTION clamp_confidence_or_null(confidence numeric)
+RETURNS numeric AS \$\$
+  SELECT CASE WHEN confidence > 12 THEN NULL ELSE GREATEST(confidence, 1) END;
+\$\$ LANGUAGE SQL IMMUTABLE;

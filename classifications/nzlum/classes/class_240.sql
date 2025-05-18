@@ -21,10 +21,10 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
         ]::TEXT[]
         OR (
             source_data = 'GDC'
-            AND crop IN (
+            AND crop && ARRAY[
                 'Citrus',
                 'Stonefruit'
-            )
+            ]
         ) -- NB special cases for GDC data that don't map to specific commodities
     ),
     base_classification AS (

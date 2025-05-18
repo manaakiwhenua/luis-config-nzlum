@@ -332,7 +332,10 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             ]
             OR (
                 source_data = 'GDC'
-                AND crop = 'Pasture/Unused'
+                AND crop && ARRAY[
+                    'Pasture',
+                    'Pasture/Unused'
+                ]
             )
         ) AS pasture_practices USING (h3_index)
     )

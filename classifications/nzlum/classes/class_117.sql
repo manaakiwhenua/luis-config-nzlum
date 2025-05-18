@@ -28,6 +28,14 @@ CREATE TEMPORARY VIEW class_117 AS (
                     ) 
                 THEN 2
                 WHEN (
+                    legislation_act = 'RESERVES_ACT'
+                    AND legislation_section IN (
+                        'S17_RECREATION_RESERVE',
+                        'S18_HISTORIC_RESERVE'
+                    )
+                )
+                THEN 3
+                WHEN (
                     legislation_act = 'LAND_ACT'
                     AND legislation_section = 'S52_BOARD_MAY_ALIENATE_CROWN_LAND'
                 ) OR (
@@ -36,15 +44,8 @@ CREATE TEMPORARY VIEW class_117 AS (
                 ) OR (
                     legislation_act = 'PUBLIC_WORKS_ACT'
                 ) OR (
-                    legislation_act = 'RESERVES_ACT'
-                    AND legislation_section IN (
-                        'S17_RECREATION_RESERVE',
-                        'S18_HISTORIC_RESERVE'
-                    ) 
-                ) OR (
                     legislation_section = 'MAORI_RESERVATION'
                 ) OR (
-                    
                     legislation_act = 'RESOURCE_MANAGEMENT_ACT'
                     AND legislation_section IN (
                         'S6', -- Significant Natural Areas
@@ -54,7 +55,7 @@ CREATE TEMPORARY VIEW class_117 AS (
                     legislation_act = 'RIVER_BOARDS_ACT'
                     AND legislation_section = 'S73_RIVER_BED'
                 )
-                THEN 12
+                THEN 10
                 WHEN designation IN (
                     'Amenities Area', 'Amenity Area',
                     'Ambiguous',
@@ -67,11 +68,11 @@ CREATE TEMPORARY VIEW class_117 AS (
                     'Water Supply', 'Water Supply and Recreation Purposes', 'Water Supply Reserve',
                     'Consent Notice'
                 )
-                THEN 7
+                THEN 5
                 ELSE 1
                 -- Penalise any form of urban area
                 + CASE WHEN rural.h3_index IS NULL THEN 1 ELSE 0 END
-                -- Penalise built land-covder including urban parks
+                -- Penalise built land-cover including urban parks
                 + CASE WHEN lcdb_unbuilt.h3_index IS NULL THEN 1 ELSE 0 END
             END, 1), 12),
             ARRAY[]::TEXT[], -- commod
@@ -79,7 +80,7 @@ CREATE TEMPORARY VIEW class_117 AS (
             ARRAY[pan_nz_not_iucn.source_data],
             pan_nz_not_iucn.source_date,
             pan_nz_not_iucn.source_scale,
-            pan_nz_not_iucn.source_protection_name
+            pan_nz_not_iucn.source_protection_name -- TODO add designation to the comment 
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -107,8 +108,9 @@ CREATE TEMPORARY VIEW class_117 AS (
         ) -- Racecourses included under 3.2.0
         ORDER BY
             h3_index,
+            priority_rank_117 ASC NULLS LAST, -- Custom priority rank specifically for this class
             source_date DESC NULLS LAST, -- Prefer more recent
-            source_id -- Tie-break
+            source_id -- Tie-break if still necessary
     ) pan_nz_not_iucn
     LEFT JOIN (
         SELECT h3_index

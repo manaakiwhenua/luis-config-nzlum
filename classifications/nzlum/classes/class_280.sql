@@ -165,7 +165,7 @@ CREATE TEMPORARY VIEW class_280 AS (
             :parent::h3index = h3_partition
             AND (
                 source_data = 'GDC'
-                AND crop = 'To Be Planted'
+                AND 'To Be Planted' = ANY(crop)
             )
     ) AS crop_transitional USING (h3_index)
     LEFT JOIN (

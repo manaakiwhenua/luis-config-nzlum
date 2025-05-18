@@ -9,6 +9,7 @@ filtered_linz AS (
         source_scale,
         actual_property_use,
         category,
+        "zone",
         improvements_value,
         improvements_description
     FROM linz_dvr_
@@ -21,7 +22,7 @@ filtered_linz AS (
         )
 ),
 filtered_lcdb AS (
-    SELECT h3_index
+    SELECT h3_index, Class_2018
     FROM lcdb_
     WHERE
         :parent::h3index = h3_partition
@@ -42,7 +43,7 @@ filtered_crop_transitional AS (
         :parent::h3index = h3_partition
         AND (
             source_data = 'GDC'
-            AND crop = 'To Be Planted'
+            AND 'To Be Planted' = ANY(crop)
         )
 ),
 filtered_rural_other AS (
@@ -85,7 +86,15 @@ unioned_matches AS (
         ROW(
             ARRAY[]::TEXT[],
             CASE
-                WHEN l.category LIKE '_V%' OR l.improvements_value < 100000 THEN 1
+                WHEN l.zone !~ '^[01]' -- Not zoned for rural (or not mixed zone)
+                    THEN 8
+                WHEN filtered_lcdb.Class_2018 = 71 -- Exotic forest
+                    THEN 9
+                WHEN (
+                    l.category LIKE '_V%' -- Vacant
+                    OR l.improvements_value < 100000 -- No considerable improvements built
+                )
+                    THEN 1
                 ELSE 2
             END,
             ARRAY[]::TEXT[],
@@ -111,7 +120,13 @@ unioned_matches AS (
         ROW(
             ARRAY[]::TEXT[],
             CASE
-                WHEN l.improvements_description ~ '\mORCHARDS?\M' THEN 5 ELSE 1
+                WHEN l.zone ~ '^1' -- Zoned for rural use
+                    THEN 1
+                WHEN l.improvements_description ~ '\mORCHARDS?\M'
+                    THEN 4
+                WHEN l.zone ~ '^0' -- More than one zone
+                    THEN 5
+                ELSE 6
             END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
@@ -137,7 +152,11 @@ unioned_matches AS (
         ROW(
             ARRAY[]::TEXT[],
             CASE
-                WHEN l.category LIKE '_V%' THEN 1 ELSE 2
+                WHEN l.category LIKE '_V%'
+                    THEN 3
+                WHEN filtered_lcdb.Class_2018 = 71 -- Exotic forest
+                    THEN 9
+                ELSE 4
             END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],

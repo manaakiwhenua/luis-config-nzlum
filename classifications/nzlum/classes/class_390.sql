@@ -48,47 +48,26 @@ CREATE TEMPORARY VIEW class_390 AS (
                 NULL
             )::nzlum_type
             WHEN linz_dvr_full_.category ~ '\wV'
-            THEN
-                CASE WHEN linz_crosl_indeterminate.h3_index IS NOT NULL
-                THEN ROW(
-                    ARRAY[]::TEXT[], -- lu_code_ancillary
-                    4,
-                    ARRAY[]::TEXT[], -- commod
-                    ARRAY[]::TEXT[], -- manage
-                    ARRAY[linz_crosl_indeterminate.source_data, transitional_land.source_data, linz_dvr_full_.source_data]::TEXT[],
-                    range_merge(datemultirange(
-                        VARIADIC ARRAY_REMOVE(ARRAY[
-                            linz_crosl_indeterminate.source_date,
-                            transitional_land.source_date,
-                            linz_dvr_full_.source_date
-                        ], NULL)
-                    ))::daterange, -- source_date
-                    range_merge(int4multirange(
-                        VARIADIC ARRAY_REMOVE(ARRAY[
-                            linz_crosl_indeterminate.source_scale,
-                            transitional_land.source_scale,
-                            linz_dvr_full_.source_scale
-                        ], NULL)
-                    ))::int4range, -- source_scale
-                    NULL
-                )::nzlum_type
-                ELSE ROW(
-                    ARRAY[]::TEXT[], -- lu_code_ancillary
-                    10,
-                    ARRAY[]::TEXT[], -- commod
-                    ARRAY[]::TEXT[], -- manage
-                    ARRAY[linz_crosl_indeterminate.source_data, transitional_land.source_data, linz_dvr_full_.source_data]::TEXT[],
-                    range_merge(
-                        transitional_land.source_date,
-                        linz_dvr_full_.source_date
-                    ),
-                    range_merge(
-                        transitional_land.source_scale,
-                        linz_dvr_full_.source_scale
-                    ),
-                    NULL
-                )::nzlum_type
-                END 
+            THEN ROW(
+                ARRAY[]::TEXT[], -- lu_code_ancillary
+                CASE
+                    WHEN linz_dvr_full_.zone ~ '^[789]' -- Higher confidence when also zoned for industrial, commercial, residential
+                    THEN 8
+                    ELSE 10
+                END,
+                ARRAY[]::TEXT[], -- commod
+                ARRAY[]::TEXT[], -- manage
+                ARRAY[transitional_land.source_data, linz_dvr_full_.source_data]::TEXT[],
+                range_merge(
+                    transitional_land.source_date,
+                    linz_dvr_full_.source_date
+                ),
+                range_merge(
+                    transitional_land.source_scale,
+                    linz_dvr_full_.source_scale
+                ),
+                NULL
+            )::nzlum_type
             END
         WHEN linz_dvr_vacant_built.h3_index IS NOT NULL
         THEN ROW(
@@ -145,20 +124,6 @@ CREATE TEMPORARY VIEW class_390 AS (
             linz_dvr_vacant_built.source_scale,
             NULL
         )::nzlum_type
-        WHEN (
-            linz_crosl_indeterminate.h3_index IS NOT NULL 
-            AND urban_rural_2025_.h3_index IS NOT NULL
-        )
-        THEN ROW(
-            ARRAY[]::TEXT[], -- lu_code_ancillary
-            10,
-            ARRAY[]::TEXT[], -- commod
-            ARRAY[]::TEXT[], -- manage
-            ARRAY[linz_crosl_indeterminate.source_data]::TEXT[],
-            linz_crosl_indeterminate.source_date,
-            linz_crosl_indeterminate.source_scale,
-            NULL
-        )::nzlum_type
     END AS nzlum_type
     FROM (
         SELECT
@@ -194,7 +159,8 @@ CREATE TEMPORARY VIEW class_390 AS (
             source_date,
             source_scale,
             actual_property_use,
-            category
+            category,
+            "zone"
         FROM linz_dvr_
     ) AS linz_dvr_full_ USING (h3_index)
     FULL OUTER JOIN (
@@ -205,17 +171,6 @@ CREATE TEMPORARY VIEW class_390 AS (
             source_scale
         FROM transitional_land
     ) AS transitional_land USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT
-            h3_index,
-            source_data,
-            source_date,
-            source_scale
-        FROM linz_crosl_
-        WHERE
-            managed_by = 'To Be Determined'
-            AND statutory_actions IS NULL
-    ) linz_crosl_indeterminate USING (h3_index)
     LEFT JOIN (
         SELECT
             h3_index,
@@ -226,16 +181,18 @@ CREATE TEMPORARY VIEW class_390 AS (
             :parent::h3index = h3_partition
             AND urban_rural_2025.IUR2025_V1_00 <> '22' -- (non) "Rural other"
     ) AS urban_rural_2025_ USING (h3_index)
+    LEFT JOIN water_features USING (h3_index)
+    LEFT JOIN pan_nz_draft_h3 USING (h3_index)
+    WHERE water_features.h3_index IS NULL -- Eliminate any form of water from this class
+    AND pan_nz_draft_h3.h3_index IS NULL -- Eliminate from consideration -anything- in PAN-NZ
 );
 
 
 -- \d9 land that is L = high confidence
 -- NB : L --> Lifestyle land, generally in a rural area, where the predominant use is for a residence and, if vacant, there **is a right to build a dwelling.** (therefore this should be class 3)
 
--- CROSL land that is indeterminate
-
 -- Chch/Gisborne Red Zone in urban areas
 
--- TODO actual use in rural (vacant) but category R or LV and zoned residential - very high confidence
+-- actual use in rural (vacant) but category R or LV and zoned residential - very high confidence
 
 -- TODO hail (contaminated brownfield?)

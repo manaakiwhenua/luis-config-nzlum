@@ -18,7 +18,7 @@ CREATE TEMPORARY VIEW roi AS (
     SELECT h3_index, h3_partition FROM :roi
     WHERE :parent::h3index = h3_partition
 );
-
+-- abstractions over some input data for DRY, conciseness
 \ir data_views/lcdb.sql
 \ir data_views/linz_crosl.sql
 \ir data_views/linz_dvr.sql
@@ -33,6 +33,12 @@ CREATE TEMPORARY VIEW roi AS (
 \ir data_views/consents/forestry.sql
 \ir data_views/consents/pastoral_farms.sql
 
+-- attributes
+\ir attributes/water.sql
+\ir attributes/land_status.sql
+\ir attributes/zone.sql   -- zone, land_estate
+
+-- classes
 \ir classes/class_111.sql
 \ir classes/class_112.sql
 \ir classes/class_113.sql
@@ -64,13 +70,6 @@ CREATE TEMPORARY VIEW roi AS (
 \ir classes/class_370.sql
 \ir classes/class_380.sql
 \ir classes/class_390.sql
-
--- water
-\ir attributes/water.sql
--- land_status
-\ir attributes/land_status.sql
- -- zone, land_estate
-\ir attributes/zone.sql
 
 -- TODO is the compact/uncompact cycle necessary for this classification?
 INSERT INTO :partition

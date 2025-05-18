@@ -30,6 +30,77 @@ external_data:
       - column: source_scale
         datatype: int4range
         set_query: "'[10,100]'::int4range"
+      # Need some form of priority ranking to handle overlapping features
+      # This list compiled from PAN-NZ pilor using filter condition as above, then identifying all distinct remaining designations
+      # Will need to be revised as PAN-NZ changes
+      - column: priority_rank_117 
+        datatype: int
+        set_query: |-
+          array_position(
+            ARRAY[
+              'wilderness area',
+              'marine reserve',
+              'ramsar wetland',
+              's12 ohau new zealand fur seal sanctuary',
+              'national reserve',
+              'historic reserve',
+              'te urewera establishment land',
+              'specially protected area',
+              'hauraki gulf marine park',
+              'maori reserve (section 29 conservation act)',
+              'maori reservation (te ture whenua maori act)',
+              'maori reservation (reserves act)',
+              'maori burial ground',
+              'burial ground massey',
+              'unesco',
+              'conservation covenant',
+              'doc covenant (legislation ambiguous)',
+              'nga whenua rahui kawenata',
+              'kawenata',
+              'qeii open space covenant',
+              'protected private land',
+              'forest park (conservation act)',
+              'fixed marginal strip',
+              'moveable marginal strip',
+              'marginal strip',
+              'esplanade reserve',
+              'esplanade strip',
+              'waitangi endowment forest',
+              'regional parks',
+              'regional park',
+              'recreation reserve',
+              'amenities area',
+              'amenity area',
+              'government purpose reserve',
+              'government purpose reserves',
+              'state forest',
+              'wellington town belt',
+              'freshwater fisheries regulation',
+              'recreational hunting area',
+              'managed as if stewardship area',
+              'management agreement',
+              'management agreements',
+              'significant natural area',
+              'water conservation reserve',
+              'water supply reserve',
+              'water supply',
+              'water supply and recreation purposes',
+              'local government managed area',
+              'local purpose reserve - not mapped',
+              'road reserve',
+              'river bed',
+              'dog area',
+              'tree planting purposes',
+              'acquired for public works',
+              'consent notice',
+              'crown land alienation',
+              'authorisation of the exchange of conservation area for other land',
+              'nga paihau overlay classification and protection principles',
+              'administration purpose (conservation act)',
+              'ambiguous'
+            ],
+            lower(designation)
+          )
     indices:
       - columns: [iucn_category]
         type: btree
@@ -52,3 +123,6 @@ external_data:
       - columns: [source_date, source_id]
         type: btree
         name: idx_btree_source_date_source_id
+      - columns: [priority_rank_117]
+        type: btree
+        name: idx_btree_priority_rank_117

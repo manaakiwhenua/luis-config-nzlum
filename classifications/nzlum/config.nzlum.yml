@@ -1,7 +1,8 @@
 region_of_interest:
   # id: otorohanga_district_cbs_2025
   # id: otorohanga_cb_2025
-  id: nz_grid_1km
+  # id: nz_grid_1km
+  id: urban_rural_2025
 
 
 h3:
@@ -156,7 +157,8 @@ classifications:
       - ecan_braided_rivers
       - cera_red_zoned_land
 
-      - sumcrop_2024_25_tairawhiti
+      - summer_crop_gdc
+      - winter_crop_gdc
       - fosal_areas_tairawhiti
       
       - es_slu

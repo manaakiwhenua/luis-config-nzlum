@@ -52,6 +52,7 @@ external_data:
       - column: gt_half_acre
         datatype: boolean
         set_query: st_area(geom::geography) > 2023.43
+
   
   national_dvr:
     # <<: *dvr_public
@@ -111,6 +112,9 @@ external_data:
           - zoning ASC
         type: btree
         name: idx_h3_ordering
+      - columns: [land_area] # hectares
+        type: btree
+        name: idx_btree_land_area
       - columns:
         - improvements_value_ratio
         type: btree
@@ -141,6 +145,16 @@ external_data:
         type: btree
         name: idx_btree_imp_desc_orchard
         where: improvements_description ~ '\mORCHARDS?\M'
+      - columns:
+        - improvements_description
+        type: btree
+        name: idx_btree_imp_desc_nursery
+        where: improvements_description ~ '\mNURSERY?\M'
+      - columns:
+        - improvements_description
+        type: btree
+        name: idx_btree_imp_desc_intens_hort
+        where: improvements_description ~ '\m(GREEN|GRN|SHADE|SHD|GLASS)\s?(HOUSE|HSE)\M'
       - columns:
         - improvements_value
         type: btree

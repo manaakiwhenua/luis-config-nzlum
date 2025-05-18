@@ -35,17 +35,27 @@ external_data:
     # Grape Nursery --> nursery plants
     # Poplar/Willow Nursery --> nursery plants
     # Stonefruit --> not a commodity, but indicates class
-  sumcrop_2024_25_tairawhiti:
+  
+  # NB also viewable at https://maps.gdc.govt.nz/H5V2_12/Index.html?viewer=TairawhitiExternal (select "water conservation" > "Summer Crop Surveys")
+  # The ArcGIS Rest service was (temporarily?) removed in May 2025, so GDC provided a file copy for inclusion.
+  summer_crop_gdc: &_gdc_crop_map
     <<: *gdc
-    host: https://services7.arcgis.com/8G10QCd84QpdcTJ9/arcgis/rest/services/Summer_Crops_Annual_Survey_Public_View/FeatureServer
+    # host: https://services7.arcgis.com/8G10QCd84QpdcTJ9/arcgis/rest/services/Summer_Crops_Annual_Survey_Public_View/FeatureServer
+    # layer: "0"
+    external_data_type: file
+    layer: export__summercrops
+    file:
+      local: /home/lawr/dvr-restricted/gdc-crop-maps.gpkg
     description: |-
-      Tairāwhiti Gisborne Summer Crops Annual Survey 2024/25. This is a public view of the data.
+      Tairāwhiti Gisborne Summer Crops Annual Survey 2007-2025. This is a public view of the data.
     geom_type: multipolygon
-    layer: "0"
     indices:
       - columns: [crop]
         type: btree
         name: idx_btree_crop
+      - columns: [YearCompleted]
+        type: btree
+        name: idx_btree_year
       - columns:
         - area_ha DESC NULLS LAST
         type: btree
@@ -72,25 +82,45 @@ external_data:
               WHEN crop = 'Avocados' THEN ARRAY['avocados']
               WHEN crop = 'Cauliflower/Broccoli' THEN ARRAY['broccoli','cauliflowers']
               WHEN crop = 'Chamomile' THEN ARRAY['chamomile']
+              WHEN crop = 'Courgettes' THEN ARRAY['zucchini']
               WHEN crop = 'Chicory' THEN ARRAY['chicory']
+              WHEN crop = 'Chicory Mix' THEN ARRAY['chicory']
+              WHEN crop = 'Chicory/Plantain' THEN ARRAY['chicory','plantain']
+              WHEN crop = 'Chou Moellier' THEN ARRAY['cabbages']
               WHEN crop = 'Clover' THEN ARRAY['clover']
+              WHEN crop = 'Echinacea' THEN ARRAY['echinacea']
               WHEN crop = 'Feijoa' THEN ARRAY['feijoa']
               WHEN crop = 'Flowers' THEN ARRAY['flowers and foliage']
-              WHEN crop = 'Grape' THEN ARRAY['grapes']
+              WHEN crop = 'Grapes' THEN ARRAY['grapes']
+              WHEN crop = 'Kale' THEN ARRAY['kale']
               WHEN crop = 'Kiwifruit' THEN ARRAY['kiwifruit']
               WHEN crop = 'Leafy Turnip' THEN ARRAY['turnips forage']
               WHEN crop = 'Lettuce/Cabbage' THEN ARRAY['lettuces','cabbages']
               WHEN crop = 'Lucerne' THEN ARRAY['lucerne']
+              WHEN crop = 'Lucerne Mix' THEN ARRAY['lucerne']
               WHEN crop = 'Maize/Sweetcorn' THEN ARRAY['maize','sweetcorn']
               WHEN crop = 'Melons' THEN ARRAY['melons']
+              WHEN crop = 'Oats' THEN ARRAY['oats']
               WHEN crop = 'Olives' THEN ARRAY['olives']
+              WHEN crop = 'Onions' THEN ARRAY['onions']
+              WHEN crop = 'Peas/Beans' THEN ARRAY['peas','beans']
               WHEN crop = 'Persimmon' THEN ARRAY['persimmons']
               WHEN crop = 'Pinenuts' THEN ARRAY['pinenuts']
               WHEN crop = 'Plantain' THEN ARRAY['plantain']
+              WHEN crop = 'Plantain Mix' THEN ARRAY['plantain']
+              WHEN crop = 'Plantain/Chicory' THEN ARRAY['plantain','chicory']
               WHEN crop = 'Plantain/Clover' THEN ARRAY['plantain','clover']
               WHEN crop = 'Pomegranate' THEN ARRAY['pomegranate']
+              WHEN crop = 'Potatoes' THEN ARRAY['potatoes']
               WHEN crop = 'Squash' THEN ARRAY['pumpkins']
+              WHEN crop = 'Strawberries' THEN ARRAY['strawberries']
+              WHEN crop = 'Swedes' THEN ARRAY['swedes']
+              WHEN crop = 'Turnip' THEN ARRAY['swedes']
+              WHEN crop = 'Turnips' THEN ARRAY['swedes']
               WHEN crop = 'Tamarillo' THEN ARRAY['tamarillo']
+              WHEN crop = 'Tomatoes' THEN ARRAY['tomatoes']
+              WHEN crop = 'Yarrow' THEN ARRAY['yarrow']
+              WHEN crop = 'Wheat' THEN ARRAY['wheat']
               ELSE NULL
             END
           )
@@ -99,26 +129,46 @@ external_data:
         set_query: |-
           (
             CASE
-              WHEN crop = 'Baleage' THEN ARRAY['residues baled']
-              WHEN crop = 'Chicory' THEN ARRAY['crop pasture rotation']
-              WHEN crop = 'Clover' THEN ARRAY['crop pasture rotation']
-              WHEN crop = 'Leafy Turnip' THEN ARRAY['crop pasture rotation']
-              WHEN crop = 'Lucerne' THEN ARRAY['crop pasture rotation','grazing rotational']
-              WHEN crop = 'Maize/Sweetcorn' THEN ARRAY['crop pasture rotation']
-              WHEN crop = 'Plantain' THEN ARRAY['crop pasture rotation']
-              WHEN crop = 'Plantain/Clover' THEN ARRAY['crop pasture rotation']
+              WHEN crop IN (
+                'Chicory',
+                'Chicory Mix',
+                'Chicory/Plantain',
+                'Clover',
+                'Clover Mix',
+                'Fodder Beet',
+                'Leafy Turnip',
+                'Lucerne',
+                'Lucerne Mix',
+                'Maize/Sweetcorn',
+                'Maize Stubble',
+                'Plantain',
+                'Plantain/Chicory',
+                'Plantain/Clover',
+                'Forage rape',
+                'Forage Rape',
+                'Lupin',
+                'Turnip',
+                'Turnips',
+                'Swedes'
+              )
+              THEN ARRAY['crop pasture rotation']
               ELSE NULL
             END
           )
       - column: start_date
         datatype: date
-        set_query: "'2024-06-03'::DATE"
+        set_query: (YearCompleted || '-01-01')::DATE
       - column: end_date
         datatype: date
-        set_query: "'2025-02-13'::DATE"
+        set_query: (YearCompleted || '-12-31')::DATE
       - column: source_date
         datatype: daterange
-        set_query: daterange('2024-06-03'::DATE, '2025-02-13'::DATE::DATE, '[]')
+        set_query: |-
+          daterange(
+            (YearCompleted || '-01-01')::DATE,
+            (YearCompleted || '-12-31')::DATE,
+            '[]'
+          )
       - column: source_data
         datatype: text
         set_query: "'GDC'::TEXT"
@@ -126,3 +176,138 @@ external_data:
         datatype: int4range
         set_query: "'[10,20]'::int4range"
     
+  winter_crop_gdc:
+    <<: *_gdc_crop_map
+    external_data_type: file
+    layer: export__wintercrops
+    file:
+      local: /home/lawr/dvr-restricted/gdc-crop-maps.gpkg
+    description: |-
+      Tairāwhiti Gisborne Winter Crops Annual Survey 2015-21. This is a public view of the data.
+    geom_type: multipolygon
+    indices:
+      - columns: [crop]
+        type: btree
+        name: idx_btree_crop
+      - columns: [YEAR]
+        type: btree
+        name: idx_btree_year
+      - columns:
+        - area_ha DESC NULLS LAST
+        type: btree
+        name: idx_btree_area
+      - columns: [commod]
+        type: gin
+        name: idx_gin_commod
+      - columns: [manage]
+        type: gin
+        name: idx_gin_manage
+      - columns: [source_data, crop]
+        type: btree
+        name: idx_btree_source_data_crop
+    derived_columns:
+      - column: area_ha
+        datatype: float8
+        set_query: ST_Area(geom::geography, false) / 10000
+      - column: commod
+        datatype: text[]
+        set_query: |-
+          (
+            CASE
+              WHEN crop = 'Apples and Pears' THEN ARRAY['apples','pears']
+              WHEN crop = 'Avocados' THEN ARRAY['avocados']
+              WHEN crop = 'Cauliflower/Broccoli' THEN ARRAY['broccoli','cauliflowers']
+              WHEN crop = 'Chamomile' THEN ARRAY['chamomile']
+              WHEN crop = 'Courgettes' THEN ARRAY['zucchini']
+              WHEN crop = 'Chicory' THEN ARRAY['chicory']
+              WHEN crop = 'Chicory Mix' THEN ARRAY['chicory']
+              WHEN crop = 'Chicory/Plantain' THEN ARRAY['chicory','plantain']
+              WHEN crop = 'Chou Moellier' THEN ARRAY['cabbages']
+              WHEN crop = 'Clover' THEN ARRAY['clover']
+              WHEN crop = 'Echinacea' THEN ARRAY['echinacea']
+              WHEN crop = 'Feijoa' THEN ARRAY['feijoa']
+              WHEN crop = 'Flowers' THEN ARRAY['flowers and foliage']
+              WHEN crop = 'Grapes' THEN ARRAY['grapes']
+              WHEN crop = 'Kale' THEN ARRAY['kale']
+              WHEN crop = 'Kiwifruit' THEN ARRAY['kiwifruit']
+              WHEN crop = 'Leafy Turnip' THEN ARRAY['turnips forage']
+              WHEN crop = 'Lettuce/Cabbage' THEN ARRAY['lettuces','cabbages']
+              WHEN crop = 'Lucerne' THEN ARRAY['lucerne']
+              WHEN crop = 'Lucerne Mix' THEN ARRAY['lucerne']
+              WHEN crop = 'Maize/Sweetcorn' THEN ARRAY['maize','sweetcorn']
+              WHEN crop = 'Melons' THEN ARRAY['melons']
+              WHEN crop = 'Oats' THEN ARRAY['oats']
+              WHEN crop = 'Olives' THEN ARRAY['olives']
+              WHEN crop = 'Onions' THEN ARRAY['onions']
+              WHEN crop = 'Peas/Beans' THEN ARRAY['peas','beans']
+              WHEN crop = 'Persimmon' THEN ARRAY['persimmons']
+              WHEN crop = 'Pinenuts' THEN ARRAY['pinenuts']
+              WHEN crop = 'Plantain' THEN ARRAY['plantain']
+              WHEN crop = 'Plantain Mix' THEN ARRAY['plantain']
+              WHEN crop = 'Plantain/Chicory' THEN ARRAY['plantain','chicory']
+              WHEN crop = 'Plantain/Clover' THEN ARRAY['plantain','clover']
+              WHEN crop = 'Pomegranate' THEN ARRAY['pomegranate']
+              WHEN crop = 'Potatoes' THEN ARRAY['potatoes']
+              WHEN crop = 'Squash' THEN ARRAY['pumpkins']
+              WHEN crop = 'Strawberries' THEN ARRAY['strawberries']
+              WHEN crop = 'Swedes' THEN ARRAY['swedes']
+              WHEN crop = 'Turnip' THEN ARRAY['swedes']
+              WHEN crop = 'Turnips' THEN ARRAY['swedes']
+              WHEN crop = 'Tamarillo' THEN ARRAY['tamarillo']
+              WHEN crop = 'Tomatoes' THEN ARRAY['tomatoes']
+              WHEN crop = 'Yarrow' THEN ARRAY['yarrow']
+              WHEN crop = 'Wheat' THEN ARRAY['wheat']
+              ELSE NULL
+            END
+          )
+      - column: manage
+        datatype: text[]
+        set_query: |-
+          (
+            CASE
+              WHEN crop IN (
+                'Chicory',
+                'Chicory Mix',
+                'Chicory/Plantain',
+                'Clover',
+                'Clover Mix',
+                'Fodder Beet',
+                'Leafy Turnip',
+                'Lucerne',
+                'Lucerne Mix',
+                'Maize/Sweetcorn',
+                'Maize Stubble',
+                'Plantain',
+                'Plantain/Chicory',
+                'Plantain/Clover',
+                'Forage rape',
+                'Forage Rape',
+                'Lupin',
+                'Turnip',
+                'Turnips',
+                'Swedes'
+              )
+              THEN ARRAY['crop pasture rotation']
+              ELSE NULL
+            END
+          )
+      - column: start_date
+        datatype: date
+        set_query: (YEAR::TEXT || '-01-01')::DATE
+      - column: end_date
+        datatype: date
+        set_query: (YEAR::TEXT || '-12-31')::DATE
+      - column: source_date
+        datatype: daterange
+        set_query: |-
+          daterange(
+            (YEAR::TEXT || '-01-01')::DATE,
+            (YEAR::TEXT || '-12-31')::DATE,
+            '[]'
+          )
+      - column: source_data
+        datatype: text
+        set_query: "'GDC'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[10,20]'::int4range"
