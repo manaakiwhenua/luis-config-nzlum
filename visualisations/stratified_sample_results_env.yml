@@ -1,0 +1,9 @@
+name: geoplot
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - geopandas
+  - matplotlib
+  - pandas
+  - numpy
