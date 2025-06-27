@@ -80,7 +80,16 @@ CREATE TEMPORARY VIEW class_117 AS (
             ARRAY[pan_nz_not_iucn.source_data],
             pan_nz_not_iucn.source_date,
             pan_nz_not_iucn.source_scale,
-            pan_nz_not_iucn.source_protection_name -- TODO add designation to the comment 
+            ARRAY_TO_STRING(
+                ARRAY_REMOVE(
+                    ARRAY[
+                        pan_nz_not_iucn.source_protection_name,
+                        pan_nz_not_iucn.designation
+                    ],
+                    NULL
+                ),
+                '\n'
+            )
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type

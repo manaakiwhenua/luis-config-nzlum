@@ -13,7 +13,16 @@ CREATE TEMPORARY VIEW class_112 AS (
             ARRAY[pan_nz_draft_iucn_Ib.source_data],
             pan_nz_draft_iucn_Ib.source_date,
             pan_nz_draft_iucn_Ib.source_scale,
-            pan_nz_draft_iucn_Ib.source_protection_name
+            ARRAY_TO_STRING(
+                ARRAY_REMOVE(
+                    ARRAY[
+                        pan_nz_draft_iucn_Ib.source_protection_name,
+                        pan_nz_draft_iucn_Ib.designation
+                    ],
+                    NULL
+                ),
+                '\n'
+            )
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
@@ -24,6 +33,7 @@ CREATE TEMPORARY VIEW class_112 AS (
         source_data,
         source_date,
         source_scale,
+        designation,
         source_protection_name
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
