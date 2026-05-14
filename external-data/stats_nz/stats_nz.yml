@@ -5,36 +5,56 @@ __publisher_stats_nz: &stats_nz
   license: https://creativecommons.org/licenses/by/4.0/
   attribution: "Sourced from the Statistics New Zealand Datafinder and licensed for reuse under CC BY 4.0"
 
+__iur_2025: &iur_2025
+  <<: *stats_nz
+  layer: layer-120965
+  geom_type: multipolygon
+  indices:
+    - columns: [IUR2025_V1_00]
+      type: btree
+      name: idx_btree_IUR2025_V1_00
+
+__iur_2026: &iur_2026
+  <<: *stats_nz
+  layer: layer-123505
+  geom_type: multipolygon
+  indices:
+    - columns: [IUR2026_V1_00]
+      type: btree
+      name: idx_btree_IUR2026_V1_00
+
 external_data:
 
   urban_rural_2025:
-    <<: *stats_nz
+    <<: *iur_2025
     description: Urban Rural 2025
-    layer: layer-120965
-    geom_type: multipolygon
-    indices:
-      - columns: [IUR2025_V1_00]
-        type: btree
-        name: idx_btree_IUR2025_V1_00
+
+  urban_rural_2026: &urban_rural_current
+    <<: *iur_2026
+    description: Urban Rural 2026
+
+  urban_rural_current: *urban_rural_current
 
   rural_2025:
-    <<: *stats_nz
+    <<: *iur_2025
     description: Urban Rural 2025 [Rural only]
-    layer: layer-120965
-    geom_type: multipolygon
     where: IUR2025_V1_00_NAME IN ('Rural other', 'Oceanic', 'Inland water', 'Inlet')
-    indices:
-      - columns: [IUR2025_V1_00]
-        type: btree
-        name: idx_btree_IUR2025_V1_00
+
+  rural_2026: &rural_current
+    <<: *iur_2026
+    description: Urban Rural 2026 [Rural only]
+    where: IUR2026_V1_00_NAME IN ('Rural other', 'Oceanic', 'Inland water', 'Inlet')
+
+  rural_current: *rural_current
 
   urban_2025:
-    <<: *stats_nz
+    <<: *iur_2025
     description: Urban Rural 2025 [Urban only]
-    layer: layer-120965
-    geom_type: multipolygon
     where: IUR2025_V1_00_NAME NOT IN ('Rural other', 'Oceanic', 'Inland water', 'Inlet')
-    indices:
-      - columns: [IUR2025_V1_00]
-        type: btree
-        name: idx_btree_IUR2025_V1_00
+
+  urban_2026: &urban_current
+    <<: *iur_2026
+    description: Urban Rural 2026 [Urban only]
+    where: IUR2026_V1_00_NAME NOT IN ('Rural other', 'Oceanic', 'Inland water', 'Inlet')
+
+  urban_current: *urban_current

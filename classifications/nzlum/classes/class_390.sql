@@ -16,7 +16,7 @@ CREATE TEMPORARY VIEW class_390 AS (
     CASE
         WHEN 
             transitional_land.h3_index IS NOT NULL
-            AND urban_rural_2025_.h3_index IS NOT NULL
+            AND urban_rural_current_.h3_index IS NOT NULL
         THEN CASE
             WHEN linz_dvr_full_.h3_index IS NULL
             THEN ROW(
@@ -174,13 +174,13 @@ CREATE TEMPORARY VIEW class_390 AS (
     LEFT JOIN (
         SELECT
             h3_index,
-            IUR2025_V1_00
-        FROM urban_rural_2025_h3
-        JOIN urban_rural_2025 USING (ogc_fid)
+            IUR2026_V1_00
+        FROM urban_rural_current_h3
+        JOIN urban_rural_current USING (ogc_fid)
         WHERE
             :parent::h3index = h3_partition
-            AND urban_rural_2025.IUR2025_V1_00 <> '22' -- (non) "Rural other"
-    ) AS urban_rural_2025_ USING (h3_index)
+            AND urban_rural_current.IUR2026_V1_00 <> '22' -- (non) "Rural other"
+    ) AS urban_rural_current_ USING (h3_index)
     LEFT JOIN water_features USING (h3_index)
     LEFT JOIN pan_nz_draft_h3 USING (h3_index)
     WHERE water_features.h3_index IS NULL -- Eliminate any form of water from this class

@@ -171,12 +171,12 @@ CREATE TEMPORARY VIEW class_280 AS (
     LEFT JOIN (
         SELECT
             h3_index,
-            IUR2025_V1_00
-        FROM urban_rural_2025_h3
-        JOIN urban_rural_2025 USING (ogc_fid)
+            IUR2026_V1_00
+        FROM urban_rural_current_h3
+        JOIN urban_rural_current USING (ogc_fid)
         WHERE
             :parent::h3index = h3_partition
-            AND IUR2025_V1_00 = '22' -- Rural other
+            AND IUR2026_V1_00 = '22' -- Rural other
     ) AS rural_other USING (h3_index)
 )
 

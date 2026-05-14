@@ -76,7 +76,7 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         THEN ROW(
             ARRAY[]::TEXT[],
             CASE
-                WHEN urban_rural_2025_.IUR2025_V1_00 = '22'
+                WHEN urban_rural_current_.IUR2026_V1_00 = '22'
                 THEN 8 -- Often paper roads in rural areas
                 ELSE 2 -- Urban areas have better defined road parcels
             END,
@@ -261,11 +261,11 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
     LEFT JOIN (
         SELECT
             h3_index,
-            IUR2025_V1_00
-        FROM urban_rural_2025_h3
-        JOIN urban_rural_2025 USING (ogc_fid)
+            IUR2026_V1_00
+        FROM urban_rural_current_h3
+        JOIN urban_rural_current USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS urban_rural_2025_ USING (h3_index)
+    ) AS urban_rural_current_ USING (h3_index)
 );
 
 -- TODO CROSL Ports of Auckland, Airways, etc.?

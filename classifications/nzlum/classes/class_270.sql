@@ -22,7 +22,7 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
                 linz_dvr_rural.h3_index IS NOT NULL
                 OR lcdb_.h3_index IS NOT NULL
             )
-            AND urban_rural_2025_.h3_index IS NOT NULL
+            AND urban_rural_current_.h3_index IS NOT NULL
         ) 
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
@@ -172,15 +172,15 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
     ) irrigation_canals USING (h3_index)
     LEFT JOIN (
         SELECT
-            urban_rural_2025_h3.h3_index,
-            urban_rural_2025.IUR2025_V1_00
-        FROM urban_rural_2025_h3
-        JOIN urban_rural_2025 USING (ogc_fid)
+            urban_rural_current_h3.h3_index,
+            urban_rural_current.IUR2026_V1_00
+        FROM urban_rural_current_h3
+        JOIN urban_rural_current USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-        AND urban_rural_2025.IUR2025_V1_00 IN (
+        AND urban_rural_current.IUR2026_V1_00 IN (
             '22', -- Rural other
             '31' -- Inland water
         ) -- Rural other
-    ) AS urban_rural_2025_ USING (h3_index)
+    ) AS urban_rural_current_ USING (h3_index)
 );
 

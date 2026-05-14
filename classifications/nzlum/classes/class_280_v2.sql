@@ -48,11 +48,11 @@ filtered_crop_transitional AS (
 ),
 filtered_rural_other AS (
     SELECT h3_index
-    FROM urban_rural_2025_h3
-    JOIN urban_rural_2025 USING (ogc_fid)
+    FROM urban_rural_current_h3
+    JOIN urban_rural_current USING (ogc_fid)
     WHERE
         :parent::h3index = h3_partition
-        AND IUR2025_V1_00 = '22'
+        AND IUR2026_V1_00 = '22'
 ),
 
 -- UNION ALL of all potential matches
