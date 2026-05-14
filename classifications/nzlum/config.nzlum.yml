@@ -1,64 +1,9 @@
 region_of_interest:
-  # id: otorohanga_district_cbs_2025
-  # id: otorohanga_cb_2025
-  # id: nz_grid_1km
   id: urban_rural_2025
-
 
 h3:
   resolution: 13
 
-external_data:
-  # palmerston_north_cb_2025: &cb2025
-  #   host: https://datafinder.stats.govt.nz/services;key={key}/wfs
-  #   key: STATS_NZ_KEY
-  #   external_data_type: wfs
-  #   license: https://creativecommons.org/licenses/by/4.0/
-  #   attribution: "Sourced from the Statistics New Zealand Datafinder and licensed for reuse under CC BY 4.0"
-  #   description: Community Board 2025
-  #   layer: layer-120952
-  #   geom_type: polygon
-  #   where: CB2025_V1_00 = '04099'
-  # otorohanga_cb_2025:
-  #   <<: *cb2025
-  #   where: CB2025_V1_00 = '01802'
-  # otorohanga_district_cbs_2025:
-  #   <<: *cb2025
-  #   where: CB2025_V1_00 IN ('01802', '01899', '01801')
-  nz_grid_1km:
-    host: https://datafinder.stats.govt.nz/services;key={key}/wfs
-    key: STATS_NZ_KEY
-    external_data_type: wfs
-    license: https://creativecommons.org/licenses/by/4.0/
-    attribution: "Sourced from the Statistics New Zealand Datafinder and licensed for reuse under CC BY 4.0"
-    description: New Zealand Grid 1 kilometre, 2023
-    layer: layer-115046
-    geom_type: polygon
-    where: |-
-      GridID LIKE 'E179%N577%'
-      OR GridID LIKE 'E177%N57845'
-      OR GridID LIKE 'E17755N578%'
-      OR GridID = 'E18045N57785'
-      OR GridID LIKE 'E175%N57855'
-      OR GridID LIKE 'E1533%N516%'
-      OR GridID LIKE 'E1928%N560%'
-      OR GridID LIKE 'E1927%N560%'
-      OR GridID LIKE 'E1929%N560%'
-      OR GridID LIKE 'E1928%N561%'
-      OR GridID LIKE 'E1812%N563%'
-      OR GridID = 'E16675N54345'
-      OR GridID LIKE 'E192%N56155'
-      OR GridID LIKE 'E157%N518%'
-      OR GridID LIKE 'E138%N512%'
-      OR GridID LIKE 'E184%N551%'
-      OR GridID LIKE 'E183%N551%'
-      OR GridID LIKE 'E174%N542%'
-      OR GridID LIKE 'E175%N543%'
-      OR GridID LIKE 'E176%N543%'
-      OR GridID LIKE 'E202%N570%'
-      OR GridID LIKE 'E202%N571%'
-      OR GridID LIKE 'E203%N571%'
-      OR GridID LIKE 'E203%N570%'
 classifications:
   nzlum:
     depends:
