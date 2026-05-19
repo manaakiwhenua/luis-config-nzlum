@@ -1,6 +1,6 @@
 CREATE TEMPORARY VIEW land_zone AS (
-    SELECT
-        h3_index,
+    SELECT DISTINCT ON (roi.h3_index)
+        roi.h3_index,
         CASE -- TODO these could be refined, see Table 19 (https://environment.govt.nz/assets/publications/national-planning-standards-november-2019-updated-2022.pdf) and Section C.2 (https://www.linz.govt.nz/sites/default/files/30300-Rating%2520Valuations%2520Rules%25202008-%2520version%2520date%25201%2520October%25202010%2520-%2520LINZS30300_0.pdf)
             WHEN "zone" = '0X' THEN 'Land in more than one zone or designation' -- Land in more than one zone or designation
             WHEN "zone" = 'OX' THEN 'Land in more than one zone or designation' -- Assume this is a rare typo for the same
@@ -18,5 +18,12 @@ CREATE TEMPORARY VIEW land_zone AS (
             ELSE null
         END AS "zone", -- May be better to just take linz_dvr_.zone values? Except that there are invalid codes
         land_estate
-    FROM linz_dvr_
+    FROM roi
+    LEFT JOIN linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
+    ORDER BY
+        roi.h3_index,
+        h3_get_resolution(linz_dvr_.h3_index) DESC NULLS LAST, -- prefer finest (most specific) DVR cell
+        linz_dvr_.source_date DESC NULLS LAST, -- then most recent valuation
+        linz_dvr_."zone" ASC NULLS LAST, -- then deterministic alphabetical
+        linz_dvr_.land_estate ASC NULLS LAST
 );

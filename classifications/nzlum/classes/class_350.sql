@@ -15,7 +15,7 @@
 --     Water extraction and transmission – facilities and infrastructure for extracting, purifying, treating, and transporting water from natural sources such as rivers, lakes, or reservoirs to meet various human needs, including drinking-water supply, irrigation, and industrial use. Includes drinking-water reservoirs themselves
 
 CREATE TEMPORARY VIEW class_350 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     5 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -114,7 +114,8 @@ CREATE TEMPORARY VIEW class_350 AS (
             NULL
         )::nzlum_type
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -128,8 +129,8 @@ CREATE TEMPORARY VIEW class_350 AS (
             'Mighty River Power Limited - Grantee',
             'Watercare Services Limited'
         ) OR statutory_actions ~* '\m(substation|electricity|water\s?power|pump\s?station|water\s?works)\M'
-    ) AS linz_crosl_
-    FULL OUTER JOIN (
+    ) AS linz_crosl_ ON roi.h3_index && linz_crosl_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -146,8 +147,8 @@ CREATE TEMPORARY VIEW class_350 AS (
             actual_property_use ~ '6[01234678]' -- 65 is sanitary (better as 3.8.X) and 69 is vacant (3.9.X)
             OR actual_property_use = '06'
             OR category ~ '^U[CEGT]' -- UP (postboxes) and UR (rail network corridors) excluded
-    ) AS linz_dvr_utility_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS linz_dvr_utility_ ON roi.h3_index && linz_dvr_utility_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             'LINZ' AS source_data,
@@ -173,8 +174,8 @@ CREATE TEMPORARY VIEW class_350 AS (
                 'Lake Maraetai',
                 'Lake Arapuni'
             )
-    ) AS topo50_hydro_and_reservoirs USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS topo50_hydro_and_reservoirs ON roi.h3_index && topo50_hydro_and_reservoirs.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -185,7 +186,7 @@ CREATE TEMPORARY VIEW class_350 AS (
         WHERE hail_category_ids @> ARRAY[
             'B4' -- Power stations, substations or switchyards
         ]
-    ) AS hail_electric USING (h3_index)
+    ) AS hail_electric ON roi.h3_index && hail_electric.h3_index
     LEFT JOIN (
         SELECT h3_index
         FROM lcdb_
@@ -194,7 +195,11 @@ CREATE TEMPORARY VIEW class_350 AS (
             2, -- Urban parkland open space
             5 -- Transport infrastructure
         )
-    ) AS lcdb_unbuilt USING (h3_index)
+    ) AS lcdb_unbuilt ON roi.h3_index && lcdb_unbuilt.h3_index
+    WHERE linz_crosl_.h3_index IS NOT NULL
+       OR linz_dvr_utility_.h3_index IS NOT NULL
+       OR topo50_hydro_and_reservoirs.h3_index IS NOT NULL
+       OR hail_electric.h3_index IS NOT NULL
 );
 -- DVR use class 6 (all, except 69? 67 (postboxes) is odd and may fit under comm. services)
 -- TODO what to do with actual use 67 postboxes

@@ -9,7 +9,7 @@
 --     Brownfield development – areas of active redevelopment of previously developed (often industrial) land that may be abandoned, contaminated, or economically under-utilised, with the aim of rehabilitating and repurposing these sites for new urban activities. May include residential areas undergoing infill development that increase housing density.
 
 CREATE TEMPORARY VIEW class_390 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     9 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -125,7 +125,8 @@ CREATE TEMPORARY VIEW class_390 AS (
             NULL
         )::nzlum_type
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -151,8 +152,8 @@ CREATE TEMPORARY VIEW class_390 AS (
             )
             OR "zone" ~ '^[24789].*' -- Lifestyle, community use, recreational, industrial, commercial or residential zones
             OR "zone" = '0X' -- Land in more than one zone or designation
-    ) AS linz_dvr_vacant_built
-    FULL OUTER JOIN (
+    ) AS linz_dvr_vacant_built ON roi.h3_index && linz_dvr_vacant_built.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -162,15 +163,15 @@ CREATE TEMPORARY VIEW class_390 AS (
             category,
             "zone"
         FROM linz_dvr_
-    ) AS linz_dvr_full_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS linz_dvr_full_ ON roi.h3_index && linz_dvr_full_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
             source_date,
             source_scale
         FROM transitional_land
-    ) AS transitional_land USING (h3_index)
+    ) AS transitional_land ON roi.h3_index && transitional_land.h3_index
     LEFT JOIN (
         SELECT
             h3_index,
@@ -180,10 +181,11 @@ CREATE TEMPORARY VIEW class_390 AS (
         WHERE
             :parent::h3index = h3_partition
             AND urban_rural_current.IUR2026_V1_00 <> '22' -- (non) "Rural other"
-    ) AS urban_rural_current_ USING (h3_index)
-    LEFT JOIN water_features USING (h3_index)
-    LEFT JOIN pan_nz_draft_h3 USING (h3_index)
-    WHERE water_features.h3_index IS NULL -- Eliminate any form of water from this class
+    ) AS urban_rural_current_ ON roi.h3_index && urban_rural_current_.h3_index
+    LEFT JOIN water_features ON roi.h3_index && water_features.h3_index
+    LEFT JOIN pan_nz_draft_h3 ON roi.h3_index && pan_nz_draft_h3.h3_index
+    WHERE (transitional_land.h3_index IS NOT NULL OR linz_dvr_vacant_built.h3_index IS NOT NULL)
+    AND water_features.h3_index IS NULL -- Eliminate any form of water from this class
     AND pan_nz_draft_h3.h3_index IS NULL -- Eliminate from consideration -anything- in PAN-NZ
 );
 

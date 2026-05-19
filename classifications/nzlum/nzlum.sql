@@ -36,7 +36,8 @@ CREATE TEMPORARY VIEW roi AS (
 -- attributes
 \ir attributes/water.sql
 \ir attributes/land_status.sql
-\ir attributes/zone.sql   -- zone, land_estate
+-- zone, land_estate
+\ir attributes/zone.sql
 
 -- classes
 \ir classes/class_111.sql
@@ -78,7 +79,7 @@ SELECT
     *
 FROM (
     SELECT
-        h3_compact_cells(ARRAY_AGG(DISTINCT h3_index)) AS h3_index_compact,
+        h3_compact_cells(ARRAY_AGG(DISTINCT subq.h3_index)) AS h3_index_compact,
         hash_bigint(ARRAY[
             lu_code_primary,
             lu_code_secondary,
@@ -220,9 +221,9 @@ FROM (
         RIGHT JOIN roi USING (h3_index)
         WHERE :parent::h3index = roi.h3_partition
     ) subq
-    FULL OUTER JOIN land_zone USING (h3_index)
-    FULL OUTER JOIN water_features USING (h3_index)
-    FULL OUTER JOIN land_status USING (h3_index)
+    LEFT JOIN land_zone USING (h3_index)
+    LEFT JOIN water_features USING (h3_index)
+    LEFT JOIN land_status USING (h3_index)
     -- TODO consider a function for recording multiple uses
     WHERE rn = 1 -- Select best option after ranking in cases where multiple classes are possible
     GROUP BY
@@ -248,6 +249,8 @@ FROM (
 ) q;
 
 \unset ON_ERROR_STOP
+
+ALTER TABLE :partition SET LOGGED;
 
 BEGIN;
 LOCK TABLE :classification IN ACCESS EXCLUSIVE MODE;

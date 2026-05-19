@@ -11,7 +11,7 @@
 -- Irrigation reservoirs and canals – land used for water storage, management or distribution intended for agricultural purposes; artificial or natural areas allocated for irrigation for agricultural purposes.
 
 CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
-    SELECT h3_index,
+    SELECT roi.h3_index,
     2 AS lu_code_primary,
     7 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -77,7 +77,8 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             NULL
         )::nzlum_type
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -90,36 +91,28 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             SELECT h3_index
             FROM topo50_pond
             JOIN topo50_pond_h3 USING (ogc_fid)
-            WHERE
-                :parent::h3index = h3_partition
-                AND pond_use IS NULL
-                AND "name" IS NULL
-                AND :parent::h3index = h3_partition
+            WHERE :parent::h3index = h3_partition
+            AND pond_use IS NULL
+            AND "name" IS NULL
 
             UNION ALL
 
             SELECT h3_index
             FROM topo50_lake
             JOIN topo50_lake_h3 USING (ogc_fid)
-            WHERE
-                :parent::h3index = h3_partition
-                AND lake_use IS NULL
-                AND "name" IS NULL
-                AND "grp_name" IS NULL
-                AND :parent::h3index = h3_partition
+            WHERE :parent::h3index = h3_partition
+            AND lake_use IS NULL
+            AND "name" IS NULL
+            AND "grp_name" IS NULL
         ) topo50_water
-    ) unspecified_waterbodies
-    FULL OUTER JOIN(
-        SELECT
-            h3_index,
-            source_data,
-            source_date,
-            source_scale
+    ) unspecified_waterbodies ON roi.h3_index && unspecified_waterbodies.h3_index
+    LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale
         FROM linz_dvr_
         WHERE actual_property_use ~ '^0?[012]' -- Rural industry or lifestyle, including multi-use at primary level, or vacant
         AND actual_property_use != '18' -- Mineral extraction
-    ) linz_dvr_rural USING (h3_index)
-    FULL OUTER JOIN (
+    ) linz_dvr_rural ON roi.h3_index && linz_dvr_rural.h3_index
+    LEFT JOIN (
         SELECT h3_index
         FROM lcdb_
         WHERE class_2018 IN (
@@ -129,17 +122,13 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             40, -- High Producing Grassland
             41 -- Low Producing Grassland
         )
-    ) AS lcdb_ USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT
-            h3_index,
-            source_data,
-            source_date,
-            source_scale
+    ) AS lcdb_ ON roi.h3_index && lcdb_.h3_index
+    LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale
         FROM dairy_effluent_discharge
         WHERE :parent::h3index = h3_partition
-    ) AS dairy_effluent_discharge USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS dairy_effluent_discharge ON roi.h3_index && dairy_effluent_discharge.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -155,8 +144,8 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             "name" ~* '\mreservoir\M'
             AND lake_use != 'hydro-electric'
         ) OR lake_use = 'reservoir'
-    ) lakes USING (h3_index)
-    FULL OUTER JOIN (
+    ) lakes ON roi.h3_index && lakes.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             '2015-03-11'::DATE,
@@ -169,7 +158,7 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
         JOIN topo50_canal_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
         AND "name" = 'Rangitata Diversion Race'
-    ) irrigation_canals USING (h3_index)
+    ) irrigation_canals ON roi.h3_index && irrigation_canals.h3_index
     LEFT JOIN (
         SELECT
             urban_rural_current_h3.h3_index,
@@ -180,7 +169,12 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
         AND urban_rural_current.IUR2026_V1_00 IN (
             '22', -- Rural other
             '31' -- Inland water
-        ) -- Rural other
-    ) AS urban_rural_current_ USING (h3_index)
+        )
+    ) AS urban_rural_current_ ON roi.h3_index && urban_rural_current_.h3_index
+    WHERE unspecified_waterbodies.h3_index IS NOT NULL
+       OR linz_dvr_rural.h3_index IS NOT NULL
+       OR dairy_effluent_discharge.h3_index IS NOT NULL
+       OR lakes.h3_index IS NOT NULL
+       OR irrigation_canals.h3_index IS NOT NULL
 );
 

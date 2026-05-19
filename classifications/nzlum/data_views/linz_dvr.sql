@@ -1,6 +1,7 @@
 CREATE TEMPORARY VIEW linz_dvr_ AS (
-    SELECT DISTINCT ON (h3_index) h3_index,
-    h3_partition,
+    SELECT DISTINCT ON (h3_finest(uop_h3.h3_index, urban_rural_current_.h3_index))
+    h3_finest(uop_h3.h3_index, urban_rural_current_.h3_index) AS h3_index,
+    uop_h3.h3_partition,
     improvements_value,
     improvements_value_ratio,
     legal_description,
@@ -47,7 +48,7 @@ CREATE TEMPORARY VIEW linz_dvr_ AS (
         FROM urban_rural_current_h3
         JOIN urban_rural_current USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS urban_rural_current_ USING (h3_index)
+    ) AS urban_rural_current_ ON uop_h3.h3_index && urban_rural_current_.h3_index
     WHERE :parent::h3index = h3_partition
     AND urban_rural_current_.IUR2026_V1_00 NOT IN (
         '31', -- Inland water (i.e. lakes)
@@ -55,7 +56,7 @@ CREATE TEMPORARY VIEW linz_dvr_ AS (
         '33' -- Oceanic
     )
     ORDER BY
-        h3_index,
+        h3_finest(uop_h3.h3_index, urban_rural_current_.h3_index),
         current_effective_valuation_date DESC NULLS LAST, -- Take more recent valuation
         CASE
             WHEN actual_property_use ~ '^0' -- Mixed use

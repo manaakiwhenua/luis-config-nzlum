@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_310 AS ( -- Residential
-    SELECT h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     1 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -83,7 +83,8 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -100,7 +101,7 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             OR actual_property_use ~ '^0(2|9)'
             OR category ~ '^(R|L)' -- Residential
         )
-    ) AS linz_dvr_
+    ) AS linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
     LEFT JOIN (
         SELECT
             h3_index,
@@ -109,8 +110,8 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             source_scale,
             status
         FROM irrigation_
-    ) AS irrigation_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS irrigation_ ON roi.h3_index && irrigation_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -118,10 +119,11 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             source_scale
         FROM linz_crosl_
         WHERE managed_by = 'Housing New Zealand'
-    ) AS hnz USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS hnz ON roi.h3_index && hnz.h3_index
+    LEFT JOIN (
         SELECT h3_index
         FROM topo50_residential_areas_h3
         WHERE :parent::h3index = h3_partition
-    ) AS topo50_residential_areas_h3 USING (h3_index)
+    ) AS topo50_residential_areas_h3 ON roi.h3_index && topo50_residential_areas_h3.h3_index
+    WHERE linz_dvr_.h3_index IS NOT NULL OR hnz.h3_index IS NOT NULL
 );

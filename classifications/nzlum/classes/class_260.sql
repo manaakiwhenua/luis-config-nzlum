@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
-    SELECT h3_index,
+    SELECT roi.h3_index,
     2 AS lu_code_primary,
     6 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -67,9 +67,10 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM marine_farms
-    FULL OUTER JOIN (
-        SELECT 
+    FROM roi
+    LEFT JOIN marine_farms ON roi.h3_index && marine_farms.h3_index
+    LEFT JOIN (
+        SELECT
             h3_index,
             source_data,
             source_date,
@@ -82,5 +83,6 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
         WHERE category ~ '^PS'
         OR category ~ '^S(A|H|P|S|X)' -- Specialist types except deer: aquaculture, horse studs and training operations, poultry, pigs, all other specialist livestock
         OR actual_property_use IN ('0', '00', '01', '1', '10', '16')
-    ) linz_dvr_ USING (h3_index)
+    ) linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
+    WHERE marine_farms.h3_index IS NOT NULL OR linz_dvr_.h3_index IS NOT NULL
 );

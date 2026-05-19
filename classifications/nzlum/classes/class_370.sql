@@ -4,7 +4,7 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
     -- Tailings
     -- Evaporation basins
     -- Extractive industry not in use
-    SELECT h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     7 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -126,7 +126,8 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
     -- management practice? mines.visibility = opencast
     -- quarries.status = NULL,disused
     -- quarries.substance = NULL,clay,gravel,lime,limestone,metal,shingle,silica sand,stone,zeolite
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT
             h3_index,
             substance,
@@ -136,8 +137,8 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
         FROM topo50_mines
         JOIN topo50_mines_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS mines_
-    FULL OUTER JOIN (
+    ) AS mines_ ON roi.h3_index && mines_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             "status",
@@ -148,7 +149,7 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
         FROM topo50_quarries
         JOIN topo50_quarries_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-        
+
         UNION ALL
 
         SELECT
@@ -165,8 +166,8 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
         FROM topo50_chatham_quarries
         JOIN topo50_chatham_quarries_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS quarries_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS quarries_ ON roi.h3_index && quarries_.h3_index
+    LEFT JOIN (
         -- NB topo50 pond; pond_use = evaporation, i.e. Lake Grassmere solar salt production
         SELECT
             h3_index,
@@ -178,8 +179,8 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
         WHERE
             :parent::h3index = h3_partition
             AND pond_use = 'evaporation'
-    ) AS evaporation_ponds_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS evaporation_ponds_ ON roi.h3_index && evaporation_ponds_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             daterange('2011-05-22'::DATE, '2025-01-02'::DATE, '[]') AS source_date,
@@ -190,8 +191,8 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
         WHERE
             :parent::h3index = h3_partition
             AND pond_use = 'settling'
-    ) AS settling_ponds_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS settling_ponds_ ON roi.h3_index && settling_ponds_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             daterange('2011-05-22'::DATE, '2024-12-20'::DATE, '[]') AS source_date,
@@ -200,8 +201,8 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
         FROM topo50_dredge_tailing_centrelines
         JOIN topo50_dredge_tailing_centrelines_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS dredge_tailings_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS dredge_tailings_ ON roi.h3_index && dredge_tailings_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -219,7 +220,13 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
                 '78' -- Industrial, depots and yards
             )
             OR improvements_description ~ '/mQUARRY/M'
-    ) AS linz_dvr_ USING (h3_index)
+    ) AS linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
+    WHERE mines_.h3_index IS NOT NULL
+       OR quarries_.h3_index IS NOT NULL
+       OR evaporation_ponds_.h3_index IS NOT NULL
+       OR settling_ponds_.h3_index IS NOT NULL
+       OR dredge_tailings_.h3_index IS NOT NULL
+       OR linz_dvr_.h3_index IS NOT NULL
 );
 
 -- Use DVR category for commodity

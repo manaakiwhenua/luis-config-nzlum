@@ -59,7 +59,7 @@ filtered_rural_other AS (
 unioned_matches AS (
     -- Match 1: Transitional land in rural_other
     SELECT
-        t.h3_index,
+        roi.h3_index,
         2 AS lu_code_primary,
         8 AS lu_code_secondary,
         0 AS lu_code_tertiary,
@@ -74,14 +74,15 @@ unioned_matches AS (
             NULL
         )::nzlum_type AS nzlum_type,
         1 AS priority
-    FROM filtered_transitional t
-    INNER JOIN filtered_rural_other r USING (h3_index)
+    FROM roi
+    JOIN filtered_transitional t ON roi.h3_index && t.h3_index
+    JOIN filtered_rural_other r ON roi.h3_index && r.h3_index
 
     UNION ALL
 
     -- Match 2: LINZ vacant rural
     SELECT
-        l.h3_index,
+        roi.h3_index,
         2, 8, 0,
         ROW(
             ARRAY[]::TEXT[],
@@ -105,8 +106,9 @@ unioned_matches AS (
             NULL
         )::nzlum_type,
         2
-    FROM filtered_linz l
-    INNER JOIN filtered_lcdb USING (h3_index)
+    FROM roi
+    JOIN filtered_linz l ON roi.h3_index && l.h3_index
+    JOIN filtered_lcdb ON roi.h3_index && filtered_lcdb.h3_index
     WHERE
         l.actual_property_use = '19'
         AND l.category ~ '^[ADFHOPS]'
@@ -115,7 +117,7 @@ unioned_matches AS (
 
     -- Match 3: Lifestyle vacant with orchard hint
     SELECT
-        l.h3_index,
+        roi.h3_index,
         2, 8, 0,
         ROW(
             ARRAY[]::TEXT[],
@@ -136,9 +138,10 @@ unioned_matches AS (
             NULL
         )::nzlum_type,
         3
-    FROM filtered_linz l
-    JOIN filtered_lcdb USING (h3_index)
-    JOIN filtered_rural_other USING (h3_index)
+    FROM roi
+    JOIN filtered_linz l ON roi.h3_index && l.h3_index
+    JOIN filtered_lcdb ON roi.h3_index && filtered_lcdb.h3_index
+    JOIN filtered_rural_other ON roi.h3_index && filtered_rural_other.h3_index
     WHERE
         l.actual_property_use = '29'
         AND l.category LIKE 'LV%'
@@ -147,7 +150,7 @@ unioned_matches AS (
 
     -- Match 4: LINZ '00' multi-use
     SELECT
-        l.h3_index,
+        roi.h3_index,
         2, 8, 0,
         ROW(
             ARRAY[]::TEXT[],
@@ -166,16 +169,17 @@ unioned_matches AS (
             NULL
         )::nzlum_type,
         4
-    FROM filtered_linz l
-    JOIN filtered_lcdb USING (h3_index)
-    JOIN filtered_rural_other USING (h3_index)
+    FROM roi
+    JOIN filtered_linz l ON roi.h3_index && l.h3_index
+    JOIN filtered_lcdb ON roi.h3_index && filtered_lcdb.h3_index
+    JOIN filtered_rural_other ON roi.h3_index && filtered_rural_other.h3_index
     WHERE l.actual_property_use = '00'
 
     UNION ALL
 
     -- Match 5: Crop transitional
     SELECT
-        c.h3_index,
+        roi.h3_index,
         2, 8, 0,
         ROW(
             ARRAY[]::TEXT[],
@@ -188,7 +192,8 @@ unioned_matches AS (
             NULL
         )::nzlum_type,
         5
-    FROM filtered_crop_transitional c
+    FROM roi
+    JOIN filtered_crop_transitional c ON roi.h3_index && c.h3_index
 ),
 
 -- Pick best match per h3_index

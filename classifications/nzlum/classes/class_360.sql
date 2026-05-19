@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
-    SELECT DISTINCT ON (h3_index) h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     6 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -114,20 +114,21 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         DATERANGE(
             '2012-12-20'::DATE,
             '2025-03-15'::DATE,
             '[]'
-            ) AS source_date,
+        ) AS source_date,
         '[1,100]'::int4range AS source_scale
         FROM railway_parcels
         JOIN railway_parcels_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS parcel_rail
-    FULL OUTER JOIN (
+    ) AS parcel_rail ON roi.h3_index && parcel_rail.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         DATERANGE(
@@ -139,8 +140,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         FROM topo50_railway
         JOIN topo50_railway_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS topo_rail USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS topo_rail ON roi.h3_index && topo_rail.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         DATERANGE(
@@ -153,8 +154,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         FROM road_parcels
         JOIN road_parcels_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS parcel_road USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS parcel_road ON roi.h3_index && parcel_road.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         DATERANGE(
@@ -178,8 +179,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         '[60,100)'::int4range AS source_scale
         FROM topo50_chatham_roads_h3
         WHERE :parent::h3index = h3_partition
-    ) AS topo_road USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS topo_road ON roi.h3_index && topo_road.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         DATERANGE(
@@ -190,7 +191,7 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         '[60,100)'::int4range AS source_scale
         FROM topo50_airports_h3
         WHERE :parent::h3index = h3_partition
-        
+
         UNION ALL
 
         SELECT h3_index,
@@ -203,8 +204,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         '[60,100)'::int4range AS source_scale
         FROM topo50_chatham_airports_h3
         WHERE :parent::h3index = h3_partition
-    ) AS topo_airport USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS topo_airport ON roi.h3_index && topo_airport.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         "status",
         'LINZ' AS source_data,
@@ -232,8 +233,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         FROM topo50_chatham_runways
         JOIN topo50_chatham_runways_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS topo50_runways USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS topo50_runways ON roi.h3_index && topo50_runways.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -243,8 +244,8 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         FROM linz_dvr_
         WHERE actual_property_use LIKE '3%' -- Transport
         OR actual_property_use = '03' -- Multi-use within transport
-    ) AS dvr_transport USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS dvr_transport ON roi.h3_index && dvr_transport.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -253,11 +254,11 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
             hail_category_count
         FROM hail
         WHERE hail_category_ids @> ARRAY[
-            'F1', -- Airports including fuel storage, workshops, washdown areas, or fire practice areas 
+            'F1', -- Airports including fuel storage, workshops, washdown areas, or fire practice areas
             'F5', -- Port activities including dry docks or marine vessel maintenance facilities
             'F6' -- Railway yards including goods-handling yards, workshops, refuelling facilities or maintenance areas
         ]
-    ) AS hail_transport USING (h3_index)
+    ) AS hail_transport ON roi.h3_index && hail_transport.h3_index
     LEFT JOIN (
         SELECT
             h3_index,
@@ -265,7 +266,15 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
         FROM urban_rural_current_h3
         JOIN urban_rural_current USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS urban_rural_current_ USING (h3_index)
+    ) AS urban_rural_current_ ON roi.h3_index && urban_rural_current_.h3_index
+    WHERE parcel_rail.h3_index IS NOT NULL
+       OR topo_rail.h3_index IS NOT NULL
+       OR parcel_road.h3_index IS NOT NULL
+       OR topo_road.h3_index IS NOT NULL
+       OR topo_airport.h3_index IS NOT NULL
+       OR topo50_runways.h3_index IS NOT NULL
+       OR dvr_transport.h3_index IS NOT NULL
+       OR hail_transport.h3_index IS NOT NULL
 );
 
 -- TODO CROSL Ports of Auckland, Airways, etc.?

@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
-    SELECT h3_index,
+    SELECT roi.h3_index,
     1 AS lu_code_primary,
     4 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -146,7 +146,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             createddate::date,
@@ -159,8 +160,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         FROM ecan_braided_rivers_h3
         JOIN ecan_braided_rivers USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS ecan_braided_rivers_
-    FULL OUTER JOIN (
+    ) AS ecan_braided_rivers_ ON roi.h3_index && ecan_braided_rivers_.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         improvements_value,
         category,
@@ -173,10 +174,10 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             actual_property_use = '00' -- Multi-use at primary level: vacant or intermediate
             OR actual_property_use ~ '[1-9]0' -- All kinds of vacant
         )
-    ) linz_dvr_vacant_other USING (h3_index)
-    FULL OUTER JOIN lcdb_ USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT h3_index,        
+    ) linz_dvr_vacant_other ON roi.h3_index && linz_dvr_vacant_other.h3_index
+    LEFT JOIN lcdb_ ON roi.h3_index && lcdb_.h3_index
+    LEFT JOIN (
+        SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
             '2011-05-22'::date,
@@ -199,8 +200,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         '[60,100)'::int4range AS source_scale
         FROM topo50_chatham_rocks_polygons_h3
         WHERE :parent::h3index = h3_partition
-    ) AS topo50_rocks_polygons USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS topo50_rocks_polygons ON roi.h3_index && topo50_rocks_polygons.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
@@ -211,8 +212,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         '[60,100)'::int4range AS source_scale
         FROM topo50_scree_polygons_h3
         WHERE :parent::h3index = h3_partition
-    ) topo50_scree USING (h3_index)
-    FULL OUTER JOIN (
+    ) topo50_scree ON roi.h3_index && topo50_scree.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
@@ -223,8 +224,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         '[60,100)'::int4range AS source_scale
         FROM topo50_snow_polygons_h3
         WHERE :parent::h3index = h3_partition
-    ) topo50_snow USING (h3_index)
-    FULL OUTER JOIN (
+    ) topo50_snow ON roi.h3_index && topo50_snow.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
@@ -235,8 +236,8 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         '[60,100)'::int4range AS source_scale
         FROM topo50_moraine_polygons_h3
         WHERE :parent::h3index = h3_partition
-    ) topo50_moraine_polygons USING (h3_index)
-    FULL OUTER JOIN (
+    ) topo50_moraine_polygons ON roi.h3_index && topo50_moraine_polygons.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
@@ -247,9 +248,9 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         '[60,100)'::int4range AS source_scale
         FROM topo50_moraine_wall_polygons_h3
         WHERE :parent::h3index = h3_partition
-    ) topo50_moraine_wall_polygons USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT h3_index,        
+    ) topo50_moraine_wall_polygons ON roi.h3_index && topo50_moraine_wall_polygons.h3_index
+    LEFT JOIN (
+        SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
             '2011-05-22'::date,
@@ -272,10 +273,10 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         '[60,100)'::int4range AS source_scale
         FROM topo50_chatham_shingle_polygons_h3
         WHERE :parent::h3index = h3_partition
-    ) AS topo50_shingle_polygons USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT  DISTINCT ON (h3_index)
-        h3_index,
+    ) AS topo50_shingle_polygons ON roi.h3_index && topo50_shingle_polygons.h3_index
+    LEFT JOIN (
+        SELECT DISTINCT ON (pan_nz_draft_h3.h3_index)
+        pan_nz_draft_h3.h3_index,
         source_data,
         source_date,
         source_scale,
@@ -286,15 +287,25 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         AND (
             legislation_act = 'RESERVES_ACT'
             AND (
-                legislation_section IS NULL 
+                legislation_section IS NULL
                 OR legislation_section = 'Acquired for Public Works'
             )
         )
         ORDER BY
-            h3_index,
+            pan_nz_draft_h3.h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break
-    ) AS pan_nz_public_works USING (h3_index)
+    ) AS pan_nz_public_works ON roi.h3_index && pan_nz_public_works.h3_index
+    WHERE ecan_braided_rivers_.h3_index IS NOT NULL
+       OR linz_dvr_vacant_other.h3_index IS NOT NULL
+       OR lcdb_.h3_index IS NOT NULL
+       OR topo50_rocks_polygons.h3_index IS NOT NULL
+       OR topo50_scree.h3_index IS NOT NULL
+       OR topo50_snow.h3_index IS NOT NULL
+       OR topo50_moraine_polygons.h3_index IS NOT NULL
+       OR topo50_moraine_wall_polygons.h3_index IS NOT NULL
+       OR topo50_shingle_polygons.h3_index IS NOT NULL
+       OR pan_nz_public_works.h3_index IS NOT NULL
 )
 
 -- DVR: "category" = 'OV' AND "actual_property_use" LIKE '%9'

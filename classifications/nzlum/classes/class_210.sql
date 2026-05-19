@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
-    SELECT h3_index,
+    SELECT roi.h3_index,
     2 AS lu_code_primary,
     1 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -122,8 +122,9 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
     END AS nzlum_type
     -- commodity type? pinus radiata, douglas fir (lum_.subid_2020)
     -- species (topo50: empty=coniferous, and "non-coniferous")
-    FROM (
-        SELECT 
+    FROM roi
+    LEFT JOIN (
+        SELECT
             h3_index,
             source_data,
             source_date,
@@ -134,8 +135,8 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
             '72 - Planted Forest - Pre 1990',
             '73 - Post 1989 Forest'
         )
-    ) AS lum_
-    FULL OUTER JOIN (
+    ) AS lum_ ON roi.h3_index && lum_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             DATERANGE(
@@ -161,8 +162,8 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
             '[60,100)'::int4range AS source_scale
         FROM topo50_chatham_exotic_polygons_h3
         WHERE :parent::h3index = h3_partition
-    ) topo50_exotic_polygons_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) topo50_exotic_polygons_ ON roi.h3_index && topo50_exotic_polygons_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -170,12 +171,12 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
             source_scale,
             afforestation_flag
         FROM consents_forestry
-    ) AS consents_forestry USING (h3_index)
+    ) AS consents_forestry ON roi.h3_index && consents_forestry.h3_index
     LEFT JOIN (
         SELECT h3_index
         FROM pan_nz_draft_h3
         WHERE :parent::h3index = h3_partition
-    ) AS pan_nz_draft_h3 USING (h3_index)
+    ) AS pan_nz_draft_h3 ON roi.h3_index && pan_nz_draft_h3.h3_index
     LEFT JOIN (
         SELECT h3_index
         FROM urban_rural_current
@@ -187,5 +188,8 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
             '32', -- Inlet
             '33' -- Oceanic
         )
-    ) AS rural USING (h3_index)
+    ) AS rural ON roi.h3_index && rural.h3_index
+    WHERE lum_.h3_index IS NOT NULL
+       OR topo50_exotic_polygons_.h3_index IS NOT NULL
+       OR consents_forestry.h3_index IS NOT NULL
 );

@@ -17,7 +17,7 @@
 -- Community services – land used for providing essential services and facilities to support the local community, including educational institutions, public healthcare facilities, libraries, museums, courts, prisons, civic buildings, emergency services, marae, religious buildings, cemeteries, and other public amenities for community functioning and well-being
 
 CREATE TEMPORARY VIEW class_320 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     2 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -167,29 +167,31 @@ CREATE TEMPORARY VIEW class_320 AS (
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
-        SELECT *,
-        'LINZ' AS source_data,
-        daterange(
-            last_modified::DATE,
-            last_modified::DATE,
-            '[]'
-        ) AS source_date, -- source_date
-        CASE
-            WHEN urban_rural_current_.IUR2026_V1_00 IN (
-                '11', -- major urban
-                '12', -- large urban
-                '13', -- medium urban
-                '14' -- small urban
-            ) -- 0.1 - 1 m in urban areas
-            THEN '(0,1]'::int4range
-            WHEN urban_rural_current_.IUR2026_V1_00 IN (
-                '21', -- rural settlement
-                '22' -- rural other
-            ) -- 1 - 100 m in rural areas
-            THEN '[1,100]'::int4range
-            ELSE 'empty'::int4range
-        END AS source_scale-- source_scale
+    FROM roi
+    LEFT JOIN (
+        SELECT DISTINCT ON (h3_finest(nz_facilities_h3.h3_index, urban_rural_current_.h3_index))
+            h3_finest(nz_facilities_h3.h3_index, urban_rural_current_.h3_index) AS h3_index,
+            'LINZ' AS source_data,
+            daterange(
+                last_modified::DATE,
+                last_modified::DATE,
+                '[]'
+            ) AS source_date,
+            CASE
+                WHEN urban_rural_current_.IUR2026_V1_00 IN (
+                    '11', -- major urban
+                    '12', -- large urban
+                    '13', -- medium urban
+                    '14' -- small urban
+                ) -- 0.1 - 1 m in urban areas
+                THEN '(0,1]'::int4range
+                WHEN urban_rural_current_.IUR2026_V1_00 IN (
+                    '21', -- rural settlement
+                    '22' -- rural other
+                ) -- 1 - 100 m in rural areas
+                THEN '[1,100]'::int4range
+                ELSE 'empty'::int4range
+            END AS source_scale
         FROM nz_facilities
         JOIN nz_facilities_h3 USING (ogc_fid)
         LEFT JOIN (
@@ -199,15 +201,18 @@ CREATE TEMPORARY VIEW class_320 AS (
             FROM urban_rural_current_h3
             JOIN urban_rural_current USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
-        ) AS urban_rural_current_ USING (h3_index)
+        ) AS urban_rural_current_ ON nz_facilities_h3.h3_index && urban_rural_current_.h3_index
         WHERE :parent::h3index = h3_partition
         AND nz_facilities.use IN (
             'Hospital', 'School'
         ) AND nz_facilities.use_type NOT IN (
             'NGO Hospital' -- Not public
         )
-    ) nz_facilities_
-    FULL OUTER JOIN (
+        ORDER BY
+            h3_finest(nz_facilities_h3.h3_index, urban_rural_current_.h3_index),
+            last_modified DESC NULLS LAST
+    ) nz_facilities_ ON roi.h3_index && nz_facilities_.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -220,8 +225,8 @@ CREATE TEMPORARY VIEW class_320 AS (
         JOIN topo50_pond_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
         AND topo50_pond.name = 'Lake Crichton' -- Recreational pond in Canterbury
-    ) AS recreational_ponds USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS recreational_ponds ON roi.h3_index && recreational_ponds.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -234,7 +239,7 @@ CREATE TEMPORARY VIEW class_320 AS (
         WHERE :parent::h3index = h3_partition
 
         UNION ALL
-        
+
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -245,8 +250,8 @@ CREATE TEMPORARY VIEW class_320 AS (
         'LINZ' AS source_data
         FROM topo50_chatham_golf_courses_h3
         WHERE :parent::h3index = h3_partition
-    ) AS golf_courses USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS golf_courses ON roi.h3_index && golf_courses.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -270,8 +275,8 @@ CREATE TEMPORARY VIEW class_320 AS (
         'LINZ' AS source_data
         FROM topo50_chatham_cemetery_h3
         WHERE :parent::h3index = h3_partition
-    ) AS cemeteries USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS cemeteries ON roi.h3_index && cemeteries.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -282,8 +287,8 @@ CREATE TEMPORARY VIEW class_320 AS (
         'LINZ' AS source_data
         FROM topo50_sportsfields_h3
         WHERE :parent::h3index = h3_partition
-    ) AS sportsfields USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS sportsfields ON roi.h3_index && sportsfields.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         source_data,
         source_date,
@@ -307,8 +312,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             OR category ~ '^O(A|H|M|R|S|X)' -- Other (assembly halls, health, Maori, religious, sports, other/multiple)
             OR actual_property_use IS NULL
         )
-    ) AS dvr_public_rec_and_services USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS dvr_public_rec_and_services ON roi.h3_index && dvr_public_rec_and_services.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -316,8 +321,8 @@ CREATE TEMPORARY VIEW class_320 AS (
             source_scale
         FROM lcdb_
         WHERE Class_2018 = 2 -- Urban Parkland/Open Space
-    ) lcdb_ USING (h3_index)
-    FULL OUTER JOIN (
+    ) lcdb_ ON roi.h3_index && lcdb_.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         daterange(
             '2011-05-22'::DATE,
@@ -330,8 +335,8 @@ CREATE TEMPORARY VIEW class_320 AS (
         JOIN topo50_pond_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
         AND pond_use = 'ice skating'
-    ) AS ice_skating USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS ice_skating ON roi.h3_index && ice_skating.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -342,10 +347,10 @@ CREATE TEMPORARY VIEW class_320 AS (
         WHERE hail_category_ids @> ARRAY[
             'C2' -- Gun clubs or rifle ranges, including clay targets clubs that use lead munitions outdoors
         ]
-    ) AS hail_gun_clubs USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT DISTINCT ON (h3_index)
-        h3_index,
+    ) AS hail_gun_clubs ON roi.h3_index && hail_gun_clubs.h3_index
+    LEFT JOIN (
+        SELECT DISTINCT ON (pan_nz_draft_h3.h3_index)
+        pan_nz_draft_h3.h3_index,
         source_data,
         source_date,
         source_scale
@@ -355,10 +360,19 @@ CREATE TEMPORARY VIEW class_320 AS (
         AND legislation_act = 'RESERVES_ACT'
         AND legislation_section = 'S16_11_RECREATION_RESERVE_RACECOURSE'
         ORDER BY
-            h3_index,
+            pan_nz_draft_h3.h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break
-    ) AS pan_nz_draft_racecourses USING (h3_index)
+    ) AS pan_nz_draft_racecourses ON roi.h3_index && pan_nz_draft_racecourses.h3_index
+    WHERE nz_facilities_.h3_index IS NOT NULL
+       OR recreational_ponds.h3_index IS NOT NULL
+       OR golf_courses.h3_index IS NOT NULL
+       OR cemeteries.h3_index IS NOT NULL
+       OR sportsfields.h3_index IS NOT NULL
+       OR dvr_public_rec_and_services.h3_index IS NOT NULL
+       OR lcdb_.h3_index IS NOT NULL
+       OR hail_gun_clubs.h3_index IS NOT NULL
+       OR pan_nz_draft_racecourses.h3_index IS NOT NULL
 );
 
 -- use DVR

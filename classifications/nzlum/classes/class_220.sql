@@ -1,6 +1,6 @@
 CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
     WITH unclamped_confidence AS (
-        SELECT h3_index,
+        SELECT roi.h3_index,
         2 AS lu_code_primary,
         2 AS lu_code_secondary,
         0 AS lu_code_tertiary,
@@ -205,9 +205,9 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             ))::int4range, -- source_scale
             NULL
         )::nzlum_type AS nzlum_type
-        FROM lum_
-        FULL OUTER JOIN (
-            SELECT 
+        FROM roi
+        LEFT JOIN (
+            SELECT
                 h3_index,
                 source_data,
                 source_date,
@@ -218,8 +218,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             FROM linz_dvr_
             WHERE linz_dvr_.actual_property_use ~ '^1' -- Rural industry
             OR linz_dvr_.actual_property_use = '01' -- Multi-use at primary level, rural-industry
-        ) linz_dvr_ USING (h3_index)
-        FULL OUTER JOIN (
+        ) linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
+        LEFT JOIN (
             SELECT
                 h3_index,
                 source_data,
@@ -227,8 +227,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 source_scale
             FROM lcdb_
             WHERE Class_2018 IN (10, 12, 15, 16, 20, 21, 30, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
-        ) AS lcdb_ USING (h3_index)
-        FULL OUTER JOIN (
+        ) AS lcdb_ ON roi.h3_index && lcdb_.h3_index
+        LEFT JOIN (
             SELECT
                 h3_index,
                 source_data,
@@ -243,8 +243,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 ts_notes IS NULL -- Very important
                 OR NOT ts_notes @@ to_tsquery('english', 'sports & field | golf & course')
             ) AND irrigation_.irrigation_type NOT LIKE 'Drip%'
-        ) irrigation_ USING (h3_index)
-        FULL OUTER JOIN (
+        ) irrigation_ ON roi.h3_index && irrigation_.h3_index
+        LEFT JOIN (
             SELECT
                 h3_index,
                 source_data,
@@ -253,8 +253,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 manage,
                 animal_count
             FROM dairy_effluent_discharge
-        ) AS dairy_effluent_discharge USING (h3_index)
-        FULL OUTER JOIN (
+        ) AS dairy_effluent_discharge ON roi.h3_index && dairy_effluent_discharge.h3_index
+        LEFT JOIN (
             SELECT
                 h3_index,
                 source_data,
@@ -264,8 +264,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 CertRating,
                 CR1Case
             FROM winter_forage_
-        ) AS winter_forage_ USING (h3_index)
-        FULL OUTER JOIN (
+        ) AS winter_forage_ ON roi.h3_index && winter_forage_.h3_index
+        LEFT JOIN (
             SELECT
                 h3_index,
                 source_date,
@@ -273,37 +273,38 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 source_data,
                 commod
             FROM pastoral_consents
-        ) AS pastoral_consents USING (h3_index)
+        ) AS pastoral_consents ON roi.h3_index && pastoral_consents.h3_index
+        LEFT JOIN lum_ ON roi.h3_index && lum_.h3_index
         LEFT JOIN (
             SELECT h3_index
             FROM topo50_sand_h3
-            WHERE :parent::h3index = h3_partition 
+            WHERE :parent::h3index = h3_partition
             UNION ALL
             SELECT h3_index
             FROM topo50_chatham_sand_h3
             WHERE :parent::h3index = h3_partition
-        ) AS topo50_sand_h3 USING (h3_index)
+        ) AS topo50_sand_h3 ON roi.h3_index && topo50_sand_h3.h3_index
         LEFT JOIN (
             SELECT h3_index
             FROM topo50_land_h3
             WHERE :parent::h3index = h3_partition
-        ) AS topo50_land_h3 USING (h3_index)
+        ) AS topo50_land_h3 ON roi.h3_index && topo50_land_h3.h3_index
         LEFT JOIN (
             SELECT h3_index
             FROM topo50_pond_h3
             WHERE :parent::h3index = h3_partition
-        ) AS topo50_pond_h3 USING (h3_index)
+        ) AS topo50_pond_h3 ON roi.h3_index && topo50_pond_h3.h3_index
         LEFT JOIN (
             SELECT h3_index
             FROM hydro_parcels_h3
             WHERE :parent::h3index = h3_partition
-        ) AS hydro_parcels_h3 USING (h3_index)
+        ) AS hydro_parcels_h3 ON roi.h3_index && hydro_parcels_h3.h3_index
         LEFT JOIN (
             SELECT h3_index, lcorrclass, source_data, source_date, source_scale
             FROM nzlri_lowcapability
             JOIN nzlri_lowcapability_h3 USING (ogc_fid)
-            WHERE :parent::h3index = h3_partition 
-        ) AS nzlri_lowcapability USING (h3_index)
+            WHERE :parent::h3index = h3_partition
+        ) AS nzlri_lowcapability ON roi.h3_index && nzlri_lowcapability.h3_index
         LEFT JOIN (
             SELECT
                 h3_index,
@@ -312,7 +313,7 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 source_scale,
                 afforestation_flag
             FROM consents_forestry
-        ) AS consents_forestry USING (h3_index)
+        ) AS consents_forestry ON roi.h3_index && consents_forestry.h3_index
         LEFT JOIN (
             SELECT
                 h3_index,
@@ -337,7 +338,14 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     'Pasture/Unused'
                 ]
             )
-        ) AS pasture_practices USING (h3_index)
+        ) AS pasture_practices ON roi.h3_index && pasture_practices.h3_index
+        WHERE lum_.h3_index IS NOT NULL
+           OR linz_dvr_.h3_index IS NOT NULL
+           OR lcdb_.h3_index IS NOT NULL
+           OR dairy_effluent_discharge.h3_index IS NOT NULL
+           OR winter_forage_.h3_index IS NOT NULL
+           OR pastoral_consents.h3_index IS NOT NULL
+           OR pasture_practices.h3_index IS NOT NULL
     )
     SELECT
         h3_index,

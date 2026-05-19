@@ -9,8 +9,8 @@ CREATE TEMPORARY VIEW land_status AS (
         FROM crosl
     ),
     crosl_land_status AS (
-        SELECT 
-            h3_index,
+        SELECT
+            roi.h3_index,
             'CRoSL' AS _source,
             CASE
                 WHEN gov_type = 'Local'
@@ -218,14 +218,18 @@ CREATE TEMPORARY VIEW land_status AS (
                         ]
                 END
             END AS land_status
-        FROM cleaned_crosl
-        JOIN crosl_h3 USING (ogc_fid)
-        WHERE :parent::h3index = h3_partition
+        FROM roi
+        JOIN (
+            SELECT crosl_h3.h3_index, gov_type, managed_by
+            FROM cleaned_crosl
+            JOIN crosl_h3 USING (ogc_fid)
+            WHERE :parent::h3index = h3_partition
+        ) crosl_joined ON roi.h3_index && crosl_joined.h3_index
     ),
     pan_nz_draft_land_status AS (
         SELECT
-            DISTINCT ON (h3_index)
-            h3_index,
+            DISTINCT ON (roi.h3_index)
+            roi.h3_index,
             'PAN-NZ' AS _source,
             CASE
                 WHEN legislation_act = 'RESERVES_ACT' AND legislation_section IN (
@@ -275,15 +279,20 @@ CREATE TEMPORARY VIEW land_status AS (
                         'Department of Conservation'
                     ]
             END AS land_status
-        FROM pan_nz_draft
-        JOIN pan_nz_draft_h3 USING (ogc_fid)
-        WHERE :parent::h3index = h3_partition
-        AND NOT EXISTS (
+        FROM roi
+        JOIN (
+            SELECT pan_nz_draft_h3.h3_index, legislation_act, legislation_section,
+                   iucn_category, source_date, source_protection_name, source_id
+            FROM pan_nz_draft
+            JOIN pan_nz_draft_h3 USING (ogc_fid)
+            WHERE :parent::h3index = h3_partition
+        ) pnd ON roi.h3_index && pnd.h3_index
+        WHERE NOT EXISTS (
             -- Only if not present in CROSL
-            SELECT 1 FROM crosl_land_status WHERE crosl_land_status.h3_index = pan_nz_draft_h3.h3_index
+            SELECT 1 FROM crosl_land_status WHERE crosl_land_status.h3_index = roi.h3_index
         )
         ORDER BY
-            h3_index,
+            roi.h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
             CASE
                 WHEN iucn_category = 'Ia' THEN 1
@@ -310,8 +319,8 @@ CREATE TEMPORARY VIEW land_status AS (
         -- 6 Private: Māori - individual
         -- 7 Private: Māori - tribal/incorporations/many owners
         SELECT
-            DISTINCT ON (h3_index)
-            h3_index,
+            DISTINCT ON (roi.h3_index)
+            roi.h3_index,
             'DVR' AS _source,
             CASE
                 WHEN ownership_code = 1
@@ -332,15 +341,16 @@ CREATE TEMPORARY VIEW land_status AS (
                     THEN NULL -- Not listed, NB often overlaps other valid codes
                 ELSE NULL
             END AS land_status
-        FROM linz_dvr_
+        FROM roi
+        JOIN linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
         WHERE NOT EXISTS (
             -- Only if not present in CROSL
-            SELECT 1 FROM crosl_land_status WHERE crosl_land_status.h3_index = linz_dvr_.h3_index
+            SELECT 1 FROM crosl_land_status WHERE crosl_land_status.h3_index = roi.h3_index
         ) AND NOT EXISTS (
             -- Only if not present in PAN-NZ
-            SELECT 1 FROM pan_nz_draft_land_status WHERE pan_nz_draft_land_status.h3_index = linz_dvr_.h3_index
+            SELECT 1 FROM pan_nz_draft_land_status WHERE pan_nz_draft_land_status.h3_index = roi.h3_index
         )
-        ORDER BY h3_index
+        ORDER BY roi.h3_index
     )
     SELECT DISTINCT ON (h3_index) *
     FROM (

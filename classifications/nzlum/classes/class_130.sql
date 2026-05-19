@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_130 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     1 AS lu_code_primary,
     3 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -28,10 +28,11 @@ CREATE TEMPORARY VIEW class_130 AS (
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         -- Deal with overlaps
-        SELECT DISTINCT ON (h3_index)
-        h3_index,
+        SELECT DISTINCT ON (pan_nz_draft_h3.h3_index)
+        pan_nz_draft_h3.h3_index,
         source_data,
         source_date,
         source_scale,
@@ -46,12 +47,12 @@ CREATE TEMPORARY VIEW class_130 AS (
             'Water Supply Reserve'
         )
         ORDER BY
-            h3_index,
+            pan_nz_draft_h3.h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break
-    ) pan_nz_draft_
-    FULL OUTER JOIN (
-        SELECT h3_index,
+    ) pan_nz_draft_ ON roi.h3_index && pan_nz_draft_.h3_index
+    LEFT JOIN (
+        SELECT south_island_pastoral_leases_h3.h3_index,
         'LINZ' AS source_data,
         daterange(
             '2013-02-07'::DATE,
@@ -60,10 +61,10 @@ CREATE TEMPORARY VIEW class_130 AS (
         ) AS source_date,
         '[100,)'::int4range AS source_scale -- Boundaries are indicative only
         FROM south_island_pastoral_leases_h3
-        INNER JOIN lcdb_ USING (h3_index)
-        WHERE
-            :parent::h3index = south_island_pastoral_leases_h3.h3_partition
-            AND :parent::h3index = lcdb_.h3_partition
+        WHERE :parent::h3index = south_island_pastoral_leases_h3.h3_partition
+        AND EXISTS (
+            SELECT 1 FROM lcdb_
+            WHERE :parent::h3index = h3_partition
             AND Class_2018 NOT IN (
                 1, -- Settlement
                 2, -- Urban parkland
@@ -76,5 +77,8 @@ CREATE TEMPORARY VIEW class_130 AS (
                 68, -- Deciduous hardwoods
                 71 -- Exotic forest
             ) -- Exclude obvious non-natural land covers
-    ) AS high_country_leases USING (h3_index)  
+            AND south_island_pastoral_leases_h3.h3_index && lcdb_.h3_index
+        )
+    ) AS high_country_leases ON roi.h3_index && high_country_leases.h3_index
+    WHERE pan_nz_draft_.h3_index IS NOT NULL OR high_country_leases.h3_index IS NOT NULL
 );

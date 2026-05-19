@@ -55,7 +55,9 @@ classifications:
       - topo50_chatham_exotic_polygons
       - topo50_land
       - irrigation_2020
-      - urban_rural_2025
+      # - urban_rural_2025
+      # - urban_rural_2026
+      - urban_rural_current
       - fenz_lakes
       - topo50_orchards
       - mpi_current_marine_farms

@@ -28,7 +28,7 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
         ) -- NB special cases for GDC data that don't map to specific commodities
     ),
     base_classification AS (
-        SELECT h3_index,
+        SELECT roi.h3_index,
         2 AS lu_code_primary,
         4 AS lu_code_secondary,
         0 AS lu_code_tertiary,
@@ -280,16 +280,13 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             )::nzlum_type
             ELSE NULL
         END AS nzlum_type
-        FROM (
-            SELECT
-                h3_index,
-                source_data,
-                source_date,
-                source_scale
+        FROM roi
+        LEFT JOIN (
+            SELECT h3_index, source_data, source_date, source_scale
             FROM lum_
             WHERE lucid_2020 = '77 - Cropland - Orchards and vineyards (perennial)'
-        ) AS lum_
-        FULL OUTER JOIN (
+        ) AS lum_ ON roi.h3_index && lum_.h3_index
+        LEFT JOIN (
             SELECT h3_index,
             daterange(
                 '2011-05-02'::date,
@@ -300,17 +297,13 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             'LINZ' AS source_data
             FROM topo50_orchards_h3
             WHERE :parent::h3index = h3_partition
-        ) topo50_orchards_ USING (h3_index)
-        FULL OUTER JOIN (
-            SELECT
-                h3_index,
-                source_data,
-                source_date,
-                source_scale
+        ) topo50_orchards_ ON roi.h3_index && topo50_orchards_.h3_index
+        LEFT JOIN (
+            SELECT h3_index, source_data, source_date, source_scale
             FROM lcdb_
             WHERE lcdb_.Class_2018 = 33 -- Orchard, Vineyard or Other Perennial Crop
-        ) lcdb_ USING (h3_index)
-        FULL OUTER JOIN (
+        ) lcdb_ ON roi.h3_index && lcdb_.h3_index
+        LEFT JOIN (
             SELECT
                 h3_index,
                 source_data,
@@ -330,11 +323,16 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             -- H(X) -- MED
             -- H(C|K|P|S|V) -- HIGH
             -- Consider H*(A|B|C|D|E|F) too (quality)
-        ) linz_dvr_ USING (h3_index)
-        FULL OUTER JOIN crop_perennial USING (h3_index)
+        ) linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
+        LEFT JOIN crop_perennial ON roi.h3_index && crop_perennial.h3_index
+        WHERE lum_.h3_index IS NOT NULL
+           OR topo50_orchards_.h3_index IS NOT NULL
+           OR lcdb_.h3_index IS NOT NULL
+           OR linz_dvr_.h3_index IS NOT NULL
+           OR crop_perennial.h3_index IS NOT NULL
     )
     SELECT
-        h3_index,
+        base_classification.h3_index,
         lu_code_primary,
         lu_code_secondary,
         lu_code_tertiary,
@@ -376,9 +374,9 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             (nzlum_type).comment
         )::nzlum_type AS nzlum_type
     FROM base_classification
-    LEFT JOIN crop_perennial USING (h3_index)
+    LEFT JOIN crop_perennial ON base_classification.h3_index && crop_perennial.h3_index
     LEFT JOIN (
-        SELECT 
+        SELECT
             h3_index,
             source_data,
             source_date,
@@ -390,7 +388,7 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             'Drip/Micro',
             'Drip/ Micro'
         )
-    ) irrigation_ USING (h3_index)
+    ) irrigation_ ON base_classification.h3_index && irrigation_.h3_index
 );
 
 -- Topo50. Middling confidence on its own. "Vegetation defined as pip or stone fruit eg apples, apricots, olives etc". No ancillary information available.

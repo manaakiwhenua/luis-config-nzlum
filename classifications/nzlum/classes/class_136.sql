@@ -7,8 +7,8 @@
 
 -- 1.3.6 Defence land – natural areas allocated to field training, weapons testing, and other field defence uses, predominantly in rural areas (e.g. Kaipara Air Weapons Range and the Waiouru Military Camp). Areas associated with buildings or more built environments on defence land are captured under an urban class.
 
-CREATE TEMPORARY VIEW class_136 AS ( 
-    SELECT h3_index,
+CREATE TEMPORARY VIEW class_136 AS (
+    SELECT roi.h3_index,
     1 AS lu_code_primary,
     3 AS lu_code_secondary,
     6 AS lu_code_tertiary,
@@ -84,25 +84,23 @@ CREATE TEMPORARY VIEW class_136 AS (
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
-        SELECT
-        h3_index,
-        source_data,
-        source_date,
-        source_scale
+    FROM roi
+    LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale
         FROM linz_crosl_
         WHERE managed_by = 'New Zealand Defence Force'
-    ) AS linz_crosl_nzdf
-    FULL OUTER JOIN linz_dvr_ USING (h3_index)
+    ) AS linz_crosl_nzdf ON roi.h3_index && linz_crosl_nzdf.h3_index
+    LEFT JOIN linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
     LEFT JOIN ( -- Use to exclude or penalise built-up areas from this class
-        SELECT * 
+        SELECT h3_index
         FROM lcdb_
         WHERE Class_2018 NOT IN (
             1, -- 'Built-up Area (settlement)',
             2, -- 'Urban Parkland/Open Space'
             5 --'Transport Infrastructure',
         )
-    ) AS lcdb_built_up USING (h3_index)
+    ) AS lcdb_built_up ON roi.h3_index && lcdb_built_up.h3_index
+    WHERE linz_crosl_nzdf.h3_index IS NOT NULL OR linz_dvr_.actual_property_use = '45'
 );
 
 -- CROSL NZDF managed land

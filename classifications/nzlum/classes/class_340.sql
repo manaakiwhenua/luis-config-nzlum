@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
-    SELECT h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     4 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -63,7 +63,8 @@ CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
         ))::int4range, -- source_scale
         NULL
     )::nzlum_type AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -77,8 +78,8 @@ CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
             actual_property_use LIKE '7%'
             OR actual_property_use = '07'
         ) AND NOT actual_property_use = '78' -- Depots and yards; considered commercial not industrial
-    ) AS linz_dvr_industrial
-    FULL OUTER JOIN (
+    ) AS linz_dvr_industrial ON roi.h3_index && linz_dvr_industrial.h3_index
+    LEFT JOIN (
         -- As the manufacture, use, storage and disposal of contaminants is confused (and often historical), HAIL itself offers strong supplementary evidence but weak primary evidence
         SELECT
             h3_index,
@@ -127,5 +128,6 @@ CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
             'G2', -- Drum or tank reconditioning or recyling
             'G4' -- Scrap yards including automotive dismantling, wrecking, or scrap metal
         ]
-    ) AS hail_manufacturing_and_industrial USING (h3_index)
+    ) AS hail_manufacturing_and_industrial ON roi.h3_index && hail_manufacturing_and_industrial.h3_index
+    WHERE linz_dvr_industrial.h3_index IS NOT NULL OR hail_manufacturing_and_industrial.h3_index IS NOT NULL
 );

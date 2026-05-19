@@ -13,7 +13,7 @@
 --     Stormwater management – infrastructure aimed at controlling and mitigating the impacts of stormwater runoff, including detention basins, drainage systems, retention ponds, and green infrastructure (rain gardens, wetlands), to prevent flooding, erosion, and pollution of water bodies.
 
 CREATE TEMPORARY VIEW class_380 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     8 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -124,7 +124,8 @@ CREATE TEMPORARY VIEW class_380 AS (
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
@@ -135,8 +136,8 @@ CREATE TEMPORARY VIEW class_380 AS (
         '[1,100]'::int4range AS source_scale
         FROM topo50_landfill_polygons_h3
         WHERE :parent::h3index = h3_partition
-    ) AS topo50_landfill
-    FULL OUTER JOIN (
+    ) AS topo50_landfill ON roi.h3_index && topo50_landfill.h3_index
+    LEFT JOIN (
         SELECT h3_index,
         'LINZ' AS source_data,
         daterange(
@@ -156,8 +157,8 @@ CREATE TEMPORARY VIEW class_380 AS (
                 -- TODO settling, sludge?
                 -- TODO join to parcel?
             )
-    ) topo50_pond USING (h3_index)
-    FULL OUTER JOIN (
+    ) topo50_pond ON roi.h3_index && topo50_pond.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -183,18 +184,18 @@ CREATE TEMPORARY VIEW class_380 AS (
             )
             OR improvements_description ~ '\m(SEWER(AGE)?\s?PONDS?|(OX|OXIDATION)\s?PONDS?)\M'
             OR category ~ '^UC'
-    ) AS linz_dvr_sanitary USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS linz_dvr_sanitary ON roi.h3_index && linz_dvr_sanitary.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
             source_date,
             source_scale,
-        CASE WHEN area_ha > 400 THEN TRUE ELSE FALSE END AS large
+            CASE WHEN area_ha > 400 THEN TRUE ELSE FALSE END AS large
         FROM linz_crosl_
         WHERE statutory_actions ~* '\m(rubbish\sdump|landfill|waste\srecovery|soild\swaste|refuse\stransfer(\sstation)?|sanitary|recyling|(waste|storm)\s?water(\sretention)?|sew(er)?(age)?|drainage)\M'
-    ) AS linz_crosl_sanitary USING (h3_index)
-    FULL OUTER JOIN (
+    ) AS linz_crosl_sanitary ON roi.h3_index && linz_crosl_sanitary.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -202,7 +203,12 @@ CREATE TEMPORARY VIEW class_380 AS (
             source_scale
         FROM lcdb_
         WHERE Class_2018 = 6 -- Surface Mine or Dump
-    ) AS lcdb_mines_and_dumps USING (h3_index)
+    ) AS lcdb_mines_and_dumps ON roi.h3_index && lcdb_mines_and_dumps.h3_index
+    WHERE topo50_landfill.h3_index IS NOT NULL
+       OR topo50_pond.h3_index IS NOT NULL
+       OR linz_dvr_sanitary.h3_index IS NOT NULL
+       OR linz_crosl_sanitary.h3_index IS NOT NULL
+       OR lcdb_mines_and_dumps.h3_index IS NOT NULL
 )
 
 -- LINZ landfill polyogons

@@ -1,5 +1,6 @@
 CREATE TEMPORARY VIEW linz_crosl_ AS (
-    SELECT DISTINCT ON (h3_index) h3_index,
+    SELECT DISTINCT ON (h3_finest(crosl_.h3_index, urban_rural_current_.h3_index))
+    h3_finest(crosl_.h3_index, urban_rural_current_.h3_index) AS h3_index,
     managed_by, -- e.g. "Housing New Zealand"
     statutory_actions,
     area_ha,
@@ -48,9 +49,9 @@ CREATE TEMPORARY VIEW linz_crosl_ AS (
         FROM urban_rural_current_h3
         JOIN urban_rural_current USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-    ) AS urban_rural_current_ USING (h3_index)
+    ) AS urban_rural_current_ ON crosl_.h3_index && urban_rural_current_.h3_index
     ORDER BY
-        h3_index,
+        h3_finest(crosl_.h3_index, urban_rural_current_.h3_index),
         TO_DATE(date_updated, 'YYYYMMDD'),
         managed_by,
         area_ha

@@ -2,7 +2,7 @@
 -- Production nurseries
 -- Glasshouses/shadehouses
 CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
-    SELECT h3_index,
+    SELECT roi.h3_index,
     2 AS lu_code_primary,
     5 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -115,7 +115,8 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
         ))::int4range, -- source_scale
         NULL
     )::nzlum_type AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -131,8 +132,8 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
             category ~ '^H'
             OR actual_property_use IN ('0', '00', '01', '1', '10', '15')
             OR improvements_description ~ '\m((GREEN|GRN|SHADE|SHD|GLASS)\s?(HOUSE|HSE))|NURSERY\M'
-    ) linz_dvr_
-    FULL OUTER JOIN (
+    ) linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -146,7 +147,7 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
             'Grape Nursery',
             'Poplar/Willow Nursery'
         ]
-    ) AS crop_nurseries USING (h3_index)
+    ) AS crop_nurseries ON roi.h3_index && crop_nurseries.h3_index
     LEFT JOIN (
         SELECT
             h3_index,
@@ -157,8 +158,9 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
         FROM irrigation_
         WHERE :parent::h3index = h3_partition
         AND irrigation_type ~ '^Drip'
-    ) irrigation_ USING (h3_index)
-    LEFT JOIN lcdb_ USING (h3_index)
+    ) irrigation_ ON roi.h3_index && irrigation_.h3_index
+    LEFT JOIN lcdb_ ON roi.h3_index && lcdb_.h3_index
+    WHERE linz_dvr_.h3_index IS NOT NULL OR crop_nurseries.h3_index IS NOT NULL
 );
 
 

@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_120 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     1 AS lu_code_primary,
     2 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -17,10 +17,11 @@ CREATE TEMPORARY VIEW class_120 AS (
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
+    FROM roi
+    JOIN (
         -- Deal with overlaps
-        SELECT DISTINCT ON (h3_index)
-        h3_index,
+        SELECT DISTINCT ON (pan_nz_draft_h3.h3_index)
+        pan_nz_draft_h3.h3_index,
         source_data,
         source_date,
         source_scale,
@@ -47,17 +48,17 @@ CREATE TEMPORARY VIEW class_120 AS (
             AND legislation_section = 'S18_HISTORIC_RESERVE'
         )
         ORDER BY
-            h3_index,
+            pan_nz_draft_h3.h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break
-    ) pan_nz_historic_reserves
+    ) pan_nz_historic_reserves ON roi.h3_index && pan_nz_historic_reserves.h3_index
     LEFT JOIN (
-        SELECT *
+        SELECT h3_index
         FROM lcdb_
         WHERE Class_2018 NOT IN (
             1, -- Settlement
             2, -- Urban parkland open space
             5 -- Transport infrastructure
         )
-    ) AS lcdb_unbuilt USING (h3_index)
+    ) AS lcdb_unbuilt ON roi.h3_index && lcdb_unbuilt.h3_index
 )

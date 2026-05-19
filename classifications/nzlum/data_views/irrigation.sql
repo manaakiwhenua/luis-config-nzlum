@@ -94,6 +94,6 @@ CREATE TEMPORARY VIEW irrigation_ AS (
     WHERE NOT EXISTS (
         SELECT 1
         FROM irrigation_mapping
-        WHERE irrigation_mapping.h3_index = irrigation_consents.h3_index
+        WHERE irrigation_mapping.h3_index && irrigation_consents.h3_index
     )
 );

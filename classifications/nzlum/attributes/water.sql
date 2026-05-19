@@ -1,6 +1,6 @@
 CREATE TEMPORARY VIEW water_features AS (
     SELECT * FROM (
-        SELECT h3_index,
+        SELECT roi.h3_index,
         COALESCE(
             rivers.feature,
             rivers_polylines.feature,
@@ -47,7 +47,7 @@ CREATE TEMPORARY VIEW water_features AS (
             RIGHT JOIN topo50_chatham_river_pol_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) rivers
-        USING (h3_index)
+        ON roi.h3_index && rivers.h3_index
         LEFT JOIN (
             SELECT h3_index, 'river' AS feature
             FROM topo50_river
@@ -59,7 +59,7 @@ CREATE TEMPORARY VIEW water_features AS (
             RIGHT JOIN topo50_chatham_river_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) rivers_polylines
-        USING (h3_index)
+        ON roi.h3_index && rivers_polylines.h3_index
         LEFT JOIN (
             SELECT h3_index, 'lake' AS feature
             FROM topo50_lake
@@ -71,7 +71,7 @@ CREATE TEMPORARY VIEW water_features AS (
             RIGHT JOIN topo50_chatham_lake_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) lakes -- NB lake_use records 'hydro-electric' and 'reservoir'
-        USING (h3_index)
+        ON roi.h3_index && lakes.h3_index
         LEFT JOIN (
             SELECT h3_index, 'lagoon' AS feature
             FROM topo50_lagoon
@@ -83,14 +83,14 @@ CREATE TEMPORARY VIEW water_features AS (
             RIGHT JOIN topo50_chatham_lagoon_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) lagoons
-        USING (h3_index)
+        ON roi.h3_index && lagoons.h3_index
         LEFT JOIN (
             SELECT h3_index, 'pond' AS feature
             FROM topo50_pond
             RIGHT JOIN topo50_pond_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) ponds
-        USING (h3_index)
+        ON roi.h3_index && ponds.h3_index
         LEFT JOIN (
             SELECT h3_index, 'swamp' AS feature
             FROM topo50_swamp
@@ -102,14 +102,14 @@ CREATE TEMPORARY VIEW water_features AS (
             RIGHT JOIN topo50_chatham_swamp_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) swamps
-        USING (h3_index)
+        ON roi.h3_index && swamps.h3_index
         LEFT JOIN (
             SELECT h3_index, 'mangrove' AS feature
             FROM topo50_mangrove
             RIGHT JOIN topo50_mangrove_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) mangroves
-        USING (h3_index)
+        ON roi.h3_index && mangroves.h3_index
         LEFT JOIN (
             SELECT h3_index, 'drain' AS feature
             FROM topo50_drain
@@ -121,21 +121,21 @@ CREATE TEMPORARY VIEW water_features AS (
             RIGHT JOIN topo50_chatham_drain_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) drains
-        USING (h3_index)
+        ON roi.h3_index && drains.h3_index
         LEFT JOIN (
             SELECT h3_index, 'canal' AS feature
             FROM topo50_canal
             RIGHT JOIN topo50_canal_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) canals
-        USING (h3_index)
+        ON roi.h3_index && canals.h3_index
         LEFT JOIN (
             SELECT h3_index, 'ice' AS feature
             FROM topo50_ice
             RIGHT JOIN topo50_ice_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) ice
-        USING (h3_index)
+        ON roi.h3_index && ice.h3_index
         LEFT JOIN (
             SELECT h3_index, 'mud' AS feature
             FROM topo50_mud
@@ -147,13 +147,13 @@ CREATE TEMPORARY VIEW water_features AS (
             RIGHT JOIN topo50_chatham_mud_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) mud
-        USING (h3_index)
+        ON roi.h3_index && mud.h3_index
         LEFT JOIN (
             SELECT h3_index
             FROM topo50_land_h3
             WHERE :parent::h3index = h3_partition
         ) AS land
-        USING (h3_index)
+        ON roi.h3_index && land.h3_index
         LEFT JOIN (
             SELECT h3_index
             FROM topo50_sand_h3
@@ -163,21 +163,21 @@ CREATE TEMPORARY VIEW water_features AS (
             FROM topo50_chatham_sand_h3
             WHERE :parent::h3index = h3_partition
         ) AS sand
-        USING (h3_index)
+        ON roi.h3_index && sand.h3_index
         LEFT JOIN (
             SELECT h3_index, water
             FROM ecan_braided_rivers_h3
             JOIN ecan_braided_rivers USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) AS ecan_braided_rivers_
-        USING (h3_index)
+        ON roi.h3_index && ecan_braided_rivers_.h3_index
         LEFT JOIN (
             SELECT h3_index, water
             FROM fenz_lakes_h3
             JOIN fenz_lakes USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) AS fenz_lakes_
-        USING (h3_index)
+        ON roi.h3_index && fenz_lakes_.h3_index
         LEFT JOIN (
             SELECT h3_index, 'reef' AS feature
             FROM topo50_reefs_h3
@@ -187,7 +187,7 @@ CREATE TEMPORARY VIEW water_features AS (
             FROM topo50_chatham_reefs_h3
             WHERE :parent::h3index = h3_partition
         ) AS reefs
-        USING (h3_index)
+        ON roi.h3_index && reefs.h3_index
     -- TODO estuary?
     )
     WHERE feature IS NOT NULL

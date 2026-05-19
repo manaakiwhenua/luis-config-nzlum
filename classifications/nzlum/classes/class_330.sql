@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality, entertainment, (private) healthcare, transportation, warehousing
-    SELECT h3_index,
+    SELECT roi.h3_index,
     3 AS lu_code_primary,
     3 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -61,7 +61,8 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
             NULL
         )::nzlum_type
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -82,16 +83,16 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
             improvements_description IS NULL
             OR improvements_description !~ '\m(SKIFIELD|VACANT\sLAND)\M'
         )
-    ) dvr_commercial
-    FULL OUTER JOIN (
-        SELECT
-            h3_index,
+    ) dvr_commercial ON roi.h3_index && dvr_commercial.h3_index
+    LEFT JOIN (
+        SELECT DISTINCT ON (h3_finest(nz_facilities_h3.h3_index, urban_rural_current_.h3_index))
+            h3_finest(nz_facilities_h3.h3_index, urban_rural_current_.h3_index) AS h3_index,
             'LINZ' AS source_data,
             daterange(
                 last_modified::DATE,
                 last_modified::DATE,
                 '[]'
-            ) AS source_date, -- source_date
+            ) AS source_date,
             CASE
                 WHEN urban_rural_current_.IUR2026_V1_00 IN (
                     '11', -- major urban
@@ -116,10 +117,14 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
             FROM urban_rural_current_h3
             JOIN urban_rural_current USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
-        ) AS urban_rural_current_ USING (h3_index)
-        WHERE :parent::h3index = h3_partition
+        ) AS urban_rural_current_ ON nz_facilities_h3.h3_index && urban_rural_current_.h3_index
+        WHERE :parent::h3index = nz_facilities_h3.h3_partition
         AND nz_facilities.use_type NOT IN (
             'NGO Hospital' -- Not public
         )
-    ) private_hospitals USING (h3_index)
+        ORDER BY
+            h3_finest(nz_facilities_h3.h3_index, urban_rural_current_.h3_index),
+            last_modified DESC NULLS LAST
+    ) private_hospitals ON roi.h3_index && private_hospitals.h3_index
+    WHERE dvr_commercial.h3_index IS NOT NULL OR private_hospitals.h3_index IS NOT NULL
 );

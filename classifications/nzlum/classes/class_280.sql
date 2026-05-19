@@ -10,7 +10,7 @@
 -- Abandoned land – land where a previous pattern of agriculture may be observed but that is not currently under production, but not due to physical land degradation.
 
 CREATE TEMPORARY VIEW class_280 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     2 AS lu_code_primary,
     8 AS lu_code_secondary,
     0 AS lu_code_tertiary,
@@ -102,7 +102,8 @@ CREATE TEMPORARY VIEW class_280 AS (
             NULL
         )::nzlum_type
     END AS nzlum_type
-    FROM (
+    FROM roi
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -113,71 +114,44 @@ CREATE TEMPORARY VIEW class_280 AS (
             improvements_value,
             improvements_description
         FROM linz_dvr_
-        WHERE
-            :parent::h3index = h3_partition
-            AND actual_property_use IN (
-                '00', 
-                '19', -- Rural industry: vacant
-                '29' -- Lifestyle: vacant
-            )
-            AND (
-                "zone" ~ '^(0X|[1245][A-Z])'
-                OR category ~ '^[ADFHLOPS]'
-            )
-    ) AS linz_dvr_
+        WHERE actual_property_use IN (
+            '00',
+            '19', -- Rural industry: vacant
+            '29' -- Lifestyle: vacant
+        )
+        AND (
+            "zone" ~ '^(0X|[1245][A-Z])'
+            OR category ~ '^[ADFHLOPS]'
+        )
+    ) AS linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
     LEFT JOIN (
         SELECT h3_index
         FROM lcdb_
-        WHERE 
-            :parent::h3index = h3_partition
-            AND lcdb_.Class_2018 IN (
-                10,
-                12,
-                16,
-                30,
-                33,
-                40,
-                41,
-                44,
-                51,
-                56,
-                64,
-                71
-            )
-    ) AS lcdb_ USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT
-            h3_index,
-            source_data,
-            source_date,
-            source_scale
+        WHERE lcdb_.Class_2018 IN (
+            10, 12, 16, 30, 33, 40, 41, 44, 51, 56, 64, 71
+        )
+    ) AS lcdb_ ON roi.h3_index && lcdb_.h3_index
+    LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale
         FROM transitional_land
         WHERE :parent::h3index = h3_partition
-    ) AS transitional_land USING (h3_index)
-    FULL OUTER JOIN (
-        SELECT
-            h3_index,
-            source_data,
-            source_date,
-            source_scale
-        FROM crop_maps
-        WHERE 
-            :parent::h3index = h3_partition
-            AND (
-                source_data = 'GDC'
-                AND 'To Be Planted' = ANY(crop)
-            )
-    ) AS crop_transitional USING (h3_index)
+    ) AS transitional_land ON roi.h3_index && transitional_land.h3_index
     LEFT JOIN (
-        SELECT
-            h3_index,
-            IUR2026_V1_00
+        SELECT h3_index, source_data, source_date, source_scale
+        FROM crop_maps
+        WHERE source_data = 'GDC'
+        AND 'To Be Planted' = ANY(crop)
+    ) AS crop_transitional ON roi.h3_index && crop_transitional.h3_index
+    LEFT JOIN (
+        SELECT h3_index
         FROM urban_rural_current_h3
         JOIN urban_rural_current USING (ogc_fid)
-        WHERE
-            :parent::h3index = h3_partition
-            AND IUR2026_V1_00 = '22' -- Rural other
-    ) AS rural_other USING (h3_index)
+        WHERE :parent::h3index = h3_partition
+        AND IUR2026_V1_00 = '22' -- Rural other
+    ) AS rural_other ON roi.h3_index && rural_other.h3_index
+    WHERE linz_dvr_.h3_index IS NOT NULL
+       OR transitional_land.h3_index IS NOT NULL
+       OR crop_transitional.h3_index IS NOT NULL
 )
 
 -- Lower confidence in urban areas, raise confidence in rural areas
