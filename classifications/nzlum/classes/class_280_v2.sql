@@ -1,3 +1,6 @@
+-- As a subclass of Production agriculture and plantations, land must recently have been used for agriculture or plantations.
+-- In the case of greenfield development where land use is transitioning to a built-environment category, classify under 3.9.0 Vacant and transitioning land (or a subclass) rather than 2.8.0.
+
 CREATE TEMPORARY VIEW class_280 AS
 WITH
 -- CTEs to filter each source
@@ -27,8 +30,18 @@ filtered_lcdb AS (
     WHERE
         :parent::h3index = h3_partition
         AND Class_2018 IN (
-            10, 12, 16, 30, 33, 40,
-            41, 44, 51, 56, 64, 71
+            10, -- Sand or Gravel
+            12, -- Landslide
+            16, -- Gravel or Rock
+            30, -- Short-rotation Cropland
+            33, -- Orchards, Vineyards or Other Perennial Crops
+            40, -- High Producing Exotic Grassland
+            41, -- Low Producing Grassland
+            44, -- Depleted Grassland
+            51, -- Gorse and/or Broom
+            56, -- Mixed Exotic Shrubland
+            64, -- Forest - Harvested
+            71  -- Exotic Forest
         )
 ),
 filtered_transitional AS (
@@ -89,7 +102,7 @@ unioned_matches AS (
             CASE
                 WHEN l.zone !~ '^[01]' -- Not zoned for rural (or not mixed zone)
                     THEN 8
-                WHEN filtered_lcdb.Class_2018 = 71 -- Exotic forest
+                WHEN filtered_lcdb.Class_2018 = 71 -- Exotic Forest
                     THEN 9
                 WHEN (
                     l.category LIKE '_V%' -- Vacant
@@ -116,19 +129,23 @@ unioned_matches AS (
     UNION ALL
 
     -- Match 3: Lifestyle vacant with orchard hint
+    -- Orchard improvements on a vacant property suggest past agricultural use,
+    -- not necessarily active production. Active orchards → class 2.3.x.
     SELECT
         roi.h3_index,
         2, 8, 0,
         ROW(
             ARRAY[]::TEXT[],
             CASE
-                WHEN l.zone ~ '^1' -- Zoned for rural use
-                    THEN 1
                 WHEN l.improvements_description ~ '\mORCHARDS?\M'
-                    THEN 4
-                WHEN l.zone ~ '^0' -- More than one zone
-                    THEN 5
-                ELSE 6
+                    THEN CASE
+                        WHEN l.zone ~ '^1' THEN 1 -- Orchard improvements in rural zone
+                        WHEN l.zone ~ '^0' THEN 3 -- Orchard improvements, multiple zones
+                        ELSE 4                    -- Orchard improvements, other zone
+                    END
+                WHEN l.zone ~ '^1' THEN 3         -- Rural zone, no orchard hint
+                WHEN l.zone ~ '^0' THEN 5         -- Multiple zones, no orchard hint
+                ELSE 7
             END,
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
@@ -157,7 +174,7 @@ unioned_matches AS (
             CASE
                 WHEN l.category LIKE '_V%'
                     THEN 3
-                WHEN filtered_lcdb.Class_2018 = 71 -- Exotic forest
+                WHEN filtered_lcdb.Class_2018 = 71 -- Exotic Forest
                     THEN 9
                 ELSE 4
             END,
