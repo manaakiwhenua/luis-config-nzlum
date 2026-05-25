@@ -214,7 +214,7 @@ CREATE TEMPORARY VIEW class_230 AS (
             'cabbages',
             'lucerne',
             'maize',
-            'sweetcorn',
+            'sweet corn',
             'melons',
             'plantain',
             'clover',
