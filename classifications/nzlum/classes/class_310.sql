@@ -56,12 +56,33 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
                 WHEN topo50_residential_areas_h3.h3_index IS NOT NULL
                 THEN -1
                 ELSE 0
+            END
+            +
+            CASE -- Properties larger than lifestyle size (>2ha) are likely non-residential (→ 2.x or 1.x)
+                WHEN over_sized_for_lifestyle THEN 6
+                ELSE 0
+            END
+            +
+            CASE -- LCDB cropland/arable land cover contradicts residential use
+                WHEN lcdb_cropland.h3_index IS NOT NULL THEN 4
+                ELSE 0
+            END
+            +
+            CASE -- Industrial zoning strongly contradicts residential use
+                WHEN linz_dvr_.zone ~ '^7' THEN 5
+                ELSE 0
             END, 12), 1),
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
-            ARRAY[linz_dvr_.source_data]::TEXT[],
-            linz_dvr_.source_date,
-            linz_dvr_.source_scale,
+            ARRAY[linz_dvr_.source_data, lcdb_cropland.source_data]::TEXT[],
+            range_merge(datemultirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                linz_dvr_.source_date,
+                lcdb_cropland.source_date
+            ], NULL))),
+            range_merge(int4multirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                linz_dvr_.source_scale,
+                lcdb_cropland.source_scale
+            ], NULL))),
             NULL
         )::nzlum_type
         WHEN (
@@ -73,12 +94,26 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             )
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary,
-            8,
+            LEAST(12, 8 + CASE
+                WHEN lcdb_cropland.h3_index IS NOT NULL THEN 4 -- LCDB cropland/arable contradicts residential use
+                ELSE 0
+            END + CASE -- Industrial zoning strongly contradicts residential use
+                WHEN linz_dvr_.zone ~ '^7' THEN 5
+                ELSE 0
+            END),
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
-            ARRAY[irrigation_.source_data, linz_dvr_.source_data]::TEXT[],
-            range_merge(irrigation_.source_date,linz_dvr_.source_date),
-            range_merge(irrigation_.source_scale,linz_dvr_.source_scale),
+            ARRAY[irrigation_.source_data, linz_dvr_.source_data, lcdb_cropland.source_data]::TEXT[],
+            range_merge(datemultirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                irrigation_.source_date,
+                linz_dvr_.source_date,
+                lcdb_cropland.source_date
+            ], NULL))),
+            range_merge(int4multirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                irrigation_.source_scale,
+                linz_dvr_.source_scale,
+                lcdb_cropland.source_scale
+            ], NULL))),
             NULL
         )::nzlum_type
         ELSE NULL
@@ -92,8 +127,10 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
             source_scale,
             actual_property_use,
             category,
+            "zone",
             improvements_value,
-            gt_half_acre
+            gt_half_acre,
+            over_sized_for_lifestyle
         FROM linz_dvr_
         WHERE (
             actual_property_use ~ '^9' -- Residential
@@ -125,5 +162,15 @@ CREATE TEMPORARY VIEW class_310 AS ( -- Residential
         FROM topo50_residential_areas_h3
         WHERE :parent::h3index = h3_partition
     ) AS topo50_residential_areas_h3 ON roi.h3_index && topo50_residential_areas_h3.h3_index
+    LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale
+        FROM lcdb_
+        WHERE
+            :parent::h3index = h3_partition
+            AND Class_2018 IN (
+                30, -- Short-rotation Cropland
+                33  -- Orchards, Vineyards or Other Perennial Crops
+            )
+    ) AS lcdb_cropland ON roi.h3_index && lcdb_cropland.h3_index
     WHERE linz_dvr_.h3_index IS NOT NULL OR hnz.h3_index IS NOT NULL
 );

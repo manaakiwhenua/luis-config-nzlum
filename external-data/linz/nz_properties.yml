@@ -48,10 +48,24 @@ external_data:
         type: btree
         name: idx_btree_partial_gt_half_acre
         where: gt_half_acre = TRUE
+      - columns: [over_sized_for_lifestyle]
+        type: btree
+        name: idx_btree_partial_over_sized_for_lifestyle
+        where: over_sized_for_lifestyle = TRUE
+      - columns: [sized_for_lifestyle]
+        type: btree
+        name: idx_btree_partial_sized_for_lifestyle
+        where: sized_for_lifestyle = TRUE
     derived_columns: # Is geometry greater than half an acre?
       - column: gt_half_acre
         datatype: boolean
         set_query: st_area(geom::geography) > 2023.43
+      - column: over_sized_for_lifestyle # as per 3.1.4 https://nzlum.landcareresearch.co.nz/classification/v0-4/classes/300/#310-residential
+        datatype: boolean
+        set_query: st_area(geom::geography) > 20000
+      - column: sized_for_lifestyle
+        datatype: boolean
+        set_query: st_area(geom::geography) <= 20000 AND st_area(geom::geography) > 4000
 
   
   national_dvr:

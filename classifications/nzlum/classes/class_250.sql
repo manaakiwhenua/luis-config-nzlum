@@ -91,26 +91,37 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
             WHEN irrigation_.h3_index IS NOT NULL
             THEN -1
             ELSE 0
+        END
+        +
+        CASE -- Penalise confidence by irrigation age (older mapping = less certain)
+            WHEN irrigation_.irrigation_age IS NULL THEN 0
+            WHEN irrigation_.irrigation_age <= 5    THEN 0
+            WHEN irrigation_.irrigation_age <= 10   THEN 1
+            WHEN irrigation_.irrigation_age <= 20   THEN 2
+            ELSE 3
         END), -- Confidence - exclude values over 12 rather than clamping down to 12
         ARRAY[]::TEXT[], -- commod
         ARRAY[irrigation_.manage]::TEXT[] || COALESCE(crop_nurseries.manage, ARRAY[]::TEXT[]), -- manage
         ARRAY[
             linz_dvr_.source_data,
             irrigation_.source_data,
-            crop_nurseries.source_data
+            crop_nurseries.source_data,
+            lcdb_.source_data
         ]::TEXT[], -- source_data
         range_merge(datemultirange(
             VARIADIC ARRAY_REMOVE(ARRAY[
                 irrigation_.source_date,
                 linz_dvr_.source_date,
-                crop_nurseries.source_date
+                crop_nurseries.source_date,
+                lcdb_.source_date
             ], NULL)
         ))::daterange, -- source_date
         range_merge(int4multirange(
             VARIADIC ARRAY_REMOVE(ARRAY[
                 irrigation_.source_scale,
                 linz_dvr_.source_scale,
-                crop_nurseries.source_scale
+                crop_nurseries.source_scale,
+                lcdb_.source_scale
             ], NULL)
         ))::int4range, -- source_scale
         NULL
@@ -154,7 +165,8 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
             source_data,
             source_date,
             source_scale,
-            manage
+            manage,
+            irrigation_age
         FROM irrigation_
         WHERE :parent::h3index = h3_partition
         AND irrigation_type ~ '^Drip'

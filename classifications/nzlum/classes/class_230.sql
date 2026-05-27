@@ -10,7 +10,7 @@ CREATE TEMPORARY VIEW class_230 AS (
     0 AS lu_code_tertiary,
     ROW(
         ARRAY[]::TEXT[], -- lu_code_ancillary
-        LEAST(GREATEST(CASE
+        clamp_confidence_or_null(CASE
             WHEN (
                 lcdb_.h3_index IS NOT NULL
                 OR lum_.h3_index IS NOT NULL
@@ -107,7 +107,15 @@ CREATE TEMPORARY VIEW class_230 AS (
             THEN -1
             ELSE 0
         END
-        , 1), 12), -- confidence
+        +
+        CASE -- Penalise confidence by irrigation age (older mapping = less certain)
+            WHEN irrigation_.irrigation_age IS NULL THEN 0
+            WHEN irrigation_.irrigation_age <= 5    THEN 0
+            WHEN irrigation_.irrigation_age <= 10   THEN 1
+            WHEN irrigation_.irrigation_age <= 20   THEN 2
+            ELSE 3
+        END
+        ), -- confidence
         (
             CASE
                 WHEN linz_dvr_.actual_property_use = '11'
@@ -196,10 +204,11 @@ CREATE TEMPORARY VIEW class_230 AS (
         OR category ~ '^H(B|F|M|X)(A|B|C|D|E|F)?' -- Berry fruits, flowers, market gardens, other hort/mixed
     ) linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
     LEFT JOIN (
-        SELECT h3_index, source_data, source_scale, source_date, manage
+        SELECT h3_index, source_data, source_scale, source_date, manage, irrigation_age
         FROM irrigation_
-        WHERE ts_notes IS NULL -- Very important
-        OR NOT (ts_notes @@ to_tsquery('english', 'sports & field | golf & course'))
+        WHERE (ts_notes IS NULL -- Very important
+            OR NOT (ts_notes @@ to_tsquery('english', 'sports & field | golf & course')))
+        AND irrigation_type !~ '^Drip' -- Drip is characteristic of perennial/intensive horticulture (class 240/250), not short-rotation cropping
     ) irrigation_ ON roi.h3_index && irrigation_.h3_index
     LEFT JOIN (
         SELECT h3_index, source_data, source_scale, source_date, manage, commod

@@ -18,7 +18,7 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
         WHEN dvr_commercial.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            CASE
+            clamp_confidence_or_null(CASE
                 WHEN
                     dvr_commercial.actual_property_use NOT IN (
                         '08',  -- Multi-use within commercial
@@ -27,7 +27,7 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
                     )
                     AND dvr_commercial.improvements_value > 0
                 THEN 1
-                WHEN 
+                WHEN
                     dvr_commercial.actual_property_use IN (
                         '08',  -- Multi-use within commercial
                         '78' -- Industrial, depots and yards
@@ -39,7 +39,7 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
                     ELSE 4
                 END
                 WHEN (
-                    dvr_commercial.actual_property_use IS NULL 
+                    dvr_commercial.actual_property_use IS NULL
                     AND dvr_commercial.category ~ '^C'
                 )
                 THEN 9
@@ -52,7 +52,11 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
                 WHEN dvr_commercial.category ~ '^C'
                 THEN 10
                 ELSE NULL
-            END,
+            END
+            + CASE -- Industrial zoning suggests commercial use is less certain
+                WHEN dvr_commercial.zone ~ '^7' THEN 2
+                ELSE 0
+            END),
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
             ARRAY[dvr_commercial.source_data]::TEXT[],
@@ -70,6 +74,7 @@ CREATE TEMPORARY VIEW class_330 AS ( -- Commercial: retail, office, hospitality,
             source_scale,
             actual_property_use,
             category,
+            "zone",
             improvements_value,
             improvements_description
         FROM linz_dvr_

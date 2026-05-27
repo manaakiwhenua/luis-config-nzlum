@@ -10,22 +10,28 @@ filtered_linz AS (
         source_data,
         source_date,
         source_scale,
+        current_effective_valuation_date,
         actual_property_use,
         category,
         "zone",
         improvements_value,
-        improvements_description
+        improvements_description,
+        sized_for_lifestyle
     FROM linz_dvr_
     WHERE
         :parent::h3index = h3_partition
-        AND actual_property_use IN ('00', '19', '29')
+        AND actual_property_use IN (
+            '00', -- 0.0 Multi-use at primary level (primary: 0=vacant/intermediate, secondary: 0=multi-use)
+            '19', -- 1.9 Rural industry, vacant (primary: 1=rural industry, secondary: 9=vacant)
+            '29'  -- 2.9 Lifestyle, vacant (primary: 2=lifestyle, secondary: 9=vacant)
+        )
         AND (
             "zone" ~ '^(0X|[1245][A-Z])'
             OR category ~ '^[ADFHLOPS]'
         )
 ),
 filtered_lcdb AS (
-    SELECT h3_index, Class_2018
+    SELECT h3_index, Class_2018, source_data, source_date, source_scale
     FROM lcdb_
     WHERE
         :parent::h3index = h3_partition
@@ -93,29 +99,56 @@ unioned_matches AS (
 
     UNION ALL
 
-    -- Match 2: LINZ vacant rural
+    -- Match 2: LINZ vacant rural (1.9 Rural industry, vacant)
     SELECT
         roi.h3_index,
         2, 8, 0,
         ROW(
             ARRAY[]::TEXT[],
-            CASE
-                WHEN l.zone !~ '^[01]' -- Not zoned for rural (or not mixed zone)
-                    THEN 8
-                WHEN filtered_lcdb.Class_2018 = 71 -- Exotic Forest
-                    THEN 9
-                WHEN (
-                    l.category LIKE '_V%' -- Vacant
-                    OR l.improvements_value < 100000 -- No considerable improvements built
-                )
+            LEAST(GREATEST(
+                CASE
+                    WHEN l.zone !~ '^[01]' -- Not zoned for rural (or not mixed zone)
+                        THEN 8
+                    WHEN filtered_lcdb.Class_2018 = 71 -- Exotic Forest
+                        THEN 9
+                    WHEN (
+                        l.category LIKE '_V%' -- Vacant
+                        OR l.improvements_value < 100000 -- No considerable improvements built
+                    )
+                        THEN 1
+                    ELSE 2
+                END
+                + CASE
+                    WHEN filtered_lcdb.Class_2018 IN (30, 33) THEN 2 -- LCDB suggests active cropland/orchard; penalise vacant classification
+                    ELSE 0
+                END
+                + CASE -- Penalise by valuation recency: older vacancy records are less reliable
+                    WHEN l.current_effective_valuation_date IS NULL
+                    THEN 2
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '1 year'
+                    THEN 0
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '3 years'
                     THEN 1
-                ELSE 2
-            END,
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '6 years'
+                    THEN 2
+                    ELSE 3
+                END
+                + CASE -- Residential-sized properties (0.4–2ha) are unlikely vacant agricultural land; likely rural-residential (→ 3.9.0)
+                    WHEN l.sized_for_lifestyle THEN 4
+                    ELSE 0
+                END
+            , 1), 12),
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
-            ARRAY[l.source_data]::TEXT[],
-            l.source_date,
-            l.source_scale,
+            ARRAY[l.source_data, filtered_lcdb.source_data]::TEXT[],
+            range_merge(datemultirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                l.source_date,
+                filtered_lcdb.source_date
+            ], NULL))),
+            range_merge(int4multirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                l.source_scale,
+                filtered_lcdb.source_scale
+            ], NULL))),
             NULL
         )::nzlum_type,
         2
@@ -123,12 +156,12 @@ unioned_matches AS (
     JOIN filtered_linz l ON roi.h3_index && l.h3_index
     JOIN filtered_lcdb ON roi.h3_index && filtered_lcdb.h3_index
     WHERE
-        l.actual_property_use = '19'
+        l.actual_property_use = '19' -- 1.9 Rural industry, vacant
         AND l.category ~ '^[ADFHOPS]'
 
     UNION ALL
 
-    -- Match 3: Lifestyle vacant with orchard hint
+    -- Match 3: Lifestyle vacant with orchard hint (2.9 Lifestyle, vacant)
     -- Orchard improvements on a vacant property suggest past agricultural use,
     -- not necessarily active production. Active orchards → class 2.3.x.
     SELECT
@@ -136,22 +169,48 @@ unioned_matches AS (
         2, 8, 0,
         ROW(
             ARRAY[]::TEXT[],
-            CASE
-                WHEN l.improvements_description ~ '\mORCHARDS?\M'
-                    THEN CASE
-                        WHEN l.zone ~ '^1' THEN 1 -- Orchard improvements in rural zone
-                        WHEN l.zone ~ '^0' THEN 3 -- Orchard improvements, multiple zones
-                        ELSE 4                    -- Orchard improvements, other zone
-                    END
-                WHEN l.zone ~ '^1' THEN 3         -- Rural zone, no orchard hint
-                WHEN l.zone ~ '^0' THEN 5         -- Multiple zones, no orchard hint
-                ELSE 7
-            END,
+            LEAST(GREATEST(
+                CASE
+                    WHEN l.improvements_description ~ '\mORCHARDS?\M'
+                        THEN CASE
+                            WHEN l.zone ~ '^1' THEN 3 -- Orchard improvements in rural zone
+                            WHEN l.zone ~ '^0' THEN 3 -- Orchard improvements, multiple zones
+                            ELSE 3                    -- Orchard improvements, other zone
+                        END
+                    WHEN l.zone ~ '^1' THEN 3         -- Rural zone, no orchard hint
+                    WHEN l.zone ~ '^0' THEN 5         -- Multiple zones, no orchard hint
+                    ELSE 7
+                END + CASE
+                    WHEN filtered_lcdb.Class_2018 IN (30, 33) THEN 2 -- Be wary of apparently "vacant" orchards; penalise vacant classification if there is an orchard signal in LCDB
+                    ELSE 0
+                END
+                + CASE -- Penalise by valuation recency: older vacancy records are less reliable
+                    WHEN l.current_effective_valuation_date IS NULL
+                    THEN 2
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '1 year'
+                    THEN 0
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '3 years'
+                    THEN 1
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '6 years'
+                    THEN 2
+                    ELSE 3
+                END
+                + CASE -- Residential-sized properties (0.4–2ha) are unlikely vacant agricultural land; likely rural-residential (→ 3.9.0)
+                    WHEN l.sized_for_lifestyle THEN 4
+                    ELSE 0
+                END
+            , 1), 12),
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
-            ARRAY[l.source_data]::TEXT[],
-            l.source_date,
-            l.source_scale,
+            ARRAY[l.source_data, filtered_lcdb.source_data]::TEXT[],
+            range_merge(datemultirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                l.source_date,
+                filtered_lcdb.source_date
+            ], NULL))),
+            range_merge(int4multirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                l.source_scale,
+                filtered_lcdb.source_scale
+            ], NULL))),
             NULL
         )::nzlum_type,
         3
@@ -160,29 +219,52 @@ unioned_matches AS (
     JOIN filtered_lcdb ON roi.h3_index && filtered_lcdb.h3_index
     JOIN filtered_rural_other ON roi.h3_index && filtered_rural_other.h3_index
     WHERE
-        l.actual_property_use = '29'
+        l.actual_property_use = '29' -- 2.9 Lifestyle, vacant
         AND l.category LIKE 'LV%'
 
     UNION ALL
 
-    -- Match 4: LINZ '00' multi-use
+    -- Match 4: LINZ '00' multi-use (0.0 Multi-use at primary level / vacant intermediate)
     SELECT
         roi.h3_index,
         2, 8, 0,
         ROW(
             ARRAY[]::TEXT[],
-            CASE
-                WHEN l.category LIKE '_V%'
-                    THEN 3
-                WHEN filtered_lcdb.Class_2018 = 71 -- Exotic Forest
-                    THEN 9
-                ELSE 4
-            END,
+            LEAST(GREATEST(
+                CASE
+                    WHEN l.category LIKE '_V%'
+                        THEN 3
+                    WHEN filtered_lcdb.Class_2018 = 71 -- Exotic Forest
+                        THEN 9
+                    ELSE 4
+                END
+                + CASE -- Penalise by valuation recency: older vacancy records are less reliable
+                    WHEN l.current_effective_valuation_date IS NULL
+                    THEN 2
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '1 year'
+                    THEN 0
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '3 years'
+                    THEN 1
+                    WHEN l.current_effective_valuation_date > CURRENT_DATE - INTERVAL '6 years'
+                    THEN 2
+                    ELSE 3
+                END
+                + CASE -- Residential-sized properties (0.4–2ha) are unlikely vacant agricultural land; likely rural-residential (→ 3.9.0)
+                    WHEN l.sized_for_lifestyle THEN 4
+                    ELSE 0
+                END
+            , 1), 12),
             ARRAY[]::TEXT[],
             ARRAY[]::TEXT[],
-            ARRAY[l.source_data]::TEXT[],
-            l.source_date,
-            l.source_scale,
+            ARRAY[l.source_data, filtered_lcdb.source_data]::TEXT[],
+            range_merge(datemultirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                l.source_date,
+                filtered_lcdb.source_date
+            ], NULL))),
+            range_merge(int4multirange(VARIADIC ARRAY_REMOVE(ARRAY[
+                l.source_scale,
+                filtered_lcdb.source_scale
+            ], NULL))),
             NULL
         )::nzlum_type,
         4
@@ -190,7 +272,7 @@ unioned_matches AS (
     JOIN filtered_linz l ON roi.h3_index && l.h3_index
     JOIN filtered_lcdb ON roi.h3_index && filtered_lcdb.h3_index
     JOIN filtered_rural_other ON roi.h3_index && filtered_rural_other.h3_index
-    WHERE l.actual_property_use = '00'
+    WHERE l.actual_property_use = '00' -- 0.0 Multi-use at primary level
 
     UNION ALL
 

@@ -36,7 +36,8 @@ CREATE TEMPORARY VIEW irrigation_ AS (
                 )
                 THEN 'irrigation drip'
                 ELSE 'irrigation'
-            END AS manage
+            END AS manage,
+            irrigation_2020.irrigation_age
     FROM irrigation_2020_h3
     INNER JOIN irrigation_2020 USING (ogc_fid)
     WHERE :parent::h3index = h3_partition
@@ -69,7 +70,8 @@ CREATE TEMPORARY VIEW irrigation_ AS (
             source_date,
             source_data,
             source_scale,
-            'irrigation'::TEXT AS manage
+            'irrigation'::TEXT AS manage,
+            NULL::int AS irrigation_age
         FROM ecan_consented_activities_areas_active
         JOIN ecan_consented_activities_areas_active_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition

@@ -261,5 +261,5 @@ RETURNS int4range AS \$\$
 -- Clamp to 1 to 12 range, but don't clamp values over 12, exclude them instead
 CREATE OR REPLACE FUNCTION clamp_confidence_or_null(confidence numeric)
 RETURNS numeric AS \$\$
-  SELECT CASE WHEN confidence > 12 THEN NULL ELSE GREATEST(confidence, 1) END;
+  SELECT CASE WHEN confidence IS NULL OR confidence > 12 THEN NULL ELSE GREATEST(confidence, 1) END;
 \$\$ LANGUAGE SQL IMMUTABLE;
