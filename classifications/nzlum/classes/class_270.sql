@@ -31,16 +31,19 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
             ARRAY[]::TEXT[], -- manage
             ARRAY[
                 unspecified_waterbodies.source_data,
-                linz_dvr_rural.source_data
-            ]::TEXT,
-            range_merge(
+                linz_dvr_rural.source_data,
+                lcdb_.source_data
+            ]::TEXT[],
+            range_merge(datemultirange(VARIADIC ARRAY_REMOVE(ARRAY[
                 unspecified_waterbodies.source_date,
-                linz_dvr_rural.source_date
-            ),
-            range_merge(
+                linz_dvr_rural.source_date,
+                lcdb_.source_date
+            ], NULL))),
+            range_merge(int4multirange(VARIADIC ARRAY_REMOVE(ARRAY[
                 unspecified_waterbodies.source_scale,
-                linz_dvr_rural.source_scale
-            ),
+                linz_dvr_rural.source_scale,
+                lcdb_.source_scale
+            ], NULL))),
             NULL
         )::nzlum_type
         WHEN lakes.h3_index IS NOT NULL
@@ -113,7 +116,7 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
         AND actual_property_use != '18' -- Mineral extraction
     ) linz_dvr_rural ON roi.h3_index && linz_dvr_rural.h3_index
     LEFT JOIN (
-        SELECT h3_index
+        SELECT h3_index, source_data, source_date, source_scale
         FROM lcdb_
         WHERE class_2018 IN (
             20, -- Lake or pond

@@ -3,7 +3,7 @@ CREATE TEMPORARY VIEW linz_crosl_ AS (
     h3_finest(crosl_.h3_index, urban_rural_current_.h3_index) AS h3_index,
     managed_by, -- e.g. "Housing New Zealand"
     statutory_actions,
-    area_ha,
+    area AS area_ha,
     'LINZ CRoSL' AS source_data,
     daterange(
         LEAST(

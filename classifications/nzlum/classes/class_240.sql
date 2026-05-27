@@ -352,6 +352,13 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                         WHEN crop_perennial.h3_index IS NOT NULL
                         THEN -6
                         ELSE 0
+                    END
+                    + CASE -- Penalise confidence by irrigation age (older mapping = less certain)
+                        WHEN irrigation_.irrigation_age IS NULL THEN 0
+                        WHEN irrigation_.irrigation_age <= 5    THEN 0
+                        WHEN irrigation_.irrigation_age <= 10   THEN 1
+                        WHEN irrigation_.irrigation_age <= 20   THEN 2
+                        ELSE 3
                     END, 1), 12) -- confidence
             END,
             COALESCE((nzlum_type).commod, ARRAY[]::TEXT[]) || COALESCE(crop_perennial.commod, ARRAY[]::TEXT[]),
@@ -381,13 +388,10 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             source_data,
             source_date,
             source_scale,
-            manage
+            manage,
+            irrigation_age
         FROM irrigation_
-        WHERE irrigation_type IN (
-            'Drip/micro',
-            'Drip/Micro',
-            'Drip/ Micro'
-        )
+        WHERE irrigation_type ~ '^Drip'
     ) irrigation_ ON base_classification.h3_index && irrigation_.h3_index
 );
 

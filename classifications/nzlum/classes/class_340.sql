@@ -8,7 +8,7 @@ CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
         CASE
             WHEN linz_dvr_industrial.h3_index IS NOT NULL
             THEN
-                LEAST(GREATEST(CASE
+                clamp_confidence_or_null(CASE
                     WHEN
                         actual_property_use <> '07'
                         AND actual_property_use NOT LIKE '%0'
@@ -41,7 +41,7 @@ CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
                     WHEN hail_manufacturing_and_industrial.h3_index IS NOT NULL
                     THEN -1
                     ELSE 0
-                END, 1), 12)
+                END)
             WHEN  hail_manufacturing_and_industrial.h3_index IS NOT NULL
             THEN 12 -- Residual possibility
             ELSE NULL

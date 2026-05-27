@@ -38,6 +38,9 @@ external_data:
       - column: ts_notes
         datatype: tsvector
         set_query: to_tsvector('english', notes)
+      - column: irrigation_age
+        datatype: int
+        set_query: EXTRACT(YEAR FROM CURRENT_DATE)::int - year_irr
     indices:
       - columns: [is_current]
         type: btree
@@ -57,6 +60,9 @@ external_data:
       - columns: [ts_notes]
         type: gin
         name: idx_gin_ts_notes
+      - columns: [irrigation_age]
+        type: btree
+        name: idx_btree_irrigation_age
   lum:
     <<: *mfe
     description: LUCAS NZ Land Use Map 2020 v003

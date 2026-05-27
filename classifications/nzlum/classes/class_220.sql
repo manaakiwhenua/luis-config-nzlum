@@ -86,6 +86,14 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     '76 - Grassland - Low producing'
                 )
                 THEN 14 -- >12 to account for modifier
+
+                -- Gap-fill: LCDB High Producing Exotic Grassland with no DVR data
+                WHEN (
+                    lcdb_.Class_2018 IN (40, 41)
+                    AND linz_dvr_.h3_index IS NULL
+                )
+                THEN 4
+
                 ELSE NULL -- No other possibilities permitted
             END
             + -- Add modifier for landcover
@@ -121,7 +129,7 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
             +
             CASE -- Lower confidence for land in hydro parcel
                 WHEN hydro_parcels_h3.h3_index IS NOT NULL
-                THEN 2
+                THEN 1
                 ELSE 0
             END
             +
@@ -224,9 +232,10 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 h3_index,
                 source_data,
                 source_date,
-                source_scale
+                source_scale,
+                Class_2018
             FROM lcdb_
-            WHERE Class_2018 IN (10, 12, 15, 16, 20, 21, 30, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
+            WHERE Class_2018 IN (10, 12, 15, 16, 20, 21, 30, 40, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
         ) AS lcdb_ ON roi.h3_index && lcdb_.h3_index
         LEFT JOIN (
             SELECT

@@ -6,6 +6,8 @@ CREATE TEMPORARY VIEW linz_dvr_ AS (
     improvements_value_ratio,
     legal_description,
     gt_half_acre,
+    sized_for_lifestyle,
+    over_sized_for_lifestyle,
     land_area,
     property_category as category,
     actual_property_use,
@@ -14,6 +16,7 @@ CREATE TEMPORARY VIEW linz_dvr_ AS (
         current_effective_valuation_date::DATE,
         '[]'::TEXT
     ) AS source_date,
+    current_effective_valuation_date,
     improvements_description,
     ts_improvements_description,
     zoning AS "zone",

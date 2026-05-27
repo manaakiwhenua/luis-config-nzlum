@@ -7,7 +7,7 @@ CREATE TEMPORARY VIEW class_117 AS (
         WHEN pan_nz_not_iucn.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
-            LEAST(GREATEST(
+            clamp_confidence_or_null(
                 CASE
                     WHEN (
                         legislation_act IN (
@@ -74,7 +74,7 @@ CREATE TEMPORARY VIEW class_117 AS (
                 + CASE WHEN rural.h3_index IS NULL THEN 1 ELSE 0 END
                 -- Penalise built land-cover including urban parks
                 + CASE WHEN lcdb_unbuilt.h3_index IS NULL THEN 1 ELSE 0 END
-            END, 1), 12),
+            END),
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
             ARRAY[pan_nz_not_iucn.source_data],
