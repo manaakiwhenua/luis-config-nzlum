@@ -11,6 +11,7 @@ external_data:
   gwrc_plantation_forests_western: &gwrc_plantation_forests_western
     <<: *gwrc
     host: https://mapping.gw.govt.nz/arcgis/rest/services/GW/Parks_P/MapServer
+    name: GWRC Plantation Forests (Western Area)
     description: Western Area Managed Plantation Forests
     geom_type: multipolygon
     layer: "16"
@@ -62,3 +63,4 @@ external_data:
     <<: *gwrc_plantation_forests_western
     layer: "15"
     description: Eastern Area Managed Plantation Forests
+    name: GWRC Plantation Forests (Eastern Area)

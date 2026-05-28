@@ -30,6 +30,7 @@ external_data:
 
   nz_facilities:
     <<: *linz
+    name: NZ Facilities
     description: NZ Facilities
     layer: layer-105588
     geom_type: multipolygon
