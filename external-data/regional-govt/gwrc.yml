@@ -2,3 +2,63 @@
 # https://catalogue.data.govt.nz/dataset/water-collection-areas (status = current) -- but this is CC BY-ND 4.0
 # See also https://catalogue.data.govt.nz/dataset/water-course/resource/e4f3d315-7589-4ff9-921d-eb881fda51ce
 
+__gwrc__: &gwrc
+  external_data_type: arcgis_rest
+  license: CC BY 4.0
+  attribution: Greater Wellington Regional Council
+
+external_data:
+  gwrc_plantation_forests_western: &gwrc_plantation_forests_western
+    <<: *gwrc
+    host: https://mapping.gw.govt.nz/arcgis/rest/services/GW/Parks_P/MapServer
+    description: Western Area Managed Plantation Forests
+    geom_type: multipolygon
+    layer: "16"
+    derived_columns:
+      - column: species_clean
+        datatype: text[]
+        set_query: |-
+          NULLIF(
+            ARRAY_REMOVE(
+              ARRAY(
+                SELECT CASE
+                  WHEN token ~* 'P[\s\.]+rad'
+                    THEN 'Pinus radiata'
+                  WHEN token ~* 'C[\s\.]+mac'
+                    THEN 'Cupressus macrocarpa'
+                  WHEN token ~* 'Ps\.menz?'
+                    THEN 'Pseudotsuga menziesii'
+                  WHEN token ~* 'P\.contorta'
+                    THEN 'Pinus contorta'
+                  WHEN token ~* 'P\.nigra'
+                    THEN 'Pinus nigra'
+                  WHEN token ~* 'Euc(?:alypt(?:us)?)?\s*[.\s]spp'
+                    THEN 'Eucalyptus spp.'
+                  WHEN token ~* 'Acc?acia\s+mel'
+                    THEN 'Acacia melanoxylon'
+                  WHEN token ~* 'Pop'
+                    THEN 'Populus spp.'
+                  ELSE NULL
+                END
+                FROM unnest(regexp_split_to_array(species, '\s*/\s*')) AS token
+              ),
+              NULL
+            ),
+            ARRAY[]::text[]
+          )
+      - column: year_planted_clean
+        datatype: integer
+        set_query: |-
+          (regexp_match(year_planted::text, '\d{4}'))[1]::integer
+    indices:
+      - columns: [species_clean]
+        type: gin
+        name: idx_gin_species_clean
+      - columns: [year_planted_clean]
+        type: btree
+        name: idx_year_planted_clean
+        
+  gwrc_plantation_forests_eastern:
+    <<: *gwrc_plantation_forests_western
+    layer: "15"
+    description: Eastern Area Managed Plantation Forests

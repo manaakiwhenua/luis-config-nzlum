@@ -32,6 +32,7 @@ CREATE TEMPORARY VIEW roi AS (
 \ir data_views/consents/dairy_effluent_discharge.sql
 \ir data_views/consents/forestry.sql
 \ir data_views/consents/pastoral_farms.sql
+\ir data_views/gwrc_plantation_forests.sql
 
 -- attributes
 \ir attributes/water.sql
