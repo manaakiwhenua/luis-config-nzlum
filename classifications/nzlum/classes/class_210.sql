@@ -3,7 +3,18 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
     2 AS lu_code_primary,
     1 AS lu_code_secondary,
     0 AS lu_code_tertiary,
-    CASE 
+    CASE
+        WHEN gwrc_.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            1, -- confidence
+            ARRAY[]::TEXT[], -- commod
+            ARRAY[]::TEXT[], -- manage
+            ARRAY[gwrc_.source_data]::TEXT[], -- source_data
+            gwrc_.source_date, -- source_date
+            gwrc_.source_scale, -- source_scale
+            gwrc_.comment -- comment
+        )::nzlum_type
         WHEN (
             lum_.subid_2020 = '122 - Wilding trees'
             AND topo50_exotic_polygons_.h3_index IS NOT NULL
@@ -124,6 +135,10 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
     -- species (topo50: empty=coniferous, and "non-coniferous")
     FROM roi
     LEFT JOIN (
+        SELECT h3_index, species_clean, source_data, source_date, source_scale, comment
+        FROM gwrc_plantation_forests_
+    ) AS gwrc_ ON roi.h3_index && gwrc_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -189,7 +204,8 @@ CREATE TEMPORARY VIEW class_210 AS ( -- Plantation forests
             '33' -- Oceanic
         )
     ) AS rural ON roi.h3_index && rural.h3_index
-    WHERE lum_.h3_index IS NOT NULL
+    WHERE gwrc_.h3_index IS NOT NULL
+       OR lum_.h3_index IS NOT NULL
        OR topo50_exotic_polygons_.h3_index IS NOT NULL
        OR consents_forestry.h3_index IS NOT NULL
 );

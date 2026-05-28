@@ -110,6 +110,9 @@ classifications:
       
       - es_slu
       - es_winter_forage_2017
+
+      - gwrc_plantation_forests_western
+      - gwrc_plantation_forests_eastern
     table_schema:
       unit_id: BIGINT
       lu_code_primary: INTEGER
