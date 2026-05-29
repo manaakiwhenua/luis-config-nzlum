@@ -98,7 +98,7 @@ CREATE OR REPLACE FUNCTION nzsluc_v0_2_0_lu_description(lu_code_primary integer,
                         THEN 'Defence land'
                         ELSE 'Minimal use from relatively natural environments'
                     END
-                WHEN lu_code_secondary = 4 THEN 'Unused land and land in transition'
+                WHEN lu_code_secondary = 4 THEN 'Unused and transitioning land'
                 END
             
             WHEN lu_code_primary = 2
@@ -110,7 +110,7 @@ CREATE OR REPLACE FUNCTION nzsluc_v0_2_0_lu_description(lu_code_primary integer,
                 WHEN lu_code_secondary = 5 THEN 'Intensive horticulture'
                 WHEN lu_code_secondary = 6 THEN 'Intensive animal production'
                 WHEN lu_code_secondary = 7 THEN 'Water and wastewater'
-                WHEN lu_code_secondary = 8 THEN 'Land in transition'
+                WHEN lu_code_secondary = 8 THEN 'Vacant and transitioning land'
                 END
 
             WHEN lu_code_primary = 3
@@ -120,7 +120,7 @@ CREATE OR REPLACE FUNCTION nzsluc_v0_2_0_lu_description(lu_code_primary integer,
                 WHEN lu_code_secondary = 3 THEN 'Commercial'
                 WHEN lu_code_secondary = 4 THEN 'Manufacturing and industrial'
                 WHEN lu_code_secondary = 5 THEN 'Utilities'
-                WHEN lu_code_secondary = 6 THEN 'Transport and communication'
+                WHEN lu_code_secondary = 6 THEN 'Transportation'
                 WHEN lu_code_secondary = 7 THEN 'Mining'
                 WHEN lu_code_secondary = 8 THEN 'Waste treatment and disposal'
                 WHEN lu_code_secondary = 9 THEN 'Vacant and transitioning land'

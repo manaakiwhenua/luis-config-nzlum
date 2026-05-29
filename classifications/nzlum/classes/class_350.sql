@@ -20,6 +20,30 @@ CREATE TEMPORARY VIEW class_350 AS (
     5 AS lu_code_secondary,
     0 AS lu_code_tertiary,
     CASE
+        WHEN (
+            topo50_beacons.h3_index IS NOT NULL
+            OR topo50_masts.h3_index IS NOT NULL
+        )
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            1,
+            ARRAY[]::TEXT[],
+            ARRAY[]::TEXT[],
+            ARRAY[topo50_beacons.source_data, topo50_masts.source_data]::TEXT[],
+            range_merge(datemultirange(
+                VARIADIC ARRAY_REMOVE(ARRAY[
+                    topo50_beacons.source_date,
+                    topo50_masts.source_date
+                ], NULL)
+            ))::daterange,
+            range_merge(int4multirange(
+                VARIADIC ARRAY_REMOVE(ARRAY[
+                    topo50_beacons.source_scale,
+                    topo50_masts.source_scale
+                ], NULL)
+            ))::int4range,
+            NULL
+        )::nzlum_type
         WHEN topo50_hydro_and_reservoirs.h3_index IS NOT NULL
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
@@ -71,7 +95,7 @@ CREATE TEMPORARY VIEW class_350 AS (
             NULL
         )::nzlum_type
         WHEN (
-            linz_dvr_utility_.actual_property_use ~ '6[01234678]'
+            linz_dvr_utility_.actual_property_use ~ '6[0123467]'
             OR linz_dvr_utility_.actual_property_use = '06'
         )
         THEN ROW(
@@ -116,6 +140,36 @@ CREATE TEMPORARY VIEW class_350 AS (
     END AS nzlum_type
     FROM roi
     LEFT JOIN (
+        SELECT h3_index,
+            'LINZ' AS source_data,
+            DATERANGE(CURRENT_DATE, CURRENT_DATE, '[]') AS source_date,
+            '[50,100]'::int4range AS source_scale
+        FROM topo50_beacons_h3
+        WHERE :parent::h3index = h3_partition
+        UNION ALL
+        SELECT h3_index,
+            'LINZ' AS source_data,
+            DATERANGE(CURRENT_DATE, CURRENT_DATE, '[]') AS source_date,
+            '[50,100]'::int4range AS source_scale
+        FROM topo50_chatham_beacons_h3
+        WHERE :parent::h3index = h3_partition
+    ) AS topo50_beacons ON roi.h3_index && topo50_beacons.h3_index
+    LEFT JOIN (
+        SELECT h3_index,
+            'LINZ' AS source_data,
+            DATERANGE(CURRENT_DATE, CURRENT_DATE, '[]') AS source_date,
+            '[50,100]'::int4range AS source_scale
+        FROM topo50_masts_h3
+        WHERE :parent::h3index = h3_partition
+        UNION ALL
+        SELECT h3_index,
+            'LINZ' AS source_data,
+            DATERANGE(CURRENT_DATE, CURRENT_DATE, '[]') AS source_date,
+            '[50,100]'::int4range AS source_scale
+        FROM topo50_chatham_masts_h3
+        WHERE :parent::h3index = h3_partition
+    ) AS topo50_masts ON roi.h3_index && topo50_masts.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -144,7 +198,7 @@ CREATE TEMPORARY VIEW class_350 AS (
             END AS improvements_evidence
         FROM linz_dvr_
         WHERE
-            actual_property_use ~ '6[01234678]' -- 65 is sanitary (better as 3.8.X) and 69 is vacant (3.9.X)
+            actual_property_use ~ '6[0123467]' -- 65 is sanitary (better as 3.8.X) and 69 is vacant (3.9.X)
             OR actual_property_use = '06'
             OR category ~ '^U[CEGT]' -- UP (postboxes) and UR (rail network corridors) excluded
     ) AS linz_dvr_utility_ ON roi.h3_index && linz_dvr_utility_.h3_index
@@ -196,7 +250,9 @@ CREATE TEMPORARY VIEW class_350 AS (
             5 -- Transport infrastructure
         )
     ) AS lcdb_unbuilt ON roi.h3_index && lcdb_unbuilt.h3_index
-    WHERE linz_crosl_.h3_index IS NOT NULL
+    WHERE topo50_beacons.h3_index IS NOT NULL
+       OR topo50_masts.h3_index IS NOT NULL
+       OR linz_crosl_.h3_index IS NOT NULL
        OR linz_dvr_utility_.h3_index IS NOT NULL
        OR topo50_hydro_and_reservoirs.h3_index IS NOT NULL
        OR hail_electric.h3_index IS NOT NULL

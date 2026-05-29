@@ -1,4 +1,4 @@
-CREATE TEMPORARY VIEW class_360 AS ( --Transport and communicaton
+CREATE TEMPORARY VIEW class_360 AS ( --Transportation
     SELECT roi.h3_index,
     3 AS lu_code_primary,
     6 AS lu_code_secondary,
