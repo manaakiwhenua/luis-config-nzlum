@@ -46,6 +46,10 @@ classifications:
       - topo50_chatham_airports
       - topo50_runways
       - topo50_chatham_runways
+      - topo50_beacons
+      - topo50_chatham_beacons
+      - topo50_masts
+      - topo50_chatham_masts
       - nz_facilities
       - topo50_sand
       - topo50_chatham_sand

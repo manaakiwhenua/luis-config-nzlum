@@ -417,3 +417,37 @@ external_data:
       - columns: [species]
         type: btree
         name: idx_species
+
+  topo50_beacons:
+    <<: *linz_topo50
+    name: NZ Beacon Points (lighthouses)
+    description: LINZ Topo 1:50k Beacon Points — lighthouses only, buffered 10 m
+    layer: layer-50238
+    geom_type: multipolygon
+    where: "type = 'lighthouse' AND status NOT IN ('derelict', 'historic')"
+    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom
+
+  topo50_chatham_beacons:
+    <<: *linz_topo50
+    name: NZ Chatham Island Beacon Points (lighthouses)
+    description: LINZ Topo Chatham Island 1:50k Beacon Points — lighthouses only, buffered 10 m
+    layer: layer-50064
+    geom_type: multipolygon
+    where: "type = 'lighthouse' AND status NOT IN ('derelict', 'historic')"
+    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom
+
+  topo50_masts:
+    <<: *linz_topo50
+    name: NZ Mast Points
+    description: LINZ Topo 1:50k Mast Points (antenna masts ≥10 m or significant), buffered 10 m
+    layer: layer-50299
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom
+
+  topo50_chatham_masts:
+    <<: *linz_topo50
+    name: NZ Chatham Island Mast Points
+    description: LINZ Topo Chatham Island 1:50k Mast Points (antenna masts ≥10 m or significant), buffered 10 m
+    layer: layer-50090
+    geom_type: multipolygon
+    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom
