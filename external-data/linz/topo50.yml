@@ -31,6 +31,19 @@ external_data:
     layer: layer-50083
     geom_type: multipolygon
   
+  topo50_racetracks:
+    <<: *linz_topo50
+    description: LINZ Topo 1:50k racetracks
+    layer: layer-50315
+    geom_type: linestring
+    indices:
+      - columns: [track_type]
+        type: btree
+        name: idx_btree_track_type
+      - columns: [track_use]
+        type: btree
+        name: idx_btree_track_use
+
   topo50_cemetery:
     <<: *linz_topo50
     description: LINZ Topo 1:50k cemeteries
