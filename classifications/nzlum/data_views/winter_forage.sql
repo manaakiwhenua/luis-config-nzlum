@@ -59,6 +59,7 @@ CREATE TEMPORARY VIEW winter_forage_ AS (
             WHERE :parent::h3index = h3_partition
             AND manage IS NOT NULL
         ) AS unioned
+        WHERE upper(source_date) >= CURRENT_DATE - INTERVAL '5 years'
     ) AS ranked
     WHERE rn = 1
 );

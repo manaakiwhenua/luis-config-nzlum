@@ -13,7 +13,7 @@ WITH gdc_crops AS (
     JOIN summer_crop_gdc_h3 USING (ogc_fid)
     WHERE
         :parent::h3index = h3_partition
-        AND YearCompleted::INT = 2025 -- Most recent survey year
+        AND YearCompleted::INT >= EXTRACT(YEAR FROM CURRENT_DATE)::INT - 5
 
     UNION ALL
 
@@ -30,7 +30,7 @@ WITH gdc_crops AS (
     JOIN winter_crop_gdc_h3 USING (ogc_fid)
     WHERE
         :parent::h3index = h3_partition
-        AND EXTRACT(YEAR FROM "start_date") = 2021 -- Most recent survey year
+        AND "start_date" >= CURRENT_DATE - INTERVAL '5 years'
 ),
 gdf_crops_unnested AS (
     SELECT
