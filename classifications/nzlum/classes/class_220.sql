@@ -69,13 +69,21 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 )
                 THEN 8
 
+                -- Horse studs: disambiguate by training track presence and property size
+                WHEN linz_dvr_.category ~ '^SH'
+                THEN CASE
+                    WHEN horse_training_properties_.h3_index IS NOT NULL THEN NULL -- intensive; let class_260 claim
+                    WHEN linz_dvr_.land_area > 20 THEN 8 -- extensive-sized, plausibly pastoral
+                    ELSE 11
+                END
+
                 WHEN (
                         linz_dvr_.actual_property_use IN (
                         '15', -- Market gardens and orchards
                         '17', -- Forestry
                         '18' -- Mineral extraction
                     )
-                    OR linz_dvr_.category ~ '^(LI|SD|SH|SX)'
+                    OR linz_dvr_.category ~ '^(LI|SD|SX)'
                     OR winter_forage_.h3_index IS NOT NULL
                 )
                 THEN 11
@@ -181,7 +189,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 nzlri_lowcapability.source_data,
                 consents_forestry.source_data,
                 pasture_practices.source_data,
-                pastoral_consents.source_data
+                pastoral_consents.source_data,
+                horse_training_properties_.source_data
             ]::TEXT[], -- source_data
             range_merge(datemultirange(
                 VARIADIC ARRAY_REMOVE(ARRAY[
@@ -194,7 +203,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     nzlri_lowcapability.source_date,
                     consents_forestry.source_date,
                     pasture_practices.source_date,
-                    pastoral_consents.source_date
+                    pastoral_consents.source_date,
+                    horse_training_properties_.source_date
                 ], NULL)
             ))::daterange, -- source_date
             range_merge(int4multirange(
@@ -208,10 +218,18 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                     nzlri_lowcapability.source_scale,
                     consents_forestry.source_scale,
                     pasture_practices.source_scale,
-                    pastoral_consents.source_scale
+                    pastoral_consents.source_scale,
+                    horse_training_properties_.source_scale
                 ], NULL)
             ))::int4range, -- source_scale
-            NULL
+            NULLIF(CONCAT_WS(E'\n',
+                CASE WHEN linz_dvr_.category ~ '^SH' AND horse_training_properties_.h3_index IS NOT NULL
+                     THEN 'horse training track (topo50)' END,
+                CASE WHEN linz_dvr_.category ~ '^SH' AND linz_dvr_.improvements_description ~ '\m(STABLES?)\M'
+                     THEN 'stables' END,
+                CASE WHEN linz_dvr_.category ~ '^SH' AND linz_dvr_.improvements_description ~ '\m(EQUES|EQUESTRIAN)\s?(CTR|CENTER|CENTRE)?\M'
+                     THEN 'equestrian centre' END
+            ), '') -- comment
         )::nzlum_type AS nzlum_type
         FROM roi
         LEFT JOIN (
@@ -222,7 +240,8 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 source_scale,
                 improvements_description,
                 actual_property_use,
-                category
+                category,
+                land_area
             FROM linz_dvr_
             WHERE linz_dvr_.actual_property_use ~ '^1' -- Rural industry
             OR linz_dvr_.actual_property_use = '01' -- Multi-use at primary level, rural-industry
@@ -348,6 +367,10 @@ CREATE TEMPORARY VIEW class_220 AS ( -- Grazing modified pasture systems
                 ]
             )
         ) AS pasture_practices ON roi.h3_index && pasture_practices.h3_index
+        LEFT JOIN (
+            SELECT h3_index, source_data, source_date, source_scale
+            FROM horse_training_properties_
+        ) AS horse_training_properties_ ON roi.h3_index && horse_training_properties_.h3_index
         WHERE lum_.h3_index IS NOT NULL
            OR linz_dvr_.h3_index IS NOT NULL
            OR lcdb_.h3_index IS NOT NULL
