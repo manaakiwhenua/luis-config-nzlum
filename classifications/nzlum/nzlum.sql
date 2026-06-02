@@ -34,6 +34,7 @@ CREATE TEMPORARY VIEW roi AS (
 \ir data_views/consents/pastoral_farms.sql
 \ir data_views/gwrc_plantation_forests.sql
 \ir data_views/horse_training_properties.sql
+\ir data_views/property_density.sql
 
 -- attributes
 \ir attributes/water.sql
@@ -42,13 +43,13 @@ CREATE TEMPORARY VIEW roi AS (
 \ir attributes/zone.sql
 
 -- classes
-\ir classes/class_111.sql
-\ir classes/class_112.sql
-\ir classes/class_113.sql
-\ir classes/class_114.sql
-\ir classes/class_115.sql
-\ir classes/class_116.sql
-\ir classes/class_117.sql
+\ir classes/110/class_111.sql
+\ir classes/110/class_112.sql
+\ir classes/110/class_113.sql
+\ir classes/110/class_114.sql
+\ir classes/110/class_115.sql
+\ir classes/110/class_116.sql
+\ir classes/110/class_117.sql
 \ir classes/class_120.sql
 \ir classes/class_130.sql
 \ir classes/class_136.sql
@@ -64,7 +65,10 @@ CREATE TEMPORARY VIEW roi AS (
 -- \ir classes/class_280.sql
 \ir classes/class_280_v2.sql
 
-\ir classes/class_310.sql
+\ir classes/310/class_311.sql
+\ir classes/310/class_312.sql
+\ir classes/310/class_313.sql
+\ir classes/310/class_314.sql
 \ir classes/class_320.sql
 \ir classes/class_330.sql
 \ir classes/class_340.sql
@@ -202,7 +206,13 @@ FROM (
             UNION ALL
             SELECT * FROM class_280 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL
-            SELECT * FROM class_310 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            SELECT * FROM class_311 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_312 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_313 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_314 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL
             SELECT * FROM class_320 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL

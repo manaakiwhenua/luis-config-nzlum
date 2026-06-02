@@ -169,6 +169,37 @@ external_data:
         type: btree
         name: idx_btree_imp_desc_intens_hort
         where: improvements_description ~ '\m(GREEN|GRN|SHADE|SHD|GLASS)\s?(HOUSE|HSE)\M'
+      - columns: [improvements_description]
+        type: btree
+        name: idx_btree_imp_desc_apartment
+        where: improvements_description ~ '\mAPARTMENT\M'
+      - columns: [improvements_description]
+        type: btree
+        name: idx_btree_imp_desc_townhouse
+        where: improvements_description ~* '\m(THSE|TOWN\s?HOUSE|TCE\s?HSE)\M'
+      - columns: [improvements_description]
+        type: btree
+        name: idx_btree_imp_desc_flat
+        where: improvements_description ~ '\mFLAT\M'
+      - columns: [improvements_description]
+        type: btree
+        name: idx_btree_imp_desc_pt_bldg_flr
+        where: improvements_description ~ '\mPT\s(BLDG|FLR)\M'
+      - columns: [building_site_coverage]
+        type: btree
+        name: idx_btree_building_site_coverage
+      - columns: [building_total_floor_area]
+        type: btree
+        name: idx_btree_building_total_floor_area
+      - columns: [mass_other_improvements]
+        type: btree
+        name: idx_btree_mass_other_improvements
+      - columns: [mass_garage_freestanding]
+        type: btree
+        name: idx_btree_mass_garage_freestanding
+      - columns: [mass_garaged_under_main_roof]
+        type: btree
+        name: idx_btree_mass_garaged_under_main_roof
       - columns:
         - improvements_value
         type: btree

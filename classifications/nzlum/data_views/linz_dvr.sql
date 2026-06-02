@@ -22,6 +22,11 @@ CREATE TEMPORARY VIEW linz_dvr_ AS (
     zoning AS "zone",
     nzptl.type AS land_estate,
     ownership_code,
+    building_site_coverage,       -- m², footprint area of principal building(s)
+    building_total_floor_area,    -- m², total floor area of principal building(s)
+    mass_other_improvements,           -- 'Y'/'N' — substantial extras (pool, tennis court, glasshouse)
+    mass_garage_freestanding,     -- count of freestanding garage car spaces
+    mass_garaged_under_main_roof, -- count of garage car spaces under main roof
     CASE
         WHEN urban_rural_current_.IUR2026_V1_00 IN (
             '11', -- major urban

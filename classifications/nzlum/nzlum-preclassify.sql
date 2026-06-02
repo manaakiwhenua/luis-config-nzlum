@@ -55,7 +55,11 @@ CREATE TYPE nzlum0_lu_coden AS ENUM (
     '2.6.0',
     '2.8.0',
 
-    '3.1.0',
+    -- '3.1.0',
+    '3.1.1',
+    '3.1.2',
+    '3.1.3',
+    '3.1.4',
     '3.2.0',
     '3.3.0',
     '3.4.0',
@@ -115,7 +119,14 @@ CREATE OR REPLACE FUNCTION nzsluc_v0_2_0_lu_description(lu_code_primary integer,
 
             WHEN lu_code_primary = 3
             THEN CASE
-                WHEN lu_code_secondary = 1 THEN 'Residential'
+                WHEN lu_code_secondary = 1 THEN
+                    CASE
+                        WHEN lu_code_tertiary = 1 THEN 'High-density residential'
+                        WHEN lu_code_tertiary = 2 THEN 'Medium-density residential'
+                        WHEN lu_code_tertiary = 3 THEN 'Low-density residential'
+                        WHEN lu_code_tertiary = 4 THEN 'Rural residential'
+                        ELSE 'Residential'
+                    END
                 WHEN lu_code_secondary = 2 THEN 'Public recreation and services'
                 WHEN lu_code_secondary = 3 THEN 'Commercial'
                 WHEN lu_code_secondary = 4 THEN 'Manufacturing and industrial'
