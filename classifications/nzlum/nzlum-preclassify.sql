@@ -46,13 +46,16 @@ CREATE TYPE nzlum0_lu_coden AS ENUM (
     '1.3.0',
     '1.4.0',
 
-    '2.7.0', -- Prefer bringing forward water related features; NB this class is probably better left to water attribute 
+    '2.7.0', -- Prefer bringing forward water related features; NB this class is probably better left to water attribute
     '2.1.0',
-    '2.2.0',
+    '2.2.1',
+    '2.2.2',
+    '2.2.3',
     '2.3.0',
     '2.4.0',
     '2.5.0',
     '2.6.0',
+    '2.9.0',
     '2.8.0',
 
     -- '3.1.0',
@@ -108,13 +111,20 @@ CREATE OR REPLACE FUNCTION nzsluc_v0_2_0_lu_description(lu_code_primary integer,
             WHEN lu_code_primary = 2
             THEN CASE
                 WHEN lu_code_secondary = 1 THEN 'Plantation forests'
-                WHEN lu_code_secondary = 2 THEN 'Grazing modified pasture systems'
+                WHEN lu_code_secondary = 2 THEN
+                    CASE
+                        WHEN lu_code_tertiary = 1 THEN 'Dairy'
+                        WHEN lu_code_tertiary = 2 THEN 'Intensive dry stock'
+                        WHEN lu_code_tertiary = 3 THEN 'Extensive dry stock'
+                        ELSE 'Grazing modified pasture systems'
+                    END
                 WHEN lu_code_secondary = 3 THEN 'Short-rotation and seasonal cropping'
                 WHEN lu_code_secondary = 4 THEN 'Perennial horticulture'
                 WHEN lu_code_secondary = 5 THEN 'Intensive horticulture'
                 WHEN lu_code_secondary = 6 THEN 'Intensive animal production'
                 WHEN lu_code_secondary = 7 THEN 'Water and wastewater'
                 WHEN lu_code_secondary = 8 THEN 'Vacant and transitioning land'
+                WHEN lu_code_secondary = 9 THEN 'Smallholder farm'
                 END
 
             WHEN lu_code_primary = 3

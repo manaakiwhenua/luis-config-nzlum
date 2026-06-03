@@ -85,6 +85,11 @@ CREATE TEMPORARY VIEW class_314 AS (
                 WHEN linz_dvr_."zone" ~ '^7' THEN 99
                 ELSE 0
             END
+            +
+            CASE -- Residential zoning confirms rural-residential character
+                WHEN linz_dvr_."zone" ~ '^9' THEN -1
+                ELSE 0
+            END
             ),
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
