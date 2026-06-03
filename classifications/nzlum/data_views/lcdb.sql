@@ -3,7 +3,7 @@ CREATE TEMPORARY VIEW lcdb_ AS (
         h3_index,
         h3_partition,
         -- Name_2018 AS comment,
-        Class_2018::int,
+        Class_2023::int,
         daterange(
             EditDate::DATE,
             EditDate::DATE,
@@ -15,10 +15,10 @@ CREATE TEMPORARY VIEW lcdb_ AS (
         SELECT
             h3_index,
             h3_partition,
-            Class_2018::int,
+            Class_2023::int,
             EditDate
-        FROM lcdb_v5_h3
-        INNER JOIN lcdb_v5 USING (ogc_fid)
+        FROM lcdb_v6_h3
+        INNER JOIN lcdb_v6 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
     
         UNION ALL
@@ -30,10 +30,10 @@ CREATE TEMPORARY VIEW lcdb_ AS (
         SELECT
             h3_index,
             h3_partition,
-            Class_2018::int,
+            Class_2023::int,
             EditDate
-        FROM lcdb_v5_chathams_h3
-        INNER JOIN lcdb_v5_chathams USING (ogc_fid)
+        FROM lcdb_v6_chathams_h3
+        INNER JOIN lcdb_v6_chathams USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
     ) AS combined_lcdb
 );

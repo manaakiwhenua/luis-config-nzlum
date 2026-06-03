@@ -94,7 +94,7 @@ CREATE TEMPORARY VIEW class_136 AS (
     LEFT JOIN ( -- Use to exclude or penalise built-up areas from this class
         SELECT h3_index
         FROM lcdb_
-        WHERE Class_2018 NOT IN (
+        WHERE Class_2023 NOT IN (
             1, -- 'Built-up Area (settlement)',
             2, -- 'Urban Parkland/Open Space'
             5 --'Transport Infrastructure',

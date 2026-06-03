@@ -61,7 +61,7 @@ CREATE TEMPORARY VIEW class_221 AS (
             ELSE NULL
         END
         + CASE -- LCDB land cover contradicts pastoral/dairy use
-            WHEN lcdb_.Class_2018 IN (
+            WHEN lcdb_.Class_2023 IN (
                 0, 5, 6,
                 10, 12, 14, 15, 16,
                 20, 21, 22,
@@ -141,9 +141,9 @@ CREATE TEMPORARY VIEW class_221 AS (
     ) linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
     LEFT JOIN (
         -- LCDB classes that would contradict pastoral/dairy use
-        SELECT h3_index, source_data, source_date, source_scale, Class_2018
+        SELECT h3_index, source_data, source_date, source_scale, Class_2023
         FROM lcdb_
-        WHERE Class_2018 IN (
+        WHERE Class_2023 IN (
             0, 5, 6,
             10, 12, 14, 15, 16,
             20, 21, 22,

@@ -238,7 +238,7 @@ CREATE TEMPORARY VIEW class_222 AS (
         LEFT JOIN (
             SELECT h3_index, source_data, source_date, source_scale
             FROM lcdb_
-            WHERE Class_2018 IN (10, 12, 15, 16, 20, 21, 30, 40, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
+            WHERE Class_2023 IN (10, 12, 15, 16, 20, 21, 30, 40, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
         ) AS lcdb_ ON roi.h3_index && lcdb_.h3_index
         LEFT JOIN (
             SELECT

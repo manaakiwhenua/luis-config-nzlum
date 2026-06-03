@@ -109,7 +109,7 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             topo50_shingle_polygons.source_scale,
             NULL
         )::nzlum_type
-        WHEN lcdb_.class_2018 IN (
+        WHEN lcdb_.Class_2023 IN (
             10, -- Sand or Gravel
             12, -- Landslide
             14, -- Permanent Snow and Ice

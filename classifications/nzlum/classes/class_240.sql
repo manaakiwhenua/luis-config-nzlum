@@ -301,7 +301,7 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
         LEFT JOIN (
             SELECT h3_index, source_data, source_date, source_scale
             FROM lcdb_
-            WHERE lcdb_.Class_2018 = 33 -- Orchard, Vineyard or Other Perennial Crop
+            WHERE lcdb_.Class_2023 = 33 -- Orchard, Vineyard or Other Perennial Crop
         ) lcdb_ ON roi.h3_index && lcdb_.h3_index
         LEFT JOIN (
             SELECT

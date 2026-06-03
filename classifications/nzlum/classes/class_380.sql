@@ -202,7 +202,7 @@ CREATE TEMPORARY VIEW class_380 AS (
             source_date,
             source_scale
         FROM lcdb_
-        WHERE Class_2018 = 6 -- Surface Mine or Dump
+        WHERE Class_2023 = 6 -- Surface Mine or Dump
     ) AS lcdb_mines_and_dumps ON roi.h3_index && lcdb_mines_and_dumps.h3_index
     WHERE topo50_landfill.h3_index IS NOT NULL
        OR topo50_pond.h3_index IS NOT NULL

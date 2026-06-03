@@ -320,7 +320,7 @@ CREATE TEMPORARY VIEW class_320 AS (
             source_date,
             source_scale
         FROM lcdb_
-        WHERE Class_2018 = 2 -- Urban Parkland/Open Space
+        WHERE Class_2023 = 2 -- Urban Parkland/Open Space
     ) lcdb_ ON roi.h3_index && lcdb_.h3_index
     LEFT JOIN (
         SELECT h3_index,

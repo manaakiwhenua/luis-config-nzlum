@@ -73,7 +73,7 @@ CREATE TEMPORARY VIEW class_250 AS ( -- Intensive horticulture
         END
         +
         CASE -- NB LCDB doesn't really capture "intensive" horticulture with buildings and related structures, but we can penalise clearly nonsensible covers
-            WHEN lcdb_.Class_2018 IN (
+            WHEN lcdb_.Class_2023 IN (
                 0, 5, 6,
                 10, 12, 14, 15, 16,
                 20, 21, 22,

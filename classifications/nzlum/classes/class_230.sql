@@ -173,7 +173,7 @@ CREATE TEMPORARY VIEW class_230 AS (
     LEFT JOIN (
         SELECT h3_index, source_data, source_scale, source_date
         FROM lcdb_
-        WHERE class_2018 = 30 -- Short-rotation Cropland
+        WHERE Class_2023 = 30 -- Short-rotation Cropland
     ) lcdb_ ON roi.h3_index && lcdb_.h3_index
     LEFT JOIN (
         SELECT h3_index, source_data, source_scale, source_date

@@ -65,7 +65,7 @@ CREATE TEMPORARY VIEW class_130 AS (
         AND EXISTS (
             SELECT 1 FROM lcdb_
             WHERE :parent::h3index = h3_partition
-            AND Class_2018 NOT IN (
+            AND Class_2023 NOT IN (
                 1, -- Settlement
                 2, -- Urban parkland
                 5, -- Transport infrastructure
