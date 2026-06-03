@@ -12,16 +12,35 @@ external_data:
 
   lcdb_v5:
     <<: *lcr_wfs
-    description: LCDB v5
+    description: LCDB v5.0 (mainland) [DEPRECATED]
     layer: layer-104400
     geom_type: multipolygon
-    indices: &lcdb_indices
+    indices: &lcdb_v5_indices
       - columns: [Name_2018]
         type: btree
         name: idx_name_2018
-      - columns: [Class_2018]
+      - columns: [Class_2023]
         type: btree
-        name: idx_class_2018
+        name: idx_class_2023
+      - columns: [editdate]
+        type: btree
+        name: idx_editdate
+      - columns: [geom]
+        type: gist
+        name: idx_gist_geom
+  
+  lcdb_v6:
+    <<: *lcr_wfs
+    layer: layer-123148
+    description: LCDB v6.0 (mainland)
+    geom_type: multipolygon
+    indices: &lcdb_v6_indices
+      - columns: [Name_2023]
+        type: btree
+        name: idx_name_2023
+      - columns: [Class_2023]
+        type: btree
+        name: idx_class_2023
       - columns: [editdate]
         type: btree
         name: idx_editdate
@@ -31,11 +50,18 @@ external_data:
 
   lcdb_v5_chathams:
     <<: *lcr_wfs
-    description: LCDB v5 [Chatham Islands]
+    description: LCDB v5 (Chatham Islands) [DEPRECATED]
     layer: layer-104442
     geom_type: multipolygon
-    indices: *lcdb_indices
-  
+    indices: *lcdb_v5_indices
+
+  lcdb_v6_chathams:
+    <<: *lcr_wfs
+    description: LCDB v6 (Chatham Islands)
+    layer: layer-123145
+    geom_type: multipolygon
+    indices: *lcdb_v6_indices
+
   nzlri_luc:
     <<: *lcr_wfs
     description: NZ Land Resource Inventory (NZLRI) Land Use Capability 2021
