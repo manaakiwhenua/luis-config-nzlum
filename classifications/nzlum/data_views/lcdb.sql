@@ -10,7 +10,7 @@ CREATE TEMPORARY VIEW lcdb_ AS (
             '[]'
          ) AS source_date,
         '[60,100)'::int4range AS source_scale, -- 10 m pansharpened image pixels accurate to within 5 m 95% RMSE, digitised at 1:50000 (1/1000*50000) scale; minimum width of 50 m for change detection
-        'LCDB v5' AS source_data
+        'LCDB v6' AS source_data
     FROM (
         SELECT
             h3_index,
