@@ -118,7 +118,7 @@ CREATE TEMPORARY VIEW class_270 AS ( -- Water and wastewater
     LEFT JOIN (
         SELECT h3_index, source_data, source_date, source_scale
         FROM lcdb_
-        WHERE class_2018 IN (
+        WHERE Class_2023 IN (
             20, -- Lake or pond
             30, -- Short-rotation cropland
             33, -- Orchards, Vineyards or Other Perennial Crops

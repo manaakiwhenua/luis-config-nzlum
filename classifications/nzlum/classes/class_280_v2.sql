@@ -31,11 +31,11 @@ filtered_linz AS (
         )
 ),
 filtered_lcdb AS (
-    SELECT h3_index, Class_2018, source_data, source_date, source_scale
+    SELECT h3_index, Class_2023, source_data, source_date, source_scale
     FROM lcdb_
     WHERE
         :parent::h3index = h3_partition
-        AND Class_2018 IN (
+        AND Class_2023 IN (
             10, -- Sand or Gravel
             12, -- Landslide
             16, -- Gravel or Rock
@@ -109,7 +109,7 @@ unioned_matches AS (
                 CASE
                     WHEN l.zone !~ '^[01]' -- Not zoned for rural (or not mixed zone)
                         THEN 8
-                    WHEN filtered_lcdb.Class_2018 = 71 -- Exotic Forest
+                    WHEN filtered_lcdb.Class_2023 = 71 -- Exotic Forest
                         THEN 9
                     WHEN (
                         l.category LIKE '_V%' -- Vacant
@@ -119,7 +119,7 @@ unioned_matches AS (
                     ELSE 2
                 END
                 + CASE
-                    WHEN filtered_lcdb.Class_2018 IN (30, 33) THEN 2 -- LCDB suggests active cropland/orchard; penalise vacant classification
+                    WHEN filtered_lcdb.Class_2023 IN (30, 33) THEN 2 -- LCDB suggests active cropland/orchard; penalise vacant classification
                     ELSE 0
                 END
                 + CASE -- Penalise by valuation recency: older vacancy records are less reliable
@@ -181,7 +181,7 @@ unioned_matches AS (
                     WHEN l.zone ~ '^0' THEN 5         -- Multiple zones, no orchard hint
                     ELSE 7
                 END + CASE
-                    WHEN filtered_lcdb.Class_2018 IN (30, 33) THEN 2 -- Be wary of apparently "vacant" orchards; penalise vacant classification if there is an orchard signal in LCDB
+                    WHEN filtered_lcdb.Class_2023 IN (30, 33) THEN 2 -- Be wary of apparently "vacant" orchards; penalise vacant classification if there is an orchard signal in LCDB
                     ELSE 0
                 END
                 + CASE -- Penalise by valuation recency: older vacancy records are less reliable
@@ -234,7 +234,7 @@ unioned_matches AS (
                 CASE
                     WHEN l.category LIKE '_V%'
                         THEN 3
-                    WHEN filtered_lcdb.Class_2018 = 71 -- Exotic Forest
+                    WHEN filtered_lcdb.Class_2023 = 71 -- Exotic Forest
                         THEN 9
                     ELSE 4
                 END

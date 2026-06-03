@@ -8,7 +8,7 @@ CREATE TEMPORARY VIEW lum_ AS (
             TO_DATE((map_year + 1)::TEXT, 'YYYY'),
             '[)'
         ) AS source_date,
-        '[60,100)'::int4range AS source_scale, -- Assume same as LCDB v5
+        '[60,100)'::int4range AS source_scale, -- Assume same as LCDB
         'LUCAS LUM' AS source_data,
         '2' AS confidence
     FROM (

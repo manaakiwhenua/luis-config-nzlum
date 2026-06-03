@@ -127,7 +127,7 @@ CREATE TEMPORARY VIEW class_280 AS (
     LEFT JOIN (
         SELECT h3_index
         FROM lcdb_
-        WHERE lcdb_.Class_2018 IN (
+        WHERE lcdb_.Class_2023 IN (
             10, 12, 16, 30, 33, 40, 41, 44, 51, 56, 64, 71
         )
     ) AS lcdb_ ON roi.h3_index && lcdb_.h3_index

@@ -263,7 +263,7 @@ CREATE TEMPORARY VIEW class_390 AS (
         FROM lcdb_
         WHERE
             :parent::h3index = h3_partition
-            AND Class_2018 IN (
+            AND Class_2023 IN (
                 30, -- Short-rotation Cropland
                 33  -- Orchards, Vineyards or Other Perennial Crops
             )

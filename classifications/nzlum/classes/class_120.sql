@@ -55,7 +55,7 @@ CREATE TEMPORARY VIEW class_120 AS (
     LEFT JOIN (
         SELECT h3_index
         FROM lcdb_
-        WHERE Class_2018 NOT IN (
+        WHERE Class_2023 NOT IN (
             1, -- Settlement
             2, -- Urban parkland open space
             5 -- Transport infrastructure
