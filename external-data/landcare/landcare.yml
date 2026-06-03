@@ -36,10 +36,39 @@ external_data:
     geom_type: multipolygon
     indices: *lcdb_indices
   
-  nzlri: &nzlri
+  nzlri_luc:
     <<: *lcr_wfs
     description: NZ Land Resource Inventory (NZLRI) Land Use Capability 2021
     layer: layer-48076
+    geom_type: multipolygon
+    license: https://lris.scinfo.org.nz/license/landcare-data-use-licence-v1/
+    attribution: Data reproduced with the permission of Landcare Research New Zealand Limited
+    indices:
+      - columns: [lcorrclass]
+        type: btree
+        name: idx_btree_lcorrclass_lowcap
+        where: lcorrclass IN (0, 7, 8)
+    derived_columns:
+      - column: start_date
+        datatype: date
+        set_query: "'1973-01-01'::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "'1983-12-31'::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: daterange('1973-01-01'::DATE, '1983-12-31'::DATE::DATE, '[]')
+      - column: source_data
+        datatype: text
+        set_query: "'NZLRI'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[60,100)'::int4range"
+
+  nzlri_slope:
+    <<: *lcr_wfs
+    description: NZ Land Resource Inventory (NZLRI) Slope 2021
+    layer: layer-48064
     geom_type: multipolygon
     license: https://lris.scinfo.org.nz/license/landcare-data-use-licence-v1/
     attribution: Data reproduced with the permission of Landcare Research New Zealand Limited
@@ -55,14 +84,10 @@ external_data:
         set_query: daterange('1973-01-01'::DATE, '1983-12-31'::DATE::DATE, '[]')
       - column: source_data
         datatype: text
-        set_query: "'MWLR'::TEXT"
+        set_query: "'NZLRI'::TEXT"
       - column: source_scale
         datatype: int4range
         set_query: "'[60,100)'::int4range"
-
-  nzlri_lowcapability:
-    <<: *nzlri
-    where: \"lcorrclass\" IN (0, 7, 8)
 
   # TODO complete crop_type... management practices, commodities?
   winter_forage_2022: &winter_forage
