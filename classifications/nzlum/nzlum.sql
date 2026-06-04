@@ -65,8 +65,7 @@ CREATE TEMPORARY VIEW roi AS (
 \ir classes/class_250.sql
 \ir classes/class_260.sql
 \ir classes/class_270.sql
--- \ir classes/class_280.sql
-\ir classes/class_280_v2.sql
+\ir classes/class_280.sql
 
 \ir classes/310/class_311.sql
 \ir classes/310/class_312.sql
