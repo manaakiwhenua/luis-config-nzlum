@@ -9,7 +9,7 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
         WHERE commod && ARRAY[
             'apples',
             'avocados',
-            'feijoa'
+            'feijoa',
             'pears',
             'kiwifruit',
             'grapes',
