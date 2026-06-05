@@ -1,5 +1,5 @@
 CREATE TEMPORARY VIEW class_111 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     1 AS lu_code_primary,
     1 AS lu_code_secondary,
     1 AS lu_code_tertiary,
@@ -16,23 +16,27 @@ CREATE TEMPORARY VIEW class_111 AS (
             ARRAY_TO_STRING(
                 ARRAY_REMOVE(
                     ARRAY[
-                        pan_nz_draft_iucn_Ia.source_protection_name,
-                        pan_nz_draft_iucn_Ia.designation
+                        pan_nz_draft_iucn_Ia.designation,
+                        NULLIF(CONCAT_WS(' ', pan_nz_draft_iucn_Ia.legislation_act, pan_nz_draft_iucn_Ia.legislation_section), ''),
+                        pan_nz_draft_iucn_Ia.source_protection_name
                     ],
                     NULL
                 ),
-                '\n'
+                E'\n'
             )
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
+    FROM roi
+    JOIN (
         -- Deal with overlaps
         SELECT DISTINCT ON (h3_index)
         h3_index,
         source_data,
         source_date,
         source_scale,
+        legislation_act,
+        legislation_section,
         designation,
         source_protection_name
         FROM pan_nz_draft
@@ -44,5 +48,5 @@ CREATE TEMPORARY VIEW class_111 AS (
             source_date DESC NULLS LAST, -- Prefer more recent
             source_protection_name, -- Prefer named
             source_id -- Tie-break
-    ) pan_nz_draft_iucn_Ia
+    ) pan_nz_draft_iucn_Ia ON roi.h3_index && pan_nz_draft_iucn_Ia.h3_index
 )

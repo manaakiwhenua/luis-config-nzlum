@@ -1,14 +1,20 @@
 external_data:
   pan_nz_draft:
-    layer: PAN-NZ_Draft
+    name: Protected Areas Network of New Zealand (PAN-NZ), 2026 (Draft)
     description: |-
-      PAN-NZ Draft H3 12 (2025)
+      This dataset is compiled from publicly accessible and appropriately licensed protected area data. Not all known data sources have been included, and therefore this is not a complete version of PAN-NZ. Processing involves the identification and elimination of duplicates, but some may persist.
+
+      In 2023 MfE commissioned a review of PAN-NZ because it was outdated and incomplete, making it unsuitable for policy and regulatory purposes. The review, which focused on the current state of the map and future directions, revealed data gaps and inconsistencies.
+
+      As part of the pilot national land-use mapping contract, MWLR has carried out some improvements to PAN-NZ to address these identified issues. The completeness of the present protected areas layer reflects the availability of protected area data that are publicly accessible, appropriately licensed for reuse, and discoverable via a public API.
+
+      Each protected area in the final layer includes an assigned IUCN category, where the associated legislation has previously been mapped to an IUCN category. Those that have unclear associations to IUCN categories are marked "Not Mapped" but are still included in the layer.
     license: https://creativecommons.org/licenses/by/4.0/
     attribution: # TODO
     external_data_type: wfs
     host: https://lris.scinfo.org.nz/services;key={key}/wfs
     key: LRIS_KEY
-    layer: layer-122065
+    layer: layer-124343
     geom_type: multipolygon
     derived_columns:
       - column: source_data
@@ -31,75 +37,101 @@ external_data:
         datatype: int4range
         set_query: "'[10,100]'::int4range"
       # Need some form of priority ranking to handle overlapping features
-      # This list compiled from PAN-NZ pilor using filter condition as above, then identifying all distinct remaining designations
+      # This list compiled from PAN-NZ then identifying all distinct remaining designations
       # Will need to be revised as PAN-NZ changes
-      - column: priority_rank_117 
+      - column: priority_rank
         datatype: int
         set_query: |-
           array_position(
             ARRAY[
-              'wilderness area',
-              'marine reserve',
-              'ramsar wetland',
-              's12 ohau new zealand fur seal sanctuary',
-              'national reserve',
-              'historic reserve',
-              'te urewera establishment land',
-              'specially protected area',
-              'hauraki gulf marine park',
-              'maori reserve (section 29 conservation act)',
-              'maori reservation (te ture whenua maori act)',
-              'maori reservation (reserves act)',
-              'maori burial ground',
-              'burial ground massey',
-              'unesco',
-              'conservation covenant',
-              'doc covenant (legislation ambiguous)',
-              'nga whenua rahui kawenata',
-              'kawenata',
-              'qeii open space covenant',
-              'protected private land',
-              'forest park (conservation act)',
-              'fixed marginal strip',
-              'moveable marginal strip',
-              'marginal strip',
-              'esplanade reserve',
-              'esplanade strip',
-              'waitangi endowment forest',
-              'regional parks',
-              'regional park',
-              'recreation reserve',
-              'amenities area',
-              'amenity area',
-              'government purpose reserve',
-              'government purpose reserves',
-              'state forest',
-              'wellington town belt',
-              'freshwater fisheries regulation',
-              'recreational hunting area',
-              'managed as if stewardship area',
-              'management agreement',
-              'management agreements',
-              'significant natural area',
-              'water conservation reserve',
-              'water supply reserve',
-              'water supply',
-              'water supply and recreation purposes',
-              'local government managed area',
-              'local purpose reserve - not mapped',
-              'road reserve',
-              'river bed',
-              'dog area',
-              'tree planting purposes',
-              'acquired for public works',
-              'consent notice',
-              'crown land alienation',
-              'authorisation of the exchange of conservation area for other land',
-              'nga paihau overlay classification and protection principles',
-              'administration purpose (conservation act)',
-              'ambiguous'
+              -- Strictly protected / wilderness (IUCN Ib / Ia equivalent)
+              'Wilderness Area',
+              'Ruakituri Wilderness Area',
+              'Nature Reserve',
+              'Scientific Reserve',
+              'Marine Reserve',
+              'Hauraki Gulf Marine Reserve',
+              'Marine Mammal Sanctuary',
+              'Te Rohe o Te Whānau Puha Whale Sanctuary',
+              'Wildlife Sanctuary',
+              'Sanctuary Area',
+              -- National / conservation parks (IUCN II equivalent)
+              'National Park',
+              'Conservation Park',
+              'Conservation Park (former Forest Park)',
+              -- International recognition
+              'World Heritage Area',
+              'Ramsar List site',
+              'Ōhau New Zealand Fur Seal Sanctuary',
+              -- National reserves and specific statutory protections
+              'Specially Protected Area',
+              'National Reserve',
+              'Historic Reserve',
+              'Te Urewera',
+              'Ecological Area',
+              'Faunistic Reserve',
+              -- Scenic reserves
+              'Scenic Reserve (a)',
+              'Scenic Reserve (b)',
+              -- Hauraki Gulf marine areas
+              'Hauraki Gulf Marine Park',
+              'Hauraki Gulf High Protection Area',
+              'Hauraki Gulf Seafloor Protection Area',
+              'Te Whata Kai o Rakihouia i Te Tai o Marokura – Kaikōura Marine Area',
+              'Marine and Coastal Area',
+              -- Wildlife management
+              'Wildlife Refuge',
+              'Wildlife Management Reserve',
+              'Wildlife Management Area',
+              -- Māori / cultural protections
+              'Maori Reservation',
+              'Māori Burial Ground',
+              'Massey Burial-Ground',
+              'Ngā Whenua Rāhui Kawenata',
+              'Mātaitai Reserves and Taiāpure-Local Fisheries',
+              -- Private / voluntary covenants
+              'Conservation Covenant',
+              'Open Space Covenant',
+              'Protected Private Land',
+              -- Conservation management
+              'Conservation Purpose',
+              -- Strips, easements, and lakes
+              'Marginal Strip',
+              'Esplanade Strip',
+              'Lake Wānaka',
+              'Lakes Manapouri and Te Anau',
+              -- Regional and recreation
+              'Waitangi Endowment Forest',
+              'Regional Park',
+              'Recreation Reserve',
+              'Amenities Area',
+              'Amenity Area',
+              -- Government purpose and forests
+              'Government Purpose Reserve',
+              'Former State Forest Land',
+              'Stewardship Area',
+              'Wellington Town Belt',
+              'Recreational Hunting Area',
+              -- Management and regulatory
+              'Management Agreement',
+              'Significant Natural Area',
+              'Water Conservation Reserve',
+              'Local Purpose Reserve',
+              -- Roads and rivers
+              'Legal Road and Road Reserve',
+              'Riverbed and Lakebed Protection',
+              -- Low priority / specific purposes
+              'Dog Area',
+              'Racecourse',
+              'Acquired for Public Works',
+              'Land Held for a Government Work',
+              'Crown Pastoral Lease',
+              'Unoccupied Crown Land',
+              'Consent Notice',
+              'Crown Land Alienation',
+              'Administration Purpose'
             ],
-            lower(designation)
+            designation
           )
     indices:
       - columns: [iucn_category]
@@ -123,6 +155,6 @@ external_data:
       - columns: [source_date, source_id]
         type: btree
         name: idx_btree_source_date_source_id
-      - columns: [priority_rank_117]
+      - columns: [priority_rank]
         type: btree
-        name: idx_btree_priority_rank_117
+        name: idx_btree_priority_rank

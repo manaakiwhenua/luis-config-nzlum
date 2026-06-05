@@ -71,7 +71,9 @@ CREATE TEMPORARY VIEW roi AS (
 \ir classes/310/class_312.sql
 \ir classes/310/class_313.sql
 \ir classes/310/class_314.sql
-\ir classes/class_320.sql
+\ir classes/320/class_321.sql
+\ir classes/320/class_322.sql
+\ir classes/320/class_323.sql
 \ir classes/class_330.sql
 \ir classes/class_340.sql
 \ir classes/class_350.sql
@@ -222,7 +224,11 @@ FROM (
             UNION ALL
             SELECT * FROM class_314 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL
-            SELECT * FROM class_320 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            SELECT * FROM class_321 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_322 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
+            UNION ALL
+            SELECT * FROM class_323 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL
             SELECT * FROM class_330 WHERE lu_code_primary IS NOT NULL AND (nzlum_type).confidence IS NOT NULL
             UNION ALL

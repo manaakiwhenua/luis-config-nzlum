@@ -40,12 +40,8 @@ CREATE TEMPORARY VIEW class_130 AS (
         FROM pan_nz_draft
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-        AND legislation_act = 'RESERVES_ACT'
-        AND designation IN (
-            'Water Supply',
-            'Water Supply and Recreation Purposes',
-            'Water Supply Reserve'
-        )
+        AND legislation_act = 'Reserves Act 1977'
+        AND designation = 'Water Supply Reserve'
         ORDER BY
             pan_nz_draft_h3.h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
@@ -73,6 +69,7 @@ CREATE TEMPORARY VIEW class_130 AS (
                 30, -- Cropland
                 33, -- Orchards etc.
                 40, -- High Producing Exotic Grassland
+                44, -- Depleted Grassland — in pastoral lease context signals grazing impact (→ 2.2.3)
                 64, -- Forested - Harvested
                 68, -- Deciduous hardwoods
                 71 -- Exotic forest

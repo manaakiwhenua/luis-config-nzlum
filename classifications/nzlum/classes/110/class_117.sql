@@ -10,70 +10,59 @@ CREATE TEMPORARY VIEW class_117 AS (
             clamp_confidence_or_null(
                 CASE
                     WHEN (
-                        legislation_act IN (
-                            'WELLINGTON_TOWN_BELT_ACT_2016',
-                            'LOCAL_GOVT_MANAGED_AREA'
+                        legislation_act = 'Wellington Town Belt Act 2016'
+                        OR (
+                            legislation_act = 'Reserves Act 1977'
+                            AND legislation_section = 'S.23' -- Local Purpose Reserve
                         )
                         OR (
-                            legislation_act = 'RESERVES_ACT'
-                            AND legislation_section = 'S23_LOCAL_PURPOSE_RESERVE'
-                        )
-                        OR (
-                            legislation_act = 'LOCAL_GOVERNMENT_ACT'
-                            AND legislation_section IN (
-                                'S139_REGIONAL_PARK',
-                                'S139_REGIONAL_PARKS'
-                            )
+                            legislation_act = 'Local Government Act 2022'
+                            AND legislation_section = 'S.139' -- Regional Park
                         )
                     ) 
                 THEN 2
                 WHEN (
-                    legislation_act = 'RESERVES_ACT'
+                    legislation_act = 'Reserves Act 1977'
                     AND legislation_section IN (
-                        'S17_RECREATION_RESERVE',
-                        'S18_HISTORIC_RESERVE'
+                        'S.17', -- Recreation Reserve,
+                        'S.18' -- Historic Reserve
                     )
                 )
                 THEN 3
                 WHEN (
-                    legislation_act = 'LAND_ACT'
-                    AND legislation_section = 'S52_BOARD_MAY_ALIENATE_CROWN_LAND'
-                ) OR (
-                    legislation_act = 'FOREST_ACT_REPEALED'
-                    AND legislation_section = 'S18'
-                ) OR (
-                    legislation_act = 'PUBLIC_WORKS_ACT'
-                ) OR (
-                    legislation_section = 'MAORI_RESERVATION'
-                ) OR (
-                    legislation_act = 'RESOURCE_MANAGEMENT_ACT'
+                    legislation_act = 'Land Act 1948'
                     AND legislation_section IN (
-                        'S6', -- Significant Natural Areas
-                        'S221_CONSENT_NOTICE'
+                        'S.52', -- Crown land alienation
+                        'S.176(1)(a)' -- Unoccupied Crown land
+                    ) 
+                ) OR (
+                    legislation_act = 'Public Works Act 1981'
+                    AND legislation_section IN (
+                        'S.20', -- Acquired for Public Works
+                        'S.52' -- Land Held for a Government Work
                     )
                 ) OR (
-                    legislation_act = 'RIVER_BOARDS_ACT'
-                    AND legislation_section = 'S73_RIVER_BED'
+                    designation = 'Maori Reservation'
+                ) OR (
+                    legislation_act = 'Resource Management Act 1991'
+                    AND legislation_section IN (
+                        'S.6', -- Significant Natural Areas
+                        'S.221' -- Consent Notice
+                    )
+                ) OR (
+                    legislation_act = 'River Boards Act 1908'
+                    AND legislation_section = 'S.73' -- Riverbed and Lakebed Protection
                 )
                 THEN 10
                 WHEN designation IN (
-                    'Amenities Area', 'Amenity Area',
-                    'Ambiguous',
+                    'Amenities Area',
                     'Dog Area',
-                    'Recreation Reserve',
-                    'Recreational Reserve - Racecourse',
                     'Recreational Hunting Area',
-                    'River Bed',
-                    'Road Reserve',
-                    'Water Supply', 'Water Supply and Recreation Purposes', 'Water Supply Reserve',
-                    'Consent Notice'
+                    'Legal Road and Road Reserve', -- Paper roads
+                    'Water Conservation Reserve'
                 )
                 THEN 5
                 ELSE 1
-                -- Penalise any form of urban area
-                + CASE WHEN rural.h3_index IS NULL THEN 1 ELSE 0 END
-                -- Penalise built land-cover including urban parks
-                + CASE WHEN lcdb_unbuilt.h3_index IS NULL THEN 1 ELSE 0 END
             END),
             ARRAY[]::TEXT[], -- commod
             ARRAY[]::TEXT[], -- manage
@@ -83,18 +72,35 @@ CREATE TEMPORARY VIEW class_117 AS (
             ARRAY_TO_STRING(
                 ARRAY_REMOVE(
                     ARRAY[
-                        pan_nz_not_iucn.source_protection_name,
-                        pan_nz_not_iucn.designation
+                        pan_nz_not_iucn.designation,
+                        NULLIF(CONCAT_WS(' ', pan_nz_not_iucn.legislation_act, pan_nz_not_iucn.legislation_section), ''),
+                        pan_nz_not_iucn.source_protection_name
                     ],
                     NULL
                 ),
-                '\n'
+                E'\n'
             )
+        )::nzlum_type
+        -- Reserve-designated land (DVR zone '0*') with native cover but absent from PAN-NZ.
+        WHEN (
+            linz_dvr_reserve.h3_index IS NOT NULL
+            AND lcdb_native.h3_index IS NOT NULL
+            AND pan_nz_not_iucn.h3_index IS NULL
+        )
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            6, -- DVR reserve zone + native LCDB cover, without PAN-NZ backing
+            ARRAY[]::TEXT[], -- commod
+            ARRAY[]::TEXT[], -- manage
+            ARRAY[linz_dvr_reserve.source_data]::TEXT[],
+            linz_dvr_reserve.source_date,
+            linz_dvr_reserve.source_scale,
+            NULL
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
     FROM roi
-    JOIN (
+    LEFT JOIN (
         -- Deal with overlaps
         SELECT DISTINCT ON (pan_nz_draft_h3.h3_index)
         pan_nz_draft_h3.h3_index,
@@ -109,38 +115,63 @@ CREATE TEMPORARY VIEW class_117 AS (
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
         AND iucn_category IN (
+            'VI',
             'Not Mapped',
             'Not IUCN'
         )
-        AND NOT (
-            legislation_act = 'RESERVES_ACT'
-            AND legislation_section = 'S16_11_RECREATION_RESERVE_RACECOURSE'
-        ) -- Racecourses included under 3.2.0
+        AND designation NOT IN (
+            'Racecourse',         -- Racecourses included under 3.2.1
+            'Significant Natural Area',
+            'Ramsar List site',
+            'World Heritage Area', -- UNESCO World Heritage
+            'Crown Pastoral Lease' -- Extensive pastoral tenure → class 2.2.3
+        )
         ORDER BY
             pan_nz_draft_h3.h3_index,
-            priority_rank_117 ASC NULLS LAST, -- Custom priority rank specifically for this class
+            CASE WHEN iucn_category = 'Not IUCN' THEN 1
+                 WHEN iucn_category = 'Not Mapped' THEN 2
+                 ELSE 3 -- VI last as most likely to be genuine protected land
+            END DESC, -- Custom priority for this class, prefer higher number
+            priority_rank ASC NULLS LAST,
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break if still necessary
     ) pan_nz_not_iucn ON roi.h3_index && pan_nz_not_iucn.h3_index
+    -- Detect LCDB coverage (any class) — to distinguish "non-native" from "no data"
+    LEFT JOIN lcdb_ AS lcdb_any ON roi.h3_index && lcdb_any.h3_index
+    -- Detect indigenous cover specifically
     LEFT JOIN (
-        SELECT h3_index
-        FROM lcdb_
+        SELECT h3_index FROM lcdb_
         WHERE Class_2023 NOT IN (
-            1, -- Settlement
-            2, -- Urban parkland open space
-            5 -- Transport infrastructure
+            1, -- Built-up area
+            2, -- Urban parkland/Open space
+            5, -- Transport infrastructure
+            6, -- Surface mine or dump
+            30, -- Short-rotation cropland
+            33, -- Orchards, Vineyards or Other Perennial Crops
+            40, -- High Producing Exotic Grassland
+            41, -- Low-producing grassland
+            64, -- Forest - Harvested
+            71 -- Exotic forest
         )
-    ) AS lcdb_unbuilt ON roi.h3_index && lcdb_unbuilt.h3_index
+    ) AS lcdb_native ON roi.h3_index && lcdb_native.h3_index
+    -- DVR reserve-designated zone (zone code '0*', excluding '0X' multi-zone).
+    -- Used as a fallback path for reserve land absent from PAN-NZ.
     LEFT JOIN (
-        SELECT h3_index
-        FROM urban_rural_current
-        JOIN urban_rural_current_h3 USING (ogc_fid)
-        WHERE :parent::h3index = h3_partition
-        AND urban_rural_current.IUR2026_V1_00 IN (
-            '22', -- Rural other
-            '31', -- Inland water
-            '32', -- Inlet
-            '33' -- Oceanic
-        )
-    ) AS rural ON roi.h3_index && rural.h3_index
+        SELECT h3_index, source_data, source_date, source_scale
+        FROM linz_dvr_
+        WHERE "zone" LIKE '0%'
+        AND "zone" != '0X'
+    ) AS linz_dvr_reserve ON roi.h3_index && linz_dvr_reserve.h3_index
+    WHERE (
+        -- PAN-NZ path: keep where native cover is present or LCDB has no data
+        pan_nz_not_iucn.h3_index IS NOT NULL
+        AND (lcdb_native.h3_index IS NOT NULL OR lcdb_any.h3_index IS NULL)
+    ) OR (
+        -- DVR reserve zone path: reserve-designated with native cover, absent from PAN-NZ
+        linz_dvr_reserve.h3_index IS NOT NULL
+        AND lcdb_native.h3_index IS NOT NULL
+        AND pan_nz_not_iucn.h3_index IS NULL
+    )
 )
+
+-- TODO crown pastoral lease to class 2.2.3?

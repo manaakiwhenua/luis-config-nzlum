@@ -136,5 +136,22 @@ CREATE TEMPORARY VIEW class_290 AS (
             '22'  -- Rural other
         )
     ) AS rural ON roi.h3_index && rural.h3_index
+    LEFT JOIN (
+        -- Native cover contradicts smallholder character
+        SELECT h3_index FROM lcdb_
+        WHERE Class_2023 NOT IN (
+            1, -- Built-up area
+            2, -- Urban parkland/Open space
+            5, -- Transport infrastructure
+            6, -- Surface mine or dump
+            30, -- Short-rotation cropland
+            33, -- Orchards, Vineyards or Other Perennial Crops
+            40, -- High Producing Exotic Grassland
+            41, -- Low-producing grassland
+            64, -- Forest - Harvested
+            71  -- Exotic forest
+        )
+    ) AS lcdb_native ON roi.h3_index && lcdb_native.h3_index
     WHERE linz_dvr_.h3_index IS NOT NULL
+    AND lcdb_native.h3_index IS NULL -- Exclude cells with native cover
 );
