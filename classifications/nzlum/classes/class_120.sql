@@ -30,22 +30,22 @@ CREATE TEMPORARY VIEW class_120 AS (
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
         AND (
-            legislation_act = 'BURIAL_GROUND_MASSEY_BURIAL_GROUND_ACT_1925'
+            legislation_act = 'Massey Burial-Ground Act 1925'
         ) OR (
-            legislation_act = 'TE_TURE_WHENUA_MAORI_ACT'
-            AND legislation_section = 'MAORI_RESERVATION'
+            legislation_act = 'Te Ture Whenua Maori Act 1993'
+            AND legislation_section = 'S.338' -- Maori Reservation
         ) OR (
-            legislation_act = 'Section 29 Conservation Act'
-            AND legislation_section = 'MAORI_RESERVATION'
+            legislation_act = 'Conservation Act 1987'
+            AND legislation_section = 'S.29' -- Management Agreement
         ) OR (
-            legislation_act = 'Section 77 Reserves Act 1977'
-            AND legislation_section = 'MAORI_RESERVATION'
+            legislation_act = 'Reserves Act 1977'
+            AND legislation_section = 'S.77' -- Conservation Covenant
         ) OR (
-            legislation_act = 'Section 77A Reserves Act 1977'
-            AND legislation_section = 'MAORI_RESERVATION'
+            legislation_act = 'Reserves Act 1977'
+            AND legislation_section = 'S.77A' -- Ngā Whenua Rāhui Kawenata
         ) OR (
-            legislation_act = 'RESERVES_ACT'
-            AND legislation_section = 'S18_HISTORIC_RESERVE'
+            legislation_act = 'Reserves Act 1977'
+            AND legislation_section = 'S.18' -- Historic Reserve
         )
         ORDER BY
             pan_nz_draft_h3.h3_index,

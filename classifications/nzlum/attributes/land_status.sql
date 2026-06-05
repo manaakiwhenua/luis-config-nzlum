@@ -232,46 +232,44 @@ CREATE TEMPORARY VIEW land_status AS (
             roi.h3_index,
             'PAN-NZ' AS _source,
             CASE
-                WHEN legislation_act = 'RESERVES_ACT' AND legislation_section IN (
-                    'S17_RECREATION_RESERVE', '17_RECREATION_RESERVE',
-                    'S19_AMBIGUOUS',
-                    'S19_1_A_SCENIC_RESERVE',
-                    'S19_1_B_SCENIC_RESERVE',
-                    'S23_LOCAL_PURPOSE_RESERVE'
-                ) OR legislation_act = 'LOCAL_GOVT_MANAGED_AREA'
+                WHEN designation IN (
+                    'Recreation Reserve',
+                    'Scenic Reserve (a)',
+                    'Scenic Reserve (b)',
+                    'Water Conservation Reserve'
+                ) OR (
+                    legislation_act = 'Reserves Act 1977'
+                    AND legislation_section = 'S.23' -- Local purpose reserve
+                )
                     THEN ARRAY[
                         'Territorial Local Authorities'
                     ]
-
-                WHEN legislation_act = 'WELLINGTON_TOWN_BELT_ACT_2016'
+                WHEN designation = 'Wellington Town Belt'
                     THEN ARRAY[
                         'Territorial Local Authorities',
                         'City Council',
                         'Wellington City Council'
                     ]
 
-                WHEN legislation_act = 'TE_TURE_WHENUA_MAORI_ACT' AND legislation_section = 'MAORI_RESERVATION'
+                WHEN designation = 'Maori Reservation'
                     THEN ARRAY[
                         'Private',
                         'Māori',
                         'Reservation'
                     ]
                 
-                WHEN legislation_act = 'LOCAL_GOVERNMENT_ACT' AND legislation_section IN ('S139_REGIONAL_PARKS', 'S139_REGIONAL_PARK')
+                WHEN designation = 'Regional Park'
                     THEN ARRAY[
                         'Territorial Local Authorities',
                         'Regional Council'
                     ]
 
-                WHEN (
-                    legislation_act = 'CONSERVATION_AREA'
-                    AND legislation_section = 'S25_STEWARDSHIP_AREA'
-                ) OR  legislation_act IN (
-                    'NATIONAL_PARK_ACT', 'NATIONAL_PARKS_ACT',
-                    'CONSERVATION_ACT',
-                    'MARINE_MAMMALS_PROTECTION_ACT',
-                    'MARINE_RESERVES_ACT',
-                    'WILDLIFE_ACT'
+                WHEN designation = 'Stewardship Area' OR  legislation_act IN (
+                    'Natonal Parks Act 1980',
+                    'Conservation Act 1987',
+                    'Marine Mammals Protection Act 1978',
+                    'Marine Reserves Act 1971',
+                    'Wildlife Act 1953'
                 )
                     THEN ARRAY[
                         'Public Service',
@@ -281,8 +279,15 @@ CREATE TEMPORARY VIEW land_status AS (
             END AS land_status
         FROM roi
         JOIN (
-            SELECT pan_nz_draft_h3.h3_index, legislation_act, legislation_section,
-                   iucn_category, source_date, source_protection_name, source_id
+            SELECT
+                pan_nz_draft_h3.h3_index,
+                legislation_act,
+                legislation_section,
+                designation,
+                iucn_category,
+                source_date,
+                source_protection_name,
+                source_id
             FROM pan_nz_draft
             JOIN pan_nz_draft_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition

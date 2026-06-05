@@ -33,6 +33,10 @@ CREATE TEMPORARY VIEW class_223 AS (
             END,
             -- Base confidence from pastoral evidence
             CASE
+                -- Crown Pastoral Lease: direct tenure evidence of extensive pastoral use
+                WHEN cpl.h3_index IS NOT NULL
+                THEN 2
+
                 WHEN (
                     pastoral_consents.h3_index IS NOT NULL
                     OR linz_dvr_.actual_property_use IN (
@@ -320,6 +324,29 @@ CREATE TEMPORARY VIEW class_223 AS (
             JOIN nzlri_luc_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) AS nzlri_luc_ ON roi.h3_index && nzlri_luc_.h3_index
+        LEFT JOIN (
+            -- Crown Pastoral Leases with exotic/modified/degraded pastoral land cover.
+            -- CPLs with native cover (e.g. tall tussock) are captured by class_130 instead.
+            -- NB: forest cover (64, 71) is excluded even on a pastoral lease title.
+            SELECT south_island_pastoral_leases_h3.h3_index,
+            'LINZ' AS source_data,
+            daterange('2013-02-07'::DATE, '2024-11-04'::DATE, '[]') AS source_date,
+            '[100,)'::int4range AS source_scale -- Boundaries are indicative only
+            FROM south_island_pastoral_leases_h3
+            WHERE :parent::h3index = south_island_pastoral_leases_h3.h3_partition
+            AND EXISTS (
+                SELECT 1 FROM lcdb_
+                WHERE :parent::h3index = h3_partition
+                AND Class_2023 IN (
+                    40, -- High Producing Exotic Grassland
+                    41, -- Low Producing Grassland (often modified)
+                    44, -- Depleted Grassland (grazing impact in pastoral lease context)
+                    51, -- Gorse and/or Broom
+                    56  -- Mixed Exotic Shrubland
+                )
+                AND south_island_pastoral_leases_h3.h3_index && lcdb_.h3_index
+            )
+        ) AS cpl ON roi.h3_index && cpl.h3_index
         WHERE lum_.h3_index IS NOT NULL
            OR linz_dvr_.h3_index IS NOT NULL
            OR lcdb_.h3_index IS NOT NULL
@@ -327,6 +354,7 @@ CREATE TEMPORARY VIEW class_223 AS (
            OR winter_forage_.h3_index IS NOT NULL
            OR pastoral_consents.h3_index IS NOT NULL
            OR pasture_practices.h3_index IS NOT NULL
+           OR cpl.h3_index IS NOT NULL
     )
     -- Clamp final confidence to 1–12; values >12 are NULL (excluded).
     -- Uses LEAST/GREATEST rather than clamp_confidence_or_null so that intermediate

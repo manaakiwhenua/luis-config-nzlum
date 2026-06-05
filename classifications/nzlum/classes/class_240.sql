@@ -9,7 +9,7 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
         WHERE commod && ARRAY[
             'apples',
             'avocados',
-            'feijoa'
+            'feijoa',
             'pears',
             'kiwifruit',
             'grapes',
@@ -411,3 +411,5 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
 -- TODO Special case data
 -- NRC qa_avocado_property; title NA981/87 (QA)
 -- title_no <> '524866' -- https://github.com/manaakiwhenua/luis-config/issues/5 (QA: gross error in the ratings database; a large forest block assigned 15 and HKD)
+
+-- TODO need to heavily penalise anything that has pasture cover indicated... can see example of a farm near Otorohanga that has ORCHARD and is probably H%, but this is only part of the farm and the rest is pasture. LINZ topo etc includes the orchard partl this part is confidence 1, but the rest only confidence 2 despite being pasture cover.

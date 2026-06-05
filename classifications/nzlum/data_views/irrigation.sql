@@ -25,8 +25,8 @@ CREATE TEMPORARY VIEW irrigation_ AS (
                     'Side Roll',
                     'Rotorainer',
                     'Pivot',
-                    'Linear boom'
-                    'Lateral'
+                    'Linear boom',
+                    'Lateral',
                     'K-line/Long lateral',
                     'Gun'
                 )

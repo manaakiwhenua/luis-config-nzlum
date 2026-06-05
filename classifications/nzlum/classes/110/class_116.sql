@@ -1,5 +1,6 @@
+-- NB category V is not present in PAN-NZ 2026 (intentionally)
 CREATE TEMPORARY VIEW class_116 AS (
-    SELECT h3_index,
+    SELECT roi.h3_index,
     1 AS lu_code_primary,
     1 AS lu_code_secondary,
     6 AS lu_code_tertiary,
@@ -16,23 +17,27 @@ CREATE TEMPORARY VIEW class_116 AS (
             ARRAY_TO_STRING(
                 ARRAY_REMOVE(
                     ARRAY[
-                        pan_nz_draft_iucn_V.source_protection_name,
-                        pan_nz_draft_iucn_V.designation
+                        pan_nz_draft_iucn_V.designation,
+                        NULLIF(CONCAT_WS(' ', pan_nz_draft_iucn_V.legislation_act, pan_nz_draft_iucn_V.legislation_section), ''),
+                        pan_nz_draft_iucn_V.source_protection_name
                     ],
                     NULL
                 ),
-                '\n'
+                E'\n'
             )
         )::nzlum_type
         ELSE NULL
     END AS nzlum_type
-    FROM (
+    FROM roi
+    JOIN (
         -- Deal with overlaps
         SELECT DISTINCT ON (h3_index)
         h3_index,
         source_data,
         source_date,
         source_scale,
+        legislation_act,
+        legislation_section,
         designation,
         source_protection_name
         FROM pan_nz_draft
@@ -43,5 +48,5 @@ CREATE TEMPORARY VIEW class_116 AS (
             h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break
-    ) pan_nz_draft_iucn_V
+    ) pan_nz_draft_iucn_V ON roi.h3_index && pan_nz_draft_iucn_V.h3_index
 )

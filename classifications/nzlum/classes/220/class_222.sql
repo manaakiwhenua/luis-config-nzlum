@@ -34,6 +34,11 @@ CREATE TEMPORARY VIEW class_222 AS (
             END,
             -- Base confidence from pastoral evidence (mirrors class_223 / class_220 logic)
             CASE
+                -- Crown Pastoral Lease: direct tenure evidence of pastoral use.
+                -- Terrain modifiers below handle the 222/223 split within CPLs.
+                WHEN cpl.h3_index IS NOT NULL
+                THEN 2
+
                 WHEN (
                     pastoral_consents.h3_index IS NOT NULL
                     OR linz_dvr_.actual_property_use IN (
@@ -321,6 +326,29 @@ CREATE TEMPORARY VIEW class_222 AS (
             JOIN nzlri_luc_h3 USING (ogc_fid)
             WHERE :parent::h3index = h3_partition
         ) AS nzlri_luc_ ON roi.h3_index && nzlri_luc_.h3_index
+        LEFT JOIN (
+            -- Crown Pastoral Leases with exotic/modified/degraded pastoral land cover.
+            -- CPLs are large and heterogeneous; terrain modifiers determine whether a cell
+            -- is intensive (2.2.2) or extensive (2.2.3) within the lease boundary.
+            SELECT south_island_pastoral_leases_h3.h3_index,
+            'LINZ' AS source_data,
+            daterange('2013-02-07'::DATE, '2024-11-04'::DATE, '[]') AS source_date,
+            '[100,)'::int4range AS source_scale -- Boundaries are indicative only
+            FROM south_island_pastoral_leases_h3
+            WHERE :parent::h3index = south_island_pastoral_leases_h3.h3_partition
+            AND EXISTS (
+                SELECT 1 FROM lcdb_
+                WHERE :parent::h3index = h3_partition
+                AND Class_2023 IN (
+                    40, -- High Producing Exotic Grassland
+                    41, -- Low Producing Grassland (often modified)
+                    44, -- Depleted Grassland
+                    51, -- Gorse and/or Broom
+                    56  -- Mixed Exotic Shrubland
+                )
+                AND south_island_pastoral_leases_h3.h3_index && lcdb_.h3_index
+            )
+        ) AS cpl ON roi.h3_index && cpl.h3_index
         WHERE (
             -- Pastoral evidence required
             lum_.h3_index IS NOT NULL
@@ -330,6 +358,7 @@ CREATE TEMPORARY VIEW class_222 AS (
             OR winter_forage_.h3_index IS NOT NULL
             OR pastoral_consents.h3_index IS NOT NULL
             OR pasture_practices.h3_index IS NOT NULL
+            OR cpl.h3_index IS NOT NULL
         ) AND (
             -- At least one positive intensive signal required; without this, default to 2.2.3.
             -- NZLRI gaps (NULL slope/luc) evaluate as non-matching, so those cells fall through to 2.2.3.

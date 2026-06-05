@@ -109,6 +109,7 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             topo50_shingle_polygons.source_scale,
             NULL
         )::nzlum_type
+        -- Reserve-designated zone (DVR '0*') with native cover → class_117 handles these
         WHEN lcdb_.Class_2023 IN (
             10, -- Sand or Gravel
             12, -- Landslide
@@ -118,14 +119,14 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             21, -- River
             43, -- Tall Tussock Grassland (Indigenous snow tussocks in mainly alpine mountain-lands and red tussock in the central North Island and locally in poorly-drained valley floors, terraces and basins of both islands.)
             44, -- Depleted Grassland
-            45, -- Herbaceous Freshwater Vegetation 
+            45, -- Herbaceous Freshwater Vegetation
             46, -- Herbaceous Saline Vegetation
             47, -- Flaxland
             50, -- Fernland
             51, -- Gorse and/or Broom
             52, -- Manuka and/or Kanuka
             54, -- Broadleaved Indigenous Hardwoods
-            55, -- Sub Alpine Shrubland
+            55, -- Sub-Alpine Shrubland
             56, -- Mixed Exotic Shrubland
             58, -- Matagouri or Grey Scrub
             68, -- Deciduous Hardwoods
@@ -133,7 +134,7 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
             70, -- Mangrove
             80, -- Peat Shrubland (Chatham Is)
             81 -- Dune Shrubland (Chatham Is)
-        )
+        ) AND linz_dvr_reserve_zone.h3_index IS NULL -- Reserve-designated → class_117
         THEN ROW(
             ARRAY[]::TEXT[], -- lu_code_ancillary
             12, -- confidence
@@ -285,17 +286,18 @@ CREATE TEMPORARY VIEW class_140 AS ( -- Unused land and land in transition
         JOIN pan_nz_draft_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
         AND (
-            legislation_act = 'RESERVES_ACT'
-            AND (
-                legislation_section IS NULL
-                OR legislation_section = 'Acquired for Public Works'
-            )
+            legislation_act = 'Public Works Act 1981'
+            AND legislation_section = 'S.20' -- Acquired for public works
         )
         ORDER BY
             pan_nz_draft_h3.h3_index,
             source_date DESC NULLS LAST, -- Prefer more recent
             source_id -- Tie-break
     ) AS pan_nz_public_works ON roi.h3_index && pan_nz_public_works.h3_index
+    LEFT JOIN (
+        SELECT h3_index FROM linz_dvr_
+        WHERE "zone" LIKE '0%' AND "zone" != '0X'
+    ) AS linz_dvr_reserve_zone ON roi.h3_index && linz_dvr_reserve_zone.h3_index
     WHERE ecan_braided_rivers_.h3_index IS NOT NULL
        OR linz_dvr_vacant_other.h3_index IS NOT NULL
        OR lcdb_.h3_index IS NOT NULL
