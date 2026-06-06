@@ -1,3 +1,8 @@
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
 __environment_southland_consents__: &es_public_consents
   external_data_type: arcgis_rest
   license: https://creativecommons.org/licenses/by/4.0/
@@ -70,7 +75,6 @@ external_data:
       - columns: [geom_area_ha]
         type: btree
         name: idx_geom_area_ha
-
 
   es_winter_forage_2017:
     <<: *es_public_general

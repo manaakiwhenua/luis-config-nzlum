@@ -1,0 +1,42 @@
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
+external_data:
+  bop_all_consents:
+    license: https://creativecommons.org/licenses/by/4.0/
+    attribution: Bay of Plenty Regional Council
+    external_data_type: kart
+    geom_type: point
+    description: BOP RC Consents and Compliance — Current Consents (LRIS 123392)
+      # Active: Status = 'Current'. Dairy: Category = 'Dairy'.
+      # Factory_Supply_Number is populated only for dairy consents.
+      # Purpose is free-form text; purpose_tsvector enables GIN phrase search.
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/bop-rc-consents-and-compliance-current-consents
+    layer: bop-rc-consents-and-compliance-current-consents
+    indices:
+      - columns: [Category]
+        type: btree
+        name: idx_btree_category
+      - columns: [Status]
+        type: btree
+        name: idx_btree_status
+      - columns: [purpose_tsvector]
+        type: gin
+        name: idx_gin_purpose_tsvector
+    derived_columns:
+      - column: purpose_tsvector
+        datatype: tsvector
+        set_query: "to_tsvector('english', COALESCE(\"Purpose\", ''))"
+      - column: source_date
+        datatype: daterange
+        set_query: "daterange(\"Granted_Date\"::DATE, \"ExpiryDate\"::DATE, '[]')"
+      - column: source_data
+        datatype: text
+        set_query: "'BOP consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"

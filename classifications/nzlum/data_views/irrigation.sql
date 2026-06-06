@@ -83,12 +83,38 @@ CREATE TEMPORARY VIEW irrigation_ AS (
             toDate DESC NULLS LAST, -- Latest expiry
             area_ha, -- Prefer larger
             link -- Prefer with more information
+    ),
+    ecan_irrigation_consents_point AS (
+        SELECT DISTINCT ON (uop_h3.h3_index)
+            uop_h3.h3_index,
+            uop_h3.h3_partition,
+            NULL::tsvector AS ts_notes,
+            'Current' AS "status",
+            'Low' AS confidence,
+            NULL AS irrigation_type,
+            c.source_date,
+            c.source_data,
+            c.source_scale,
+            'irrigation'::TEXT AS manage,
+            NULL::int AS irrigation_age
+        FROM ecan_consented_activities_points_active c
+        JOIN ecan_consented_activities_points_active_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
+        JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
+        JOIN unit_of_property uop_inner ON uop_inner_h3.ogc_fid = uop_inner.ogc_fid
+            AND ST_Within(c.geom, uop_inner.geom)
+        JOIN unit_of_property uop_all ON uop_inner.unit_of_property_id = uop_all.unit_of_property_id
+        JOIN unit_of_property_h3 uop_h3 ON uop_all.ogc_fid = uop_h3.ogc_fid
+        WHERE :parent::h3index = c_h3.h3_partition
+        AND   :parent::h3index = uop_inner_h3.h3_partition
+        AND   :parent::h3index = uop_h3.h3_partition
+        AND c.current = TRUE
+        AND c.FeatureType = 'Irrigation Area'
+        ORDER BY uop_h3.h3_index, start_date DESC NULLS LAST, end_date DESC NULLS LAST
     )
     SELECT *
     FROM irrigation_mapping
 
-    -- union with an anti-join
-    -- i.e. prefer irrigation_mapping, but supplement it with information from irrigation_consents
+    -- union with anti-joins: prefer irrigation_mapping > area consents > point consents
     UNION ALL
 
     SELECT *
@@ -97,5 +123,20 @@ CREATE TEMPORARY VIEW irrigation_ AS (
         SELECT 1
         FROM irrigation_mapping
         WHERE irrigation_mapping.h3_index && irrigation_consents.h3_index
+    )
+
+    UNION ALL
+
+    SELECT *
+    FROM ecan_irrigation_consents_point
+    WHERE NOT EXISTS (
+        SELECT 1
+        FROM irrigation_mapping
+        WHERE irrigation_mapping.h3_index && ecan_irrigation_consents_point.h3_index
+    )
+    AND NOT EXISTS (
+        SELECT 1
+        FROM irrigation_consents
+        WHERE irrigation_consents.h3_index && ecan_irrigation_consents_point.h3_index
     )
 );

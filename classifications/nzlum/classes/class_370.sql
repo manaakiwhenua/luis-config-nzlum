@@ -119,6 +119,17 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
             linz_dvr_.source_scale,
             NULL
         )::nzlum_type
+        WHEN hail_mining_.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            8,
+            ARRAY[]::TEXT[], -- commod
+            ARRAY[]::TEXT[], -- manage
+            ARRAY[hail_mining_.source_data]::TEXT[],
+            hail_mining_.source_date,
+            hail_mining_.source_scale,
+            NULL
+        )::nzlum_type
         ELSE NULL
     END AS nzlum_type
     -- commodity type? mines.substance = ironsand,coal, gold
@@ -221,12 +232,18 @@ CREATE TEMPORARY VIEW class_370 AS ( -- Mining
             )
             OR improvements_description ~ '/mQUARRY/M'
     ) AS linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
+    LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale
+        FROM hail
+        WHERE hail_category_ids && ARRAY['E7']
+    ) hail_mining_ ON roi.h3_index && hail_mining_.h3_index
     WHERE mines_.h3_index IS NOT NULL
        OR quarries_.h3_index IS NOT NULL
        OR evaporation_ponds_.h3_index IS NOT NULL
        OR settling_ponds_.h3_index IS NOT NULL
        OR dredge_tailings_.h3_index IS NOT NULL
        OR linz_dvr_.h3_index IS NOT NULL
+       OR hail_mining_.h3_index IS NOT NULL
 );
 
 -- Use DVR category for commodity

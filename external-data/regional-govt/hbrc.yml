@@ -1,3 +1,8 @@
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
 __hbrc__: &hbrc
   external_data_type: arcgis_rest
   license: null
@@ -21,12 +26,15 @@ external_data:
         name: idx_btree_category
 
   hbrc_all_consent_polygons:
-    <<: *hbrc
     license: https://creativecommons.org/licenses/by/4.0/
-    host: https://gis.hbrc.govt.nz/server/rest/services/ExternalServices/Regulatory/MapServer
-    description: HBRC consents
-    layer: "4"
+    attribution: Hawke's Bay Regional Council
+    external_data_type: kart
     geom_type: multipolygon
+    description: HBRC Regulatory All Consent Polygons (LRIS 123415)
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/hbrc-regulatory-all-consent-polygons
+    layer: hbrc-regulatory-all-consent-polygons
     indices:
       - columns: [ActPrimaryIndustry]
         type: btree
@@ -34,66 +42,65 @@ external_data:
       - columns: [ActPrimaryIndustry, ActPrimaryPurpose]
         type: btree
         name: idx_btree_ActPrimaryIndustry_ActPrimaryPurpose
+      - columns: [AuthPrimaryIndustry]
+        type: btree
+        name: idx_btree_AuthPrimaryIndustry
+      - columns: [AuthSecondaryIndustry]
+        type: btree
+        name: idx_btree_AuthSecondaryIndustry
       - columns: [ActPrimaryPurpose]
         type: trigram
         name: idx_trgm_ActPrimaryPurpose
       - columns: [ActPrimaryPurpose]
         type: gin
         name: idx_gin_ActPrimaryPurpose
-      - columns: [AuthorisationActivityType]
+      - columns: [Authorisation_Activity_Type]
         type: btree
-        name: idx_gin_AuthorisationActivityType
+        name: idx_btree_Authorisation_Activity_Type
       - columns:
-        - DecisionServedDate DESC NULLS LAST
-        - ExpiryDate DESC NULLS LAST
-        - Area_m2 DESC NULLS LAST 
-        - DocumentLink DESC NULLS LAST
+        - Authorisation_Decision_Date DESC NULLS LAST
+        - Authorisation_Expiry_Date DESC NULLS LAST
+        - Area_m2 DESC NULLS LAST
+        - Document_Link DESC NULLS LAST
         type: btree
         name: idx_btree_sort_order
     derived_columns:
       - column: start_date
         datatype: date
-        set_query: |-
-          CASE
-            WHEN DecisionServedDate IS NOT NULL
-            THEN DecisionServedDate::DATE
-            ELSE NULL
-          END
+        set_query: "Authorisation_Decision_Date::DATE"
       - column: end_date
         datatype: date
-        set_query: |-
-          CASE
-            WHEN ExpiryDate IS NOT NULL
-            THEN ExpiryDate::DATE
-            ELSE NULL
-          END
+        set_query: "Authorisation_Expiry_Date::DATE"
       - column: source_date
         datatype: daterange
         set_query: |-
           CASE
-            WHEN DecisionServedDate IS NULL AND ExpiryDate IS NULL
+            WHEN Authorisation_Decision_Date IS NULL AND Authorisation_Expiry_Date IS NULL
             THEN daterange(CURRENT_DATE, CURRENT_DATE, '(]')
-            WHEN DecisionServedDate IS NOT NULL AND ExpiryDate IS NOT NULL
-            THEN daterange(DecisionServedDate::DATE, ExpiryDate::DATE, '[]')
-            WHEN DecisionServedDate IS NOT NULL
-            THEN daterange(LEAST(CURRENT_DATE, DecisionServedDate::DATE), CURRENT_DATE, '[]')
-            WHEN ExpiryDate IS NOT NULL
-            THEN daterange(CURRENT_DATE, GREATEST(CURRENT_DATE, ExpiryDate::DATE), '[]')
+            WHEN Authorisation_Decision_Date IS NOT NULL AND Authorisation_Expiry_Date IS NOT NULL
+            THEN daterange(Authorisation_Decision_Date::DATE, Authorisation_Expiry_Date::DATE, '[]')
+            WHEN Authorisation_Decision_Date IS NOT NULL
+            THEN daterange(LEAST(CURRENT_DATE, Authorisation_Decision_Date::DATE), CURRENT_DATE, '[]')
+            WHEN Authorisation_Expiry_Date IS NOT NULL
+            THEN daterange(CURRENT_DATE, GREATEST(CURRENT_DATE, Authorisation_Expiry_Date::DATE), '[]')
           END
       - column: source_data
         datatype: text
-        set_query: "'HBRC'::TEXT"
+        set_query: "'HBRC consents'::TEXT"
       - column: source_scale
         datatype: int4range
         set_query: "'[60,200)'::int4range"
 
-  __hbrc_contaminated_sites: &__hbrc_contaminated_sites
-    <<: *hbrc
-    description: HBRC Contaminated Land Use Sites (SLUS)
-    geom_type: multipolygon
+  hbrc_hail_suitable_remediated: &__hbrc_hail_kart
     license: https://creativecommons.org/licenses/by/4.0/
-    layer: '' # NB this is a template
-    host: https://gis.hbrc.govt.nz/server/rest/services/HazardPortal/Contaminated_Sites/MapServer
+    attribution: Hawke's Bay Regional Council
+    external_data_type: kart
+    description: "HBRC HAIL: Suitable for land use: remediated (LRIS 123645)"
+    layer: hbrc-hail-suitable-for-land-use-remediated
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/hbrc-hail-suitable-for-land-use-remediated
+    geom_type: multipolygon
     derived_columns:
       - column: hail_category_count
         datatype: int
@@ -137,37 +144,58 @@ external_data:
         type: btree
         name: idx_geom_area_ha
 
-  hbrc_hail_suitable_remediated:
-    <<: *__hbrc_contaminated_sites
-    description: "HBRC HAIL: Suitable for land use: remediated"
-    layer: "21"
-
   hbrc_hail_suitable_natural_state:
-    <<: *__hbrc_contaminated_sites
-    description: "HBRC HAIL: Suitable for land use: natural state"
-    layer: "20"
+    <<: *__hbrc_hail_kart
+    description: "HBRC HAIL: Suitable for land use: natural state (LRIS 123644)"
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/hbrc-hail-suitable-for-land-use-natural-state
+    layer: hbrc-hail-suitable-for-land-use-natural-state
 
   hbrc_hail_risk_not_quantified:
-    <<: *__hbrc_contaminated_sites
-    description: "HBRC HAIL: risk not quantified"
-    layer: "19"
+    <<: *__hbrc_hail_kart
+    description: "HBRC HAIL: risk not quantified (LRIS 123643)"
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/hbrc-hail-risk-not-quantified
+    layer: hbrc-hail-risk-not-quantified
 
   hbrc_hail_managed_for_land_use:
-    <<: *__hbrc_contaminated_sites
-    description: "HBRC HAIL: managed for land use"
-    layer: "18"
+    <<: *__hbrc_hail_kart
+    description: "HBRC HAIL: managed for land use (LRIS 123642)"
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/hbrc-hail-managed-for-land-use
+    layer: hbrc-hail-managed-for-land-use
 
   hbrc_hail_contaminated_for_lu_human:
-    <<: *__hbrc_contaminated_sites
-    description: "HBRC HAIL: contaminated for land use: human health"
-    layer: "14"
+    <<: *__hbrc_hail_kart
+    description: "HBRC HAIL: contaminated for land use: human health (LRIS 123641)"
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/hbrc-hail-contaminated-for-land-use-human-health
+    layer: hbrc-hail-contaminated-for-land-use-human-health
 
   hbrc_hail_contaminated_for_lu_env:
-    <<: *__hbrc_contaminated_sites
-    description: "HBRC HAIL: contaminated for land use: environment"
-    layer: "12"
+    <<: *__hbrc_hail_kart
+    description: "HBRC HAIL: contaminated for land use: environment (LRIS 123562)"
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/hbrc-hail-contaminated-for-land-use-environment
+    layer: hbrc-hail-contaminated-for-land-use-environment
 
   hbrc_hail_background_natural_state:
-    <<: *__hbrc_contaminated_sites
-    description: "HBRC HAIL: at or below background: natural state"
-    layer: "17"
+    <<: *__hbrc_hail_kart
+    description: "HBRC HAIL: at or below background: natural state (LRIS 123543)"
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/hbrc-hail-at-or-below-background-natural-state
+    layer: hbrc-hail-at-or-below-background-natural-state
+
+  hbrc_hail_background_remediated:
+    <<: *__hbrc_hail_kart
+    description: "HBRC HAIL: at or below background: remediated (LRIS 123548)"
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/contaminated-sites-verified-hail-at-or-below-background-natural-state
+    layer: contaminated-sites-verified-hail-at-or-below-background-natural-state

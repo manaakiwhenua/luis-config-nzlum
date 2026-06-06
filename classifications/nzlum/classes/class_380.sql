@@ -122,6 +122,17 @@ CREATE TEMPORARY VIEW class_380 AS (
             linz_crosl_sanitary.source_scale,
             NULL
         )::nzlum_type
+        WHEN hail_waste_.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            CASE WHEN hail_waste_.hail_category_ids && ARRAY['G3'] THEN 7 ELSE 8 END,
+            ARRAY[]::TEXT[], -- commod
+            ARRAY[]::TEXT[], -- manage
+            ARRAY[hail_waste_.source_data]::TEXT[],
+            hail_waste_.source_date,
+            hail_waste_.source_scale,
+            NULL
+        )::nzlum_type
         ELSE NULL
     END AS nzlum_type
     FROM roi
@@ -204,11 +215,17 @@ CREATE TEMPORARY VIEW class_380 AS (
         FROM lcdb_
         WHERE Class_2023 = 6 -- Surface Mine or Dump
     ) AS lcdb_mines_and_dumps ON roi.h3_index && lcdb_mines_and_dumps.h3_index
+    LEFT JOIN (
+        SELECT h3_index, hail_category_ids, source_data, source_date, source_scale
+        FROM hail
+        WHERE hail_category_ids && ARRAY['G3', 'G6']
+    ) hail_waste_ ON roi.h3_index && hail_waste_.h3_index
     WHERE topo50_landfill.h3_index IS NOT NULL
        OR topo50_pond.h3_index IS NOT NULL
        OR linz_dvr_sanitary.h3_index IS NOT NULL
        OR linz_crosl_sanitary.h3_index IS NOT NULL
        OR lcdb_mines_and_dumps.h3_index IS NOT NULL
+       OR hail_waste_.h3_index IS NOT NULL
 )
 
 -- LINZ landfill polyogons

@@ -1,73 +1,123 @@
-__horizons__: &horizons
-  external_data_type: arcgis_rest
-  license: null
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
+_horizons: &horizons
+  license: https://creativecommons.org/licenses/by/4.0/
   attribution: Horizons Regional Council
 
 external_data:
   horizons_reg_act:
     <<: *horizons
-    license: https://creativecommons.org/licenses/by/4.0/
-    description: Horizons RC regulatory activities (polygon only)
-    host: https://services1.arcgis.com/VuN78wcRdq1Oj69W/arcgis/rest/services/OpenData_RegulatoryActivity/FeatureServer
-    layer: "1"
+    external_data_type: kart
     geom_type: multipolygon
+    description: Horizons Regulatory Activity — Polygon (LRIS 123041)
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/horizons-regulatory-activity-polygon-only
+    layer: horizons-regulatory-activity-polygon-only
     indices:
-      - columns: [Ath_IndPrim]
+      - columns: [PRIMARY_INDUSTRY]
         type: btree
-        name: idx_btree_AthIndPrim
-      - columns: [ATH_PURPRIM]
+        name: idx_btree_primary_industry
+      - columns: [PRIMARY_PURPOSE]
         type: btree
-        name: idx_btree_ATH_PURPRIM
-      - columns: [ATH_PURSEC]
+        name: idx_btree_primary_purpose
+      - columns: [SECONDARY_PURPOSE]
         type: btree
-        name: idx_btree_ATH_PURSEC
-      - columns: [Ath_IndPrim, Ath_PurPrim]
+        name: idx_btree_secondary_purpose
+      - columns: [PRIMARY_INDUSTRY, PRIMARY_PURPOSE]
         type: btree
-        name: idx_btree_Ath_IndPrim_Ath_PurPrim
-      - columns: [Ath_PurPrim]
+        name: idx_btree_industry_purpose
+      - columns: [PRIMARY_PURPOSE]
         type: trigram
-        name: idx_trgm_Ath_PurPrim
-      - columns: [Ath_PurPrim]
+        name: idx_trgm_primary_purpose
+      - columns: [PRIMARY_PURPOSE]
         type: gin
-        name: idx_gin_Ath_PurPrim
-      - columns: [Ath_PurSec]
+        name: idx_gin_primary_purpose
+      - columns: [SECONDARY_PURPOSE]
         type: trigram
-        name: idx_trgm_Ath_PurSec
-      - columns: [Ath_PurSec]
+        name: idx_trgm_secondary_purpose
+      - columns: [SECONDARY_PURPOSE]
         type: gin
-        name: idx_gin_Ath_PurSec
+        name: idx_gin_secondary_purpose
     derived_columns:
       - column: start_date
         datatype: date
-        set_query: |-
-          CASE
-            WHEN Ath_Commence IS NOT NULL
-            THEN Ath_Commence::DATE
-            ELSE NULL
-          END
+        set_query: "COMMENCEMENT_DATE::DATE"
       - column: end_date
         datatype: date
-        set_query: |-
-          CASE
-            WHEN Ath_Expiry IS NOT NULL
-            THEN Ath_Expiry::DATE
-            ELSE NULL
-          END
+        set_query: "EXPIRY_DATE::DATE"
       - column: source_date
         datatype: daterange
         set_query: |-
           CASE
-            WHEN Ath_Granted IS NULL AND DataLastUpdated IS NULL
-            THEN DATERANGE(DataLastUpdated::date, DataLastUpdated::date, '[]')
-            WHEN Ath_Granted IS NOT NULL AND DataLastUpdated IS NOT NULL
-            THEN daterange(Ath_Granted::DATE, DataLastUpdated::DATE, '[]')
-            WHEN Ath_Granted IS NOT NULL
-            THEN daterange(Ath_Granted::DATE, Ath_Granted::DATE, '[]')
-            ELSE daterange(DataLastUpdated::DATE, DataLastUpdated::DATE, '[]')
+            WHEN COMMENCEMENT_DATE IS NULL OR EXPIRY_DATE IS NULL
+              OR COMMENCEMENT_DATE::DATE > EXPIRY_DATE::DATE
+            THEN NULL::daterange
+            ELSE daterange(COMMENCEMENT_DATE::DATE, EXPIRY_DATE::DATE, '[]')
           END
       - column: source_data
         datatype: text
-        set_query: "'Horizons'::TEXT"
+        set_query: "'Horizons consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[60,200)'::int4range"
+
+  horizons_reg_act_point:
+    <<: *horizons
+    external_data_type: kart
+    geom_type: point
+    description: Horizons Regulatory Activity — Point (LRIS 123042)
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/horizons-regulatory-activity-point-only
+    layer: horizons-regulatory-activity-point-only
+    indices:
+      - columns: [PRIMARY_INDUSTRY]
+        type: btree
+        name: idx_btree_primary_industry
+      - columns: [PRIMARY_PURPOSE]
+        type: btree
+        name: idx_btree_primary_purpose
+      - columns: [SECONDARY_PURPOSE]
+        type: btree
+        name: idx_btree_secondary_purpose
+      - columns: [PRIMARY_INDUSTRY, PRIMARY_PURPOSE]
+        type: btree
+        name: idx_btree_industry_purpose
+      - columns: [PRIMARY_PURPOSE]
+        type: trigram
+        name: idx_trgm_primary_purpose
+      - columns: [PRIMARY_PURPOSE]
+        type: gin
+        name: idx_gin_primary_purpose
+      - columns: [SECONDARY_PURPOSE]
+        type: trigram
+        name: idx_trgm_secondary_purpose
+      - columns: [SECONDARY_PURPOSE]
+        type: gin
+        name: idx_gin_secondary_purpose
+    derived_columns:
+      - column: start_date
+        datatype: date
+        set_query: "COMMENCEMENT_DATE::DATE"
+      - column: end_date
+        datatype: date
+        set_query: "EXPIRY_DATE::DATE"
+      - column: source_date
+        datatype: daterange
+        set_query: |-
+          CASE
+            WHEN COMMENCEMENT_DATE IS NULL OR EXPIRY_DATE IS NULL
+              OR COMMENCEMENT_DATE::DATE > EXPIRY_DATE::DATE
+            THEN NULL::daterange
+            ELSE daterange(COMMENCEMENT_DATE::DATE, EXPIRY_DATE::DATE, '[]')
+          END
+      - column: source_data
+        datatype: text
+        set_query: "'Horizons consents'::TEXT"
       - column: source_scale
         datatype: int4range
         set_query: "'[60,200)'::int4range"

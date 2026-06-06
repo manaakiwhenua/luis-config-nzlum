@@ -44,20 +44,24 @@ CREATE TEMPORARY VIEW class_221 AS (
             THEN 1
             -- DVR dairy APU with at least one corroborating signal
             WHEN linz_dvr_.actual_property_use = '11'
-                AND (linz_dvr_.category ~ '^D' OR lum_dairy.h3_index IS NOT NULL)
+                AND (
+                    linz_dvr_.category ~ '^D'
+                    OR lum_dairy.h3_index IS NOT NULL
+                    OR pastoral_consents.h3_index IS NOT NULL
+                )
             THEN 2
             -- DVR dairy APU alone
             WHEN linz_dvr_.actual_property_use = '11'
             THEN 3
-            -- DVR category D (dairy) without APU confirmation
+            -- DVR category D alone
             WHEN linz_dvr_.category ~ '^D'
-            THEN 4
-            -- LUM dairy subid without DVR confirmation
+            THEN 6
+            -- LUM dairy subid alone
             WHEN lum_dairy.h3_index IS NOT NULL
-            THEN 4
+            THEN 6
             -- Pastoral consent specifying dairy commodity
             WHEN pastoral_consents.h3_index IS NOT NULL
-            THEN 4
+            THEN 6
             ELSE NULL
         END
         + CASE -- LCDB land cover contradicts pastoral/dairy use
@@ -92,11 +96,14 @@ CREATE TEMPORARY VIEW class_221 AS (
         + CASE -- Residential zoning contradicts commercial pastoral/dairy use
             WHEN linz_dvr_."zone" ~ '^9' THEN 3
             ELSE 0
+        END
+        + CASE -- Pastoral consent with dairy commodity corroborates across all cases
+            WHEN pastoral_consents.h3_index IS NOT NULL THEN -2
+            ELSE 0
         END),
         ARRAY['cattle dairy']::TEXT[], -- commod: dairy by definition
-        ARRAY_REMOVE(ARRAY[
-            GREATEST(irrigation_.manage, dairy_effluent_discharge.manage)
-        ], NULL)::TEXT[], -- manage
+        ARRAY_REMOVE(ARRAY[irrigation_.manage], NULL)::TEXT[]
+        || COALESCE(dairy_effluent_discharge.manage, ARRAY[]::TEXT[]), -- manage
         ARRAY[
             linz_dvr_.source_data,
             lcdb_.source_data,

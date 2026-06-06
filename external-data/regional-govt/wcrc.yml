@@ -1,0 +1,69 @@
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
+_wcrc: &wcrc
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: West Coast Regional Council
+
+external_data:
+  wcrc_consent_shapes:
+    <<: *wcrc
+    external_data_type: kart
+    geom_type: polygon
+    description: WCRC Environment Consents — Shapes/Polygon (LRIS 123383)
+      # PrimaryIndustry uses ANZSIC codes. All 1,515 records have CurrentStatus = 'Current'.
+      # Dairy: PrimaryIndustry = 'A0130 Dairy Cattle Farming' (632 records).
+      # Exclude: 'C2121 Milk and Cream Processing' (dairy factory sites, not farms).
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/west-coast-regional-council-environment-consents-consent-shapes
+    layer: west-coast-regional-council-environment-consents-consent-shapes
+    indices:
+      - columns: [PrimaryIndustry]
+        type: btree
+        name: idx_btree_primary_industry
+      - columns: [CurrentStatus]
+        type: btree
+        name: idx_btree_current_status
+    derived_columns:
+      - column: source_date
+        datatype: daterange
+        set_query: "daterange(\"CommencementDate\"::DATE, \"ExpiryDate\"::DATE, '[]')"
+      - column: source_data
+        datatype: text
+        set_query: "'WCRC consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"
+
+  wcrc_consent_points:
+    <<: *wcrc
+    external_data_type: kart
+    geom_type: point
+    description: WCRC Environment Consents — Points (LRIS 123381)
+      # Same ANZSIC scheme as wcrc_consent_shapes. All 9,126 records are current.
+      # Dairy (763): 'A0130 Dairy Cattle Farming'. Forestry (156): 'A0301 Forestry'.
+      # Point layer; parcel join needed to expand to farm boundary H3 cells.
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/west-coast-regional-council-environment-consents-consent-points
+    layer: west-coast-regional-council-environment-consents-consent-points
+    indices:
+      - columns: [PrimaryIndustry]
+        type: btree
+        name: idx_btree_primary_industry
+      - columns: [CurrentStatus]
+        type: btree
+        name: idx_btree_current_status
+    derived_columns:
+      - column: source_date
+        datatype: daterange
+        set_query: "daterange(\"CommencementDate\"::DATE, \"ExpiryDate\"::DATE, '[]')"
+      - column: source_data
+        datatype: text
+        set_query: "'WCRC consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"

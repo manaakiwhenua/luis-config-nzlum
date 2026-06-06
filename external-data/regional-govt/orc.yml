@@ -1,0 +1,36 @@
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
+external_data:
+  orc_all_consents:
+    license: https://creativecommons.org/licenses/by/4.0/
+    attribution: Otago Regional Council
+    external_data_type: kart
+    geom_type: point
+    description: ORC All Consents (LRIS 123377)
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/otago-regional-council-all-consents
+    layer: otago-regional-council-all-consents
+    indices:
+      - columns: [Consent_Status]
+        type: btree
+        name: idx_btree_consent_status
+      - columns: [activity_tsvector]
+        type: gin
+        name: idx_gin_activity_tsvector
+    derived_columns:
+      - column: activity_tsvector
+        datatype: tsvector
+        set_query: "to_tsvector('english', COALESCE(\"Activity_Purpose\", ''))"
+      - column: source_date
+        datatype: daterange
+        set_query: "daterange(NULL::DATE, \"Expiry_Date\"::DATE, '(]')"
+      - column: source_data
+        datatype: text
+        set_query: "'ORC consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"

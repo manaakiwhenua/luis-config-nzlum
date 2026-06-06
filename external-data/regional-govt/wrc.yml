@@ -1,0 +1,63 @@
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
+_wrc: &wrc
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: Waikato Regional Council
+
+external_data:
+  wrc_land_use_consents:
+    <<: *wrc
+    external_data_type: kart
+    geom_type: point
+    description: WRC Resource Consents — Land Use Consents (LRIS 123531)
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/waikato-regional-council-consents-and-permits-authorisation-resource-consents-land-use-consents
+    layer: waikato-regional-council-consents-and-permits-authorisation-resource-consents-land-use-consents
+    indices:
+      - columns: [PRIMARY_INDUSTRY_PURPOSE]
+        type: btree
+        name: idx_btree_primary_industry_purpose
+      - columns: [STATUS]
+        type: btree
+        name: idx_btree_status
+    derived_columns:
+      - column: source_date
+        datatype: daterange
+        set_query: "daterange(\"COMMENCEMENT_DATE\"::DATE, \"EXPIRY_DATE\"::DATE, '[]')"
+      - column: source_data
+        datatype: text
+        set_query: "'WRC consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"
+
+  wrc_discharge_permits:
+    <<: *wrc
+    external_data_type: kart
+    geom_type: point
+    description: WRC Resource Consents — Discharge Permits (LRIS 123533)
+      # PRIMARY_INDUSTRY_PURPOSE signals wired to:
+      #   dairy_effluent_discharge.sql: 'Agricultural farming - dairy'
+      #   intensive_livestock.sql → class_260: 'Agricultural farming - pigs',
+      #     'Agricultural farming - poultry (broiler)'
+      #   forestry.sql: 'Forestry'
+      # Sample remaining (not wired): 'Power generation - hydro', 'Crematoria/cemeteries',
+      #   'Educational/cultural/religious'
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/waikato-regional-council-consents-and-permits-authorisation-resource-consents-discharge-permits
+    layer: waikato-regional-council-consents-and-permits-authorisation-resource-consents-discharge-permits
+    derived_columns:
+      - column: source_date
+        datatype: daterange
+        set_query: "daterange(\"COMMENCEMENT_DATE\"::DATE, \"EXPIRY_DATE\"::DATE, '[]')"
+      - column: source_data
+        datatype: text
+        set_query: "'WRC consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"

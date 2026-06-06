@@ -1,61 +1,150 @@
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
 __ecan__: &ecan
   external_data_type: arcgis_rest
   license: https://creativecommons.org/licenses/by/4.0/
   attribution: Sourced from Canterbury Maps and partners and licensed for reuse under the CC BY 4.0 licence
 
+# Shared by LRIS 122982 (areas) and 122985 (points) — identical schema
+__ecan_consented_derived_columns: &ecan_consented_derived_columns
+  - column: current
+    datatype: boolean
+    set_query: |-
+      (
+        CASE
+          WHEN (
+            ConsentStatus = 'Issued - Active'
+            AND Expires::DATE > CURRENT_DATE
+          )
+          OR (
+            Expires::DATE <= CURRENT_DATE
+            AND ConsentStatus = 'Issued - s124 Continuance'
+          )
+          THEN TRUE
+          ELSE FALSE
+        END
+      )
+  - column: start_date
+    datatype: date
+    set_query: "fmDate::DATE"
+  - column: end_date
+    datatype: date
+    set_query: "toDate::DATE"
+  - column: expires_date
+    datatype: date
+    set_query: "Expires::DATE"
+  - column: source_date
+    datatype: daterange
+    set_query: |-
+      CASE
+        WHEN fmDate IS NULL OR toDate IS NULL
+          OR fmDate::DATE > toDate::DATE
+        THEN NULL::daterange
+        ELSE daterange(fmDate::DATE, toDate::DATE, '[]')
+      END
+  - column: source_data
+    datatype: text
+    set_query: "'ECAN consents'::TEXT"
+  - column: source_scale
+    datatype: int4range
+    set_query: |-
+      CASE FEATURE_ACCURACY
+        WHEN '1 metre to 5 metres'
+          THEN '[1,5]'::int4range
+        WHEN '5 metres to 20 metres'
+          THEN '[5,20]'::int4range
+        WHEN 'Greater than 50 metres'
+          THEN '(50,)'::int4range
+        WHEN 'Unknown'
+          THEN '(50,)'::int4range
+        ELSE '(50,)'::int4range
+      END
+
+# Shared by LRIS 122990 (area) and 122991 (point) — identical schema
+# animal_count is TEXT stored as "0.0" floats; FLOAT::INT double-cast required
+__ecan_effluent_derived_columns: &ecan_effluent_derived_columns
+  - column: animal_count
+    datatype: integer
+    set_query: "NULLIF(ActualAnimalNumbers, '')::FLOAT::INT"
+  - column: manage
+    datatype: TEXT[]
+    set_query: |-
+      ARRAY_REMOVE(ARRAY[
+        CASE
+          WHEN DisposalMethod IN (
+            'Centre Pivot',
+            'Dedicated roto-rainer',
+            'Dedicated Spray-effluent only',
+            'Injection - pivot',
+            'Injection k-line',
+            'Pivot - dedicated sprinklers',
+            'Pivot - gun',
+            'Pivot - TI boom',
+            'Spray Irrigation-effluent + water',
+            'Stationary - dedicated k-line',
+            'Stationary - honey pot',
+            'Tanker',
+            'Travelling Irrigator'
+          ) THEN 'irrigation spray'
+          WHEN DisposalMethod IS NOT NULL THEN 'irrigation'
+        END,
+        CASE
+          WHEN CowsWintered LIKE 'Off farm%' THEN 'wintering off'
+          WHEN CowsWintered = 'On farm' THEN 'wintering on'
+        END,
+        CASE WHEN FeedPad = 'Yes' THEN 'feed pad' END,
+        CASE
+          WHEN MilkSupply = 'Town Supply' THEN 'town supply'
+          WHEN MilkSupply = 'Factory Supply' THEN 'factory supply'
+        END
+      ], NULL)::TEXT[]
+  - column: start_date
+    datatype: date
+    set_query: "fmDate::DATE"
+  - column: end_date
+    datatype: date
+    set_query: "toDate::DATE"
+  - column: source_date
+    datatype: daterange
+    set_query: |-
+      CASE
+        WHEN fmDate IS NULL OR toDate IS NULL
+          OR fmDate::DATE > toDate::DATE
+        THEN NULL::daterange
+        ELSE daterange(fmDate::DATE, toDate::DATE, '[]')
+      END
+  - column: source_data
+    datatype: text
+    set_query: "'ECAN consents'::TEXT"
+  - column: source_scale
+    datatype: int4range
+    set_query: |-
+      (CASE FEATURE_ACCURACY
+        WHEN '1 metre to 5 metres'
+          THEN '[1,5]'::int4range
+        WHEN '5 metres to 20 metres'
+          THEN '[5,20]'::int4range
+        WHEN 'Greater than 50 metres'
+          THEN '(50,)'::int4range
+        WHEN 'Unknown'
+          THEN '(50,)'::int4range
+        ELSE '(50,)'::int4range
+      END)
 
 external_data:
   ecan_consented_activities_areas_active:
     <<: *ecan
-    host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/Resource_Consents_Active/MapServer
-    description: Records showing a summary of a current consented activity as recorded within Environment Canterbury's Resource Management Act database.
-      # Records showing a summary of a current consented activity as recorded within Environment Canterbury's Resource Management Act database. This layer contains features that are represented as area of a size 10,000ha or less, and includes feature types such as gravel excavation areas, burnoff areas, etc. Note: Prior to 2013 all actvivties were recorded as point features. Subsequent to this activities may have been captured as line or area features. This layer should be used in conjuction with the Consented Activities - Points, Consented Activities - Lines and Consented Activities - Global layers to get a full representation of all consented activity features. Depending on the nature and conditions of the consent, more than location area may be associated with a single consent. The feature type property indicates the nature of the recorded activity. The layer includes details on: The type of permit (land use consent, discharge permit, etc.), the section of the RMA underwhich the activity was permitted, the current status of the permit (active, in process, etc.), the name of the applicant, a description of the location where the activity related to the permit is undertaken, and if the permit was successfully issued, the period over which the permiitted activities apply. The layer also contains several sumary fields related to spatially defined regions the location lies with including: which territorial local authority(s); the Land and Water Regional Plan groundwater & surface water allocation zones and nutrient management zone; the Canterbury Water Management Strategy (CWMS) zone; the Ngai Tahu Runanga area of interest for Resource Consenting purposes; and the clean air zone.
-    layer: "29"
+    external_data_type: kart
     geom_type: multipolygon
-    derived_columns:
-      - column: current
-        datatype: boolean
-        set_query: |-
-          (
-            CASE
-              WHEN (
-                ConsentStatus = 'Issued - Active'
-                AND Expires > CURRENT_DATE
-              ) 
-              OR (
-                Expires <= CURRENT_DATE
-                AND ConsentStatus = 'Issued - s124 Continuance'
-              )
-              THEN TRUE
-              ELSE FALSE
-            END
-          )
-      - column: start_date
-        datatype: date
-        set_query: "fmDate::DATE"
-      - column: end_date
-        datatype: date
-        set_query: "toDate::DATE"
-      - column: source_date
-        datatype: daterange
-        set_query: daterange(fmDate::DATE, toDate::DATE::DATE, '[]')
-      - column: source_data
-        datatype: text
-        set_query: "'ECAN'::TEXT"
-      - column: source_scale
-        datatype: int4range
-        set_query: |-
-          CASE FEATURE_ACCURACY
-            WHEN '1 metre to 5 metres'
-              THEN '[1,5]'::int4range
-            WHEN '5 metres to 20 metres'
-              THEN '[5,20]'::int4range
-            WHEN 'Greater than 50 metres'
-              THEN '(50,)'::int4range
-            WHEN 'Unknown'
-              THEN '(50,)'::int4range
-            ELSE '(50,)'::int4range
-          END
+    description: ECAN Consented Activities - Areas (Active) (LRIS 122982)
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/ecan-consented-activities-areas-active
+    layer: ecan-consented-activities-areas-active
+    derived_columns: *ecan_consented_derived_columns
     indices:
       - columns: [FeatureType]
         type: btree
@@ -70,88 +159,66 @@ external_data:
         type: btree
         name: idx_current
       - columns:
-        - fmDate DESC NULLS LAST
-        - Expires DESC NULLS LAST
-        - Area_HA DESC NULLS LAST 
+        - start_date DESC NULLS LAST
+        - expires_date DESC NULLS LAST
+        - Area_HA DESC NULLS LAST
         type: btree
         name: idx_btree_sort_order
+
+  ecan_consented_activities_points_active:
+    <<: *ecan
+    external_data_type: kart
+    description: ECAN Consented Activities - Points (Active) (LRIS 122985)
+    geom_type: point
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/ecan-consented-activities-points-active
+    layer: ecan-consented-activities-points-active
+    derived_columns: *ecan_consented_derived_columns
+    indices:
+      - columns: [FeatureType]
+        type: btree
+        name: idx_btree_featuretype
+      - columns: [ConsentType]
+        type: btree
+        name: idx_btree_consenttype
+      - columns: [ActivityText]
+        type: gin
+        name: idx_gin_activitytext
+      - columns: [current]
+        type: btree
+        name: idx_current
+      - columns:
+        - start_date DESC NULLS LAST
+        - expires_date DESC NULLS LAST
+        type: btree
+        name: idx_btree_sort_order
+
   ecan_effluent_dairy_discharge_area:
     <<: *ecan
-    host: https://gis.ecan.govt.nz/arcgis/rest/services/Public/Resource_Consents_Active/MapServer
-    description: Consented Activities - Effluent Dairy Discharge Area (Active)
-      # Consented Activities - Effluent Dairy Discharge Area (Active)
-      # Records showing a summary of a current consented activity related to the storage and discharge of dairy effluent to water or land as recorded within Environment Canterbury's Resource Management Act Database. This layer contains discharge features that are represented as areas less than 10,000ha in size. Note: Prior to 2013 all actvivties were recorded as point features. Subsequent to this activities may have been captured as line or area features. This layer should be used in conjuction with the Consented Activities - Effluent Dairy Discharge Points and Consented Activities - Effluent Dairy Discharge Global layers to get a full representation of all consented activity features. Depending on the nature and conditions of the consent, more than location point may be associated with a single consent. The feature type property indicates the nature of the recorded activity. The layer includes details on: The type of permit (land use consent, discharge permit, etc.), the section of the RMA underwhich the activity was permitted, the current status of the permit (active, in process, etc.), the name of the applicant, a description of the location where the activity related to the permit is undertaken, and if the permit was successfully issued, the period over which the permiitted activities apply. Activity specific details related to dairying practices are also included if relavent. The layer also contains several sumary fields related to spatially defined regions the location lies with including: which territorial local authority(s); the Land and Water Regional Plan groundwater & surface water allocation zones and nutrient management zone; the Canterbury Water Management Strategy (CWMS) zone; the Ngai Tahu Runanga area of interest for Resource Consenting purposes; and the clean air zone.
+    external_data_type: kart
+    description: Consented Activities - Effluent Dairy Discharge Area (Active) (LRIS 122990)
     geom_type: multipolygon
-    layer: "37"
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/ecan-consented-activities-effluent-dairy-discharge-area
+    layer: ecan-consented-activities-effluent-dairy-discharge-area
+    derived_columns: *ecan_effluent_derived_columns
+
+  ecan_effluent_dairy_discharge:
+    <<: *ecan
+    external_data_type: kart
+    description: Consented Activities - Effluent Dairy Discharge (Active) (LRIS 122991)
+    geom_type: point
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/ecan-consented-activities-effluent-dairy-discharge
+    layer: ecan-consented-activities-effluent-dairy-discharge
     indices:
       - columns: [animal_count]
         type: btree
-        name: idx_btree_ActualAnimalNumbers_int
-    derived_columns:
-      # ::FLOAT::INT as column is TEXT and "0.0"::INT is invalid input syntax, must be "0.0"::FLOAT::INT (values are counts, but 0 is often recorded as 0.0)
-      - column: animal_count
-        datatype: integer
-        set_query: ActualAnimalNumbers::FLOAT::INT
-      - column: wintering_off
-        datatype: boolean
-        set_query: |-
-          (CASE
-            WHEN CowsWintered LIKE 'Off farm%'
-            THEN true
-            WHEN CowsWintered = 'On farm'
-            THEN false
-            ELSE NULL
-          END)
-      - column: manage
-        datatype: TEXT
-        set_query: |-
-          (CASE
-            WHEN DisposalMethod IN (
-              'Centre Pivot',
-              'Dedicated roto-rainer',
-              'Dedicated Spray-effluent only',
-              'Injection - pivot',
-              'Injection k-line',
-              'Pivot - dedicated sprinklers',
-              'Pivot - gun',
-              'Pivot - TI boom',
-              'Spray Irrigation-effluent + water',
-              'Stationary - dedicated k-line',
-              'Stationary - honey pot',
-              'Tanker',
-              'Travelling Irrigator'
-            )
-            THEN 'irrigation spray'
-            WHEN DisposalMethod IS NOT NULL
-            THEN 'irrigation'
-            ELSE NULL
-          END)
-      - column: start_date
-        datatype: date
-        set_query: "fmDate::DATE"
-      - column: end_date
-        datatype: date
-        set_query: "toDate::DATE"
-      - column: source_date
-        datatype: daterange
-        set_query: daterange(fmDate::DATE, toDate::DATE::DATE, '[]')
-      - column: source_data
-        datatype: text
-        set_query: "'ECAN'::TEXT"
-      - column: source_scale
-        datatype: int4range
-        set_query: |-
-          (CASE FEATURE_ACCURACY
-            WHEN '1 metre to 5 metres'
-              THEN '[1,5]'::int4range
-            WHEN '5 metres to 20 metres'
-              THEN '[5,20]'::int4range
-            WHEN 'Greater than 50 metres'
-              THEN '(50,)'::int4range
-            WHEN 'Unknown'
-              THEN '(50,)'::int4range
-            ELSE '(50,)'::int4range
-          END)
+        name: idx_btree_animal_count
+    derived_columns: *ecan_effluent_derived_columns
 
   ecan_braided_rivers:
     <<: *ecan

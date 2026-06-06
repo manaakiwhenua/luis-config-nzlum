@@ -101,12 +101,16 @@ classifications:
       - hbrc_hail_contaminated_for_lu_human
       - hbrc_hail_contaminated_for_lu_env
       - hbrc_hail_background_natural_state
+      - hbrc_hail_background_remediated
 
       - horizons_reg_act
+      - horizons_reg_act_point
 
       # - ecan_lakes
       - ecan_consented_activities_areas_active
+      - ecan_consented_activities_points_active
       - ecan_effluent_dairy_discharge_area
+      - ecan_effluent_dairy_discharge
       - ecan_braided_rivers
       - cera_red_zoned_land
 
@@ -114,11 +118,28 @@ classifications:
       - winter_crop_gdc
       - fosal_areas_tairawhiti
       
-      - es_slu
+      - es_hail
       - es_winter_forage_2017
 
       - gwrc_plantation_forests_western
       - gwrc_plantation_forests_eastern
+      - gwrc_resource_consents
+
+      - wrc_land_use_consents
+      # - wrc_discharge_permits # low ag signal
+
+      - orc_all_consents
+
+      - trc_land_use_consents
+      - trc_discharge_permits
+
+      - mdc_discharge_polygon
+      - mdc_discharge_point
+
+      - wcrc_consent_shapes
+      - wcrc_consent_points
+
+      - bop_all_consents
     table_schema:
       unit_id: BIGINT
       lu_code_primary: INTEGER

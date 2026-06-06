@@ -222,7 +222,7 @@ CREATE TEMPORARY VIEW class_321 AS (
     LEFT JOIN (
         SELECT h3_index, source_data, source_date, source_scale, hail_category_count
         FROM hail
-        WHERE hail_category_ids @> ARRAY['C2']
+        WHERE hail_category_ids && ARRAY['C2']
     ) AS hail_gun_clubs ON roi.h3_index && hail_gun_clubs.h3_index
     LEFT JOIN (
         -- PAN-NZ reserves in the same IUCN categories as class_117, but without requiring native cover.

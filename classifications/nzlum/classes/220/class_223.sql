@@ -180,9 +180,8 @@ CREATE TEMPORARY VIEW class_223 AS (
                     ELSE ARRAY[]::TEXT[]
                 END
             ) || COALESCE(pasture_practices.commod, ARRAY[]::TEXT[]), -- commod
-            ARRAY_REMOVE(ARRAY[
-                GREATEST(irrigation_.manage, dairy_effluent_discharge.manage)
-            ], NULL)::TEXT[]
+            ARRAY_REMOVE(ARRAY[irrigation_.manage], NULL)::TEXT[]
+            || COALESCE(dairy_effluent_discharge.manage, ARRAY[]::TEXT[])
             || COALESCE(ARRAY[winter_forage_.manage]::TEXT[], ARRAY[]::TEXT[])
             || COALESCE(pasture_practices.manage, ARRAY[]::TEXT[]), -- manage
             ARRAY[

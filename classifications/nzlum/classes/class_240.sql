@@ -278,6 +278,17 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                 linz_dvr_.source_scale,
                 NULL
             )::nzlum_type
+            WHEN hail_a10_.h3_index IS NOT NULL
+            THEN ROW(
+                ARRAY[]::TEXT[], -- lu_code_ancillary
+                9, -- weak standalone; outer SELECT applies -1 → 8 final
+                ARRAY[]::TEXT[], -- commod
+                ARRAY[]::TEXT[], -- manage
+                ARRAY[hail_a10_.source_data]::TEXT[],
+                hail_a10_.source_date,
+                hail_a10_.source_scale,
+                NULL
+            )::nzlum_type
             ELSE NULL
         END AS nzlum_type
         FROM roi
@@ -325,11 +336,17 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
             -- Consider H*(A|B|C|D|E|F) too (quality)
         ) linz_dvr_ ON roi.h3_index && linz_dvr_.h3_index
         LEFT JOIN crop_perennial ON roi.h3_index && crop_perennial.h3_index
+        LEFT JOIN (
+            SELECT h3_index, source_data, source_date, source_scale
+            FROM hail
+            WHERE hail_category_ids && ARRAY['A10']
+        ) hail_a10_ ON roi.h3_index && hail_a10_.h3_index
         WHERE lum_.h3_index IS NOT NULL
            OR topo50_orchards_.h3_index IS NOT NULL
            OR lcdb_.h3_index IS NOT NULL
            OR linz_dvr_.h3_index IS NOT NULL
            OR crop_perennial.h3_index IS NOT NULL
+           OR hail_a10_.h3_index IS NOT NULL
     )
     SELECT
         base_classification.h3_index,
@@ -351,6 +368,11 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
                     + CASE
                         WHEN crop_perennial.h3_index IS NOT NULL
                         THEN -6
+                        ELSE 0
+                    END
+                    + CASE
+                        WHEN hail_a10_.h3_index IS NOT NULL
+                        THEN -1
                         ELSE 0
                     END
                     + CASE -- Penalise confidence by irrigation age (older mapping = less certain)
@@ -393,6 +415,11 @@ CREATE TEMPORARY VIEW class_240 AS ( -- Perennial horticulture
         FROM irrigation_
         WHERE irrigation_type ~ '^Drip'
     ) irrigation_ ON base_classification.h3_index && irrigation_.h3_index
+    LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale
+        FROM hail
+        WHERE hail_category_ids && ARRAY['A10']
+    ) hail_a10_ ON base_classification.h3_index && hail_a10_.h3_index
 );
 
 -- Topo50. Middling confidence on its own. "Vegetation defined as pip or stone fruit eg apples, apricots, olives etc". No ancillary information available.

@@ -1,0 +1,66 @@
+_kart_mwlcr: &kart_mwlcr
+  host: kart@data.koordinates.com
+  branch: main
+  commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+
+_mdc: &mdc
+  license: https://creativecommons.org/licenses/by/4.0/
+  attribution: Marlborough District Council
+
+external_data:
+  mdc_discharge_polygon:
+    <<: *mdc
+    external_data_type: kart
+    geom_type: polygon
+    description: Marlborough DC Discharge Consents — Polygon (LRIS 123371)
+      # No date fields present; source_date upper-bounded to commit date 2026-06-01.
+      # Dairy signal: ActivityType IN ('Dairy', 'Piggery & Dairy').
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/discharge-land-polygon
+    layer: discharge-land-polygon
+    indices:
+      - columns: [ActivityType]
+        type: btree
+        name: idx_btree_activity_type
+      - columns: [Status]
+        type: btree
+        name: idx_btree_status
+    derived_columns:
+      - column: source_date
+        datatype: daterange
+        set_query: "daterange(NULL::DATE, '2026-06-01'::DATE, '(]')"
+      - column: source_data
+        datatype: text
+        set_query: "'MDC consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"
+
+  mdc_discharge_point:
+    <<: *mdc
+    external_data_type: kart
+    geom_type: point
+    description: Marlborough DC Discharge Consents — Point (LRIS 123372)
+      # Only 4 dairy records; parcel join needed. No date fields present.
+    kart:
+      <<: *kart_mwlcr
+      remote: mwlcr/discharge-land-point
+    layer: discharge-land-point
+    indices:
+      - columns: [ActivityType]
+        type: btree
+        name: idx_btree_activity_type
+      - columns: [Status]
+        type: btree
+        name: idx_btree_status
+    derived_columns:
+      - column: source_date
+        datatype: daterange
+        set_query: "daterange(NULL::DATE, '2026-06-01'::DATE, '(]')"
+      - column: source_data
+        datatype: text
+        set_query: "'MDC consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"

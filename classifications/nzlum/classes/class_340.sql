@@ -87,7 +87,7 @@ CREATE TEMPORARY VIEW class_340 AS ( -- Manufacturing and industrial
             source_date,
             source_scale
         FROM hail
-        WHERE hail_category_ids @> ARRAY[
+        WHERE hail_category_ids && ARRAY[
             'A1', -- Agrichemicals
             'A2', -- Chemical manufacture
             'A3', -- Commercial analytical laboratory sites

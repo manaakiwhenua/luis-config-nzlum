@@ -253,10 +253,11 @@ CREATE TEMPORARY VIEW class_360 AS ( --Transportation
             source_scale,
             hail_category_count
         FROM hail
-        WHERE hail_category_ids @> ARRAY[
+        WHERE hail_category_ids && ARRAY[
             'F1', -- Airports including fuel storage, workshops, washdown areas, or fire practice areas
             'F5', -- Port activities including dry docks or marine vessel maintenance facilities
-            'F6' -- Railway yards including goods-handling yards, workshops, refuelling facilities or maintenance areas
+            'F6', -- Railway yards including goods-handling yards, workshops, refuelling facilities or maintenance areas
+            'F8'  -- Vehicle or equipment depots, yards, and workshops
         ]
     ) AS hail_transport ON roi.h3_index && hail_transport.h3_index
     LEFT JOIN (

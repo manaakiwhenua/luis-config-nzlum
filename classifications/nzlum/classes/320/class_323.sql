@@ -73,6 +73,17 @@ CREATE TEMPORARY VIEW class_323 AS (
             dvr_community.source_scale,
             NULL
         )::nzlum_type
+        WHEN hail_g1_.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[], -- lu_code_ancillary
+            8,
+            ARRAY[]::TEXT[], -- commod
+            ARRAY[]::TEXT[], -- manage
+            ARRAY[hail_g1_.source_data]::TEXT[],
+            hail_g1_.source_date,
+            hail_g1_.source_scale,
+            NULL
+        )::nzlum_type
         ELSE NULL
     END AS nzlum_type
     FROM roi
@@ -136,7 +147,13 @@ CREATE TEMPORARY VIEW class_323 AS (
         ) dvr_
         WHERE dvr_.community_improvements IS TRUE
     ) AS dvr_community ON roi.h3_index && dvr_community.h3_index
+    LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale
+        FROM hail
+        WHERE hail_category_ids && ARRAY['G1']
+    ) hail_g1_ ON roi.h3_index && hail_g1_.h3_index
     WHERE cemeteries.h3_index IS NOT NULL
        OR nz_facilities_.h3_index IS NOT NULL
        OR dvr_community.h3_index IS NOT NULL
+       OR hail_g1_.h3_index IS NOT NULL
 );

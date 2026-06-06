@@ -64,3 +64,62 @@ external_data:
     layer: "15"
     description: Eastern Area Managed Plantation Forests
     name: GWRC Plantation Forests (Eastern Area)
+
+  gwrc_resource_consents:
+    license: https://creativecommons.org/licenses/by/4.0/
+    attribution: Greater Wellington Regional Council
+    external_data_type: kart
+    geom_type: point
+    description: GWRC Resource Consents (LRIS 123385)
+      # Active status is 'Granted' (not 'Current' — unique to GWRC).
+      # Dairy shed effluent (~400 records): Purpose_Desc ~* '\bdairy shed effluent\b'
+      # AND RC_APT_DESC = 'DP - ANIMAL WASTE TO LAND'.
+    kart:
+      host: kart@data.koordinates.com
+      branch: main
+      commit: '`git rev-list -n 1 --first-parent --before="2026-06-01 00:00" main`'
+      remote: mwlcr/resource-consents
+    layer: resource-consents
+    indices:
+      - columns: [RCstatus]
+        type: btree
+        name: idx_btree_rcstatus
+      - columns: [RC_APT_DESC]
+        type: btree
+        name: idx_btree_rc_apt_desc
+    derived_columns:
+      - column: source_date
+        datatype: daterange
+        set_query: |-
+          CASE
+            WHEN commencement_date IS NULL OR commencement_date = ''
+            THEN NULL::daterange
+            WHEN GREATEST(
+                TO_DATE(NULLIF("ElapsedDate", ''), 'DD/MM/YYYY'),
+                TO_DATE(NULLIF("ExpiredDate", ''), 'DD/MM/YYYY')
+            ) IS NULL
+            THEN daterange(
+                TO_DATE(commencement_date, 'DD/MM/YYYY'),
+                TO_DATE(commencement_date, 'DD/MM/YYYY'),
+                '[]'
+            )
+            WHEN TO_DATE(commencement_date, 'DD/MM/YYYY') > GREATEST(
+                TO_DATE(NULLIF("ElapsedDate", ''), 'DD/MM/YYYY'),
+                TO_DATE(NULLIF("ExpiredDate", ''), 'DD/MM/YYYY')
+            )
+            THEN NULL::daterange
+            ELSE daterange(
+                TO_DATE(commencement_date, 'DD/MM/YYYY'),
+                GREATEST(
+                    TO_DATE(NULLIF("ElapsedDate", ''), 'DD/MM/YYYY'),
+                    TO_DATE(NULLIF("ExpiredDate", ''), 'DD/MM/YYYY')
+                ),
+                '[]'
+            )
+          END
+      - column: source_data
+        datatype: text
+        set_query: "'GWRC consents'::TEXT"
+      - column: source_scale
+        datatype: int4range
+        set_query: "'[1,200]'::int4range"

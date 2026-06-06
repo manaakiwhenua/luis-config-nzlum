@@ -15,6 +15,17 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
             marine_farms.source_scale,
             NULL
         )::nzlum_type
+        WHEN intensive_livestock_consents_.h3_index IS NOT NULL
+        THEN ROW(
+            ARRAY[]::TEXT[],
+            4,
+            intensive_livestock_consents_.commod,
+            ARRAY[]::TEXT[],
+            ARRAY[intensive_livestock_consents_.source_data]::TEXT[],
+            intensive_livestock_consents_.source_date,
+            intensive_livestock_consents_.source_scale,
+            NULL
+        )::nzlum_type
         WHEN (
             linz_dvr_.actual_property_use IN ('0', '00', '01', '1', '10', '16')
             AND (
@@ -91,6 +102,10 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
     FROM roi
     LEFT JOIN marine_farms ON roi.h3_index && marine_farms.h3_index
     LEFT JOIN (
+        SELECT h3_index, source_data, source_date, source_scale, commod
+        FROM intensive_livestock_consents
+    ) AS intensive_livestock_consents_ ON roi.h3_index && intensive_livestock_consents_.h3_index
+    LEFT JOIN (
         SELECT
             h3_index,
             source_data,
@@ -109,5 +124,7 @@ CREATE TEMPORARY VIEW class_260 AS ( -- Intensive animal production
         SELECT h3_index, source_data, source_date, source_scale
         FROM horse_training_properties_
     ) AS horse_training_properties_ ON roi.h3_index && horse_training_properties_.h3_index
-    WHERE marine_farms.h3_index IS NOT NULL OR linz_dvr_.h3_index IS NOT NULL
+    WHERE marine_farms.h3_index IS NOT NULL
+       OR intensive_livestock_consents_.h3_index IS NOT NULL
+       OR linz_dvr_.h3_index IS NOT NULL
 );
