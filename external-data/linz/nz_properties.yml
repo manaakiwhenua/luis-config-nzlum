@@ -25,18 +25,29 @@ _dvr_public: &dvr_public
   <<: *linz_nz_properties
   layer: layer-114085
 
-_dvr_local: &dvr_local
+_dvr_local_202406:
   <<: *linz_nz_properties_local_restricted
   layer: NZ_Properties__National_District_Valuation_Roll__restricted_access_
   file:
-    # local: /home/lawr/dvr-restricted/nz-properties-national-district-valuation-roll-restricted-ac.gdb # June 2024
+    local: /home/lawr/dvr-restricted/nz-properties-national-district-valuation-roll-restricted-ac.gdb
+
+_dvr_local_202505:
+  <<: *linz_nz_properties_local_restricted
+  layer: NZ_Properties__National_District_Valuation_Roll__restricted_access_
+  file:
     local: /home/lawr/dvr-restricted/nz-properties-national-district-valuation-roll-restricted-ac-20250508.gdb
+
+_dvr_local_202605: &dvr_local
+  <<: *linz_nz_properties_local_restricted
+  layer: nz_properties_national_district_valuation_roll_restricted_ac
+  file:
+    local: /home/lawr/dvr-restricted/nz-properties-national-district-valuation-roll-restricted-ac.gpkg
 
 external_data:
 
   unit_of_property:
-    # <<: *uop_public
-    <<: *uop_local
+    <<: *uop_public
+    # <<: *uop_local
     description: |-
       This pilot dataset provides a representation of the boundaries of all known properties in New Zealand.
     geom_type: multipolygon

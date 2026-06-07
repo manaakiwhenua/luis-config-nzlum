@@ -2,7 +2,7 @@ region_of_interest:
   id: urban_rural_2025
 
 h3:
-  resolution: 13
+  resolution: 11
 
 classifications:
   nzlum:
