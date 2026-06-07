@@ -27,7 +27,7 @@ external_data:
         set_query: "to_tsvector('english', COALESCE(\"Activity_Purpose\", ''))"
       - column: source_date
         datatype: daterange
-        set_query: "daterange(NULL::DATE, \"Expiry_Date\"::DATE, '(]')"
+        set_query: "daterange(NULL::DATE, TO_DATE(NULLIF(\"Expiry_Date\", ''), 'DD/MM/YYYY'), '(]')"
       - column: source_data
         datatype: text
         set_query: "'ORC consents'::TEXT"
