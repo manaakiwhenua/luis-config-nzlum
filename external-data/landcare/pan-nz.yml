@@ -25,13 +25,25 @@ external_data:
         set_query: |-
           (CASE
             WHEN source_start_date IS NOT NULL AND source_end_date IS NOT NULL
-              THEN daterange(source_start_date::DATE, source_end_date::DATE, '[]')
+              THEN daterange(
+                to_timestamp(source_start_date::FLOAT8 / 1000)::DATE,
+                to_timestamp(source_end_date::FLOAT8 / 1000)::DATE,
+                '[]'
+              )
             WHEN source_start_date IS NULL AND source_end_date IS NULL
-              THEN daterange(NULL, '2025-04-15'::DATE, '(]')
+              THEN daterange(NULL, '2026-05-12'::DATE, '(]')
             WHEN source_start_date IS NOT NULL
-              THEN daterange(source_start_date::DATE, GREATEST(source_start_date::DATE, '2025-04-15'::DATE), '[]')
+              THEN daterange(
+                to_timestamp(source_start_date::FLOAT8 / 1000)::DATE,
+                GREATEST(to_timestamp(source_start_date::FLOAT8 / 1000)::DATE, '2026-05-12'::DATE),
+                '[]'
+              )
             WHEN source_end_date IS NOT NULL
-              THEN daterange(LEAST(source_end_date::DATE, '2025-04-15'::DATE), source_end_date::DATE, '[]')
+              THEN daterange(
+                LEAST(to_timestamp(source_end_date::FLOAT8 / 1000)::DATE, '2026-05-12'::DATE),
+                to_timestamp(source_end_date::FLOAT8 / 1000)::DATE,
+                '[]'
+              )
           END)
       - column: source_scale
         datatype: int4range

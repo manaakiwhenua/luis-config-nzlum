@@ -90,7 +90,7 @@ external_data:
         set_query: "'2017-08-31'::DATE"
       - column: source_date
         datatype: daterange
-        set_query: daterange('2017-06-01'::DATE, '2017-08-31'::DATE::DATE, '[]')
+        set_query: daterange('2017-06-01'::DATE, '2017-08-31'::DATE, '[]')
       - column: source_data
         datatype: text
         set_query: "'ES'::TEXT"

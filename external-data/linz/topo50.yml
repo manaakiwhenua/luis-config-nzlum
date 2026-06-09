@@ -166,14 +166,14 @@ external_data:
     description: LINZ Topo 1:50k River Centrelines
     layer: layer-50327
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5, 'endcap=round join=round')::geometry AS geom FROM topo50_river
 
   topo50_chatham_river:
     <<: *linz_topo50
     description: LINZ Topo Chatham Island 1:50k River Centrelines
     layer: layer-50098
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5, 'endcap=round join=round')::geometry AS geom FROM topo50_chatham_river
 
   topo50_river_pol:
     <<: *linz_topo50
@@ -192,14 +192,14 @@ external_data:
     description: LINZ Topo 1:50k Drain Centrelines
     layer: layer-50262
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 3, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 3, 'endcap=round join=round')::geometry AS geom FROM topo50_drain
 
   topo50_chatham_drain:
     <<: *linz_topo50
     description: LINZ Topo 1:50k Chatham Island Drain Centrelines
     layer: layer-50077
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 3, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 3, 'endcap=round join=round')::geometry AS geom FROM topo50_chatham_drain
 
   topo50_canal:
     <<: *linz_topo50
@@ -217,7 +217,7 @@ external_data:
     layer: layer-50329
     geom_type: multipolygon
     # clip: false
-    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 1.5 * lane_count + 1.5, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 1.5 * lane_count + 1.5, 'endcap=round join=round')::geometry AS geom FROM topo50_roads
     indices:
       - columns: [geom]
         type: gist
@@ -228,7 +228,7 @@ external_data:
     description: LINZ Topo 1:50k Chatham Island Road Centrelines
     layer: layer-50100
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 1.5 * lane_count + 1.5, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 1.5 * lane_count + 1.5, 'endcap=round join=round')::geometry AS geom FROM topo50_chatham_roads
     indices:
       - columns: [geom]
         type: gist
@@ -249,14 +249,14 @@ external_data:
     description: LINZ Topo 1:50k Railway Centrelines
     layer: layer-50319
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5 * CASE WHEN track_type = 'single' THEN 1 ELSE 2 END, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 5 * CASE WHEN track_type = 'single' THEN 1 ELSE 2 END, 'endcap=round join=round')::geometry AS geom FROM topo50_railway
 
   topo50_dredge_tailing_centrelines:
     <<: *linz_topo50
     description: LINZ Topo 1:50k Dredge Tailing Centrelines (buffered 50 m)
     layer: layer-50264
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 50, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(ST_CurveToLine(geom)::geography, 50, 'endcap=round join=round')::geometry AS geom FROM topo50_dredge_tailing_centrelines
 
   topo50_quarries:
     <<: *linz_topo50
@@ -425,7 +425,7 @@ external_data:
     layer: layer-50238
     geom_type: multipolygon
     where: "type = 'lighthouse' AND status NOT IN ('derelict', 'historic')"
-    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom FROM topo50_beacons
 
   topo50_chatham_beacons:
     <<: *linz_topo50
@@ -434,7 +434,7 @@ external_data:
     layer: layer-50064
     geom_type: multipolygon
     where: "type = 'lighthouse' AND status NOT IN ('derelict', 'historic')"
-    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom FROM topo50_chatham_beacons
 
   topo50_masts:
     <<: *linz_topo50
@@ -442,7 +442,7 @@ external_data:
     description: LINZ Topo 1:50k Mast Points (antenna masts ≥10 m or significant), buffered 10 m
     layer: layer-50299
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom FROM topo50_masts
 
   topo50_chatham_masts:
     <<: *linz_topo50
@@ -450,4 +450,4 @@ external_data:
     description: LINZ Topo Chatham Island 1:50k Mast Points (antenna masts ≥10 m or significant), buffered 10 m
     layer: layer-50090
     geom_type: multipolygon
-    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom
+    replace_table: SELECT ogc_fid, ST_Buffer(geom::geography, 10, 'endcap=round join=round')::geometry AS geom FROM topo50_chatham_masts
