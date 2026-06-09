@@ -7,6 +7,16 @@ __publisher_linz: &linz
 
 external_data:
 
+  territorial_sea: # Original table is curve polylines; replace with polygons
+    <<: *linz
+    description: LINZ 12 Mile Territorial Sea
+    layer: layer-50846
+    geom_type: multipolygon
+    replace_table: |-
+      WITH g AS (SELECT (ST_Dump(ST_BuildArea(ST_Union(ST_CurveToLine(geom))))).geom AS geom FROM territorial_sea)
+      SELECT ROW_NUMBER() OVER (ORDER BY g.geom) AS ogc_fid, g.geom
+      FROM g
+
   railway_parcels:
     <<: *linz
     description: NZ Parcels (all cadastral parcel polygons) - current, primary, railway
