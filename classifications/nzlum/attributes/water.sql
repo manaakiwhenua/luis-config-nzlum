@@ -1,6 +1,7 @@
 CREATE TEMPORARY VIEW water_features AS (
     SELECT * FROM (
-        SELECT roi.h3_index,
+        SELECT DISTINCT ON (roi.h3_index)
+        roi.h3_index,
         COALESCE(
             rivers.feature,
             rivers_polylines.feature,
@@ -28,6 +29,10 @@ CREATE TEMPORARY VIEW water_features AS (
             reefs.feature,
 
             CASE
+                WHEN (
+                    land.h3_index IS NULL
+                    AND sand.h3_index IS NOT NULL
+                ) THEN 'sand' -- Coastal sand
                 WHEN (
                     land.h3_index IS NULL
                     AND sand.h3_index IS NULL
@@ -189,6 +194,28 @@ CREATE TEMPORARY VIEW water_features AS (
         ) AS reefs
         ON roi.h3_index && reefs.h3_index
     -- TODO estuary?
+        ORDER BY
+            -- A single roi.h3_index can match more than one row across these joins
+            -- (e.g. compacted/coarser h3 cells from adjacent or overlapping source
+            -- features both satisfying &&). DISTINCT ON + this ORDER BY collapses
+            -- such duplicates to one row, mirroring the COALESCE priority above,
+            -- with `feature` itself as a final deterministic tie-break.
+            roi.h3_index,
+            rivers.feature IS NULL,
+            rivers_polylines.feature IS NULL,
+            ecan_braided_rivers_.water IS NULL,
+            fenz_lakes_.water IS NULL,
+            lakes.feature IS NULL,
+            lagoons.feature IS NULL,
+            ponds.feature IS NULL,
+            swamps.feature IS NULL,
+            mangroves.feature IS NULL,
+            drains.feature IS NULL,
+            canals.feature IS NULL,
+            ice.feature IS NULL,
+            mud.feature IS NULL,
+            reefs.feature IS NULL,
+            feature
     )
     WHERE feature IS NOT NULL
 );
