@@ -81,10 +81,19 @@ CREATE TEMPORARY VIEW class_221 AS (
             WHEN irrigation_.irrigation_type LIKE 'Drip%' THEN 3
             ELSE 0
         END
-        + CASE -- Very low capability land (LUC 0 or 8) unlikely for dairy; LUC 7 minor penalty
-            WHEN nzlri_lowcapability.lcorrclass = 0 THEN NULL -- Impossible
-            WHEN nzlri_lowcapability.lcorrclass = 8 THEN 8
-            WHEN nzlri_lowcapability.lcorrclass = 7 THEN 3
+        + CASE -- NZLRI LUC: high-capability land corroborates dairy; low-capability land is penalised (LUC 0 impossible)
+            WHEN nzlri_luc_.lcorrclass = 0 THEN NULL -- Impossible
+            WHEN nzlri_luc_.lcorrclass = 8 THEN 8
+            WHEN nzlri_luc_.lcorrclass = 7 THEN 3
+            WHEN nzlri_luc_.lcorrclass = 6 THEN 2
+            WHEN nzlri_luc_.lcorrclass BETWEEN 1 AND 3 THEN -2 -- High-capability land confirms dairy
+            ELSE 0 -- LUC 4-5 or no coverage: neutral
+        END
+        + CASE -- NZLRI slope: flat/undulating terrain confirms dairy character; steep terrain is penalised. NULL = no coverage, neutral.
+            WHEN left(nzlri_slope_.slope, 1) IN ('A', 'B') THEN -2
+            WHEN left(nzlri_slope_.slope, 1) = 'C' THEN -1
+            WHEN left(nzlri_slope_.slope, 1) = 'D' THEN 0
+            WHEN left(nzlri_slope_.slope, 1) IN ('E', 'F', 'G', 'H') THEN 4
             ELSE 0
         END
         + CASE -- Winter forage weakly corroborates dairy support land use
@@ -112,7 +121,8 @@ CREATE TEMPORARY VIEW class_221 AS (
             dairy_effluent_discharge.source_data,
             pastoral_consents.source_data,
             winter_forage_.source_data,
-            nzlri_lowcapability.source_data
+            nzlri_luc_.source_data,
+            nzlri_slope_.source_data
         ]::TEXT[],
         range_merge(datemultirange(VARIADIC ARRAY_REMOVE(ARRAY[
             linz_dvr_.source_date,
@@ -122,7 +132,8 @@ CREATE TEMPORARY VIEW class_221 AS (
             dairy_effluent_discharge.source_date,
             pastoral_consents.source_date,
             winter_forage_.source_date,
-            nzlri_lowcapability.source_date
+            nzlri_luc_.source_date,
+            nzlri_slope_.source_date
         ], NULL)))::daterange,
         range_merge(int4multirange(VARIADIC ARRAY_REMOVE(ARRAY[
             linz_dvr_.source_scale,
@@ -132,7 +143,8 @@ CREATE TEMPORARY VIEW class_221 AS (
             dairy_effluent_discharge.source_scale,
             pastoral_consents.source_scale,
             winter_forage_.source_scale,
-            nzlri_lowcapability.source_scale
+            nzlri_luc_.source_scale,
+            nzlri_slope_.source_scale
         ], NULL)))::int4range,
         NULL
     )::nzlum_type AS nzlum_type
@@ -196,8 +208,14 @@ CREATE TEMPORARY VIEW class_221 AS (
         FROM nzlri_luc
         JOIN nzlri_luc_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
-        AND lcorrclass IN (0, 7, 8)
-    ) AS nzlri_lowcapability ON roi.h3_index && nzlri_lowcapability.h3_index
+    ) AS nzlri_luc_ ON roi.h3_index && nzlri_luc_.h3_index
+    LEFT JOIN (
+        -- NZLRI slope: A (flat) through H (precipitous). Absent for offshore islands (Chathams, Stewart).
+        SELECT h3_index, slope, source_data, source_date, source_scale
+        FROM nzlri_slope
+        JOIN nzlri_slope_h3 USING (ogc_fid)
+        WHERE :parent::h3index = h3_partition
+    ) AS nzlri_slope_ ON roi.h3_index && nzlri_slope_.h3_index
     WHERE dairy_effluent_discharge.h3_index IS NOT NULL
        OR linz_dvr_.h3_index IS NOT NULL
        OR lum_dairy.h3_index IS NOT NULL

@@ -118,7 +118,7 @@ classifications:
       - winter_crop_gdc
       - fosal_areas_tairawhiti
       
-      - es_hail
+      - es_slu
       - es_winter_forage_2017
 
       - gwrc_plantation_forests_western
@@ -126,7 +126,7 @@ classifications:
       - gwrc_resource_consents
 
       - wrc_land_use_consents
-      # - wrc_discharge_permits # low ag signal
+      - wrc_discharge_permits
 
       - orc_all_consents
 

@@ -113,23 +113,26 @@ CREATE TEMPORARY VIEW class_223 AS (
                     AND lum_.subid_2020 <> '504 - Ungrazed'
                 )
                 THEN -2 -- Very positive evidence
-                WHEN irrigation_.status = 'Current' AND irrigation_.confidence IN ('High', 'Medium')
-                THEN -2 -- Very positive evidence
-                WHEN irrigation_.h3_index IS NOT NULL
-                THEN -1 -- Somewhat positive evidence
                 WHEN lum_.lucid_2020 IN (
                     '71 - Natural Forest',
                     '72 - Planted Forest - Pre 1990',
                     '73 - Post 1989 Forest'
                 )
-                THEN 2 -- Negative evidence
+                THEN NULL -- Forested; impossible
                 WHEN (
                     topo50_sand_h3.h3_index IS NOT NULL
                     OR topo50_land_h3.h3_index IS NULL
-                ) THEN NULL -- Impossible
+                ) THEN NULL -- Non-terrestrial; impossible
                 WHEN lcdb_.h3_index IS NOT NULL
                 THEN 0 -- Neutral evidence
                 ELSE 1 -- Negative evidence
+            END
+            + CASE -- Irrigation modifier
+                WHEN irrigation_.status = 'Current' AND irrigation_.confidence IN ('High', 'Medium')
+                THEN -2 -- Very positive evidence
+                WHEN irrigation_.h3_index IS NOT NULL
+                THEN -1 -- Somewhat positive evidence
+                ELSE 0
             END
             + CASE -- Lower confidence for land in hydro parcel
                 WHEN hydro_parcels_h3.h3_index IS NOT NULL
@@ -240,7 +243,11 @@ CREATE TEMPORARY VIEW class_223 AS (
         LEFT JOIN (
             SELECT h3_index, source_data, source_date, source_scale
             FROM lcdb_
-            WHERE Class_2023 IN (10, 12, 15, 16, 20, 21, 30, 40, 41, 44, 51, 52, 55, 56, 58, 80, 81, 64)
+            WHERE Class_2023 IN (
+                41, -- Low Producing Grassland
+                44, -- Depleted Grassland
+                55 -- Sub-Alpine Shrubland
+            )
         ) AS lcdb_ ON roi.h3_index && lcdb_.h3_index
         LEFT JOIN (
             SELECT

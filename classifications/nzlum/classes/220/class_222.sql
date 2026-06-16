@@ -148,8 +148,10 @@ CREATE TEMPORARY VIEW class_222 AS (
                 WHEN consents_forestry.afforestation_flag IS TRUE THEN 3
                 ELSE 0
             END
-            + CASE -- LUM dairy subid contradicts intensive dry stock classification
-                WHEN lum_.subid_2020 = '502 - Grazed - dairy' THEN 4
+            + CASE -- LUM dairy subid or pastoral consent dairy commodity contradicts intensive dry stock; still possible (dairy run-off/wintering block) but less likely
+                WHEN lum_.subid_2020 = '502 - Grazed - dairy'
+                    OR pastoral_consents.commod && ARRAY['cattle dairy']::TEXT[]
+                THEN 2
                 ELSE 0
             END
             + -- NZLRI slope: flat/undulating terrain confirms intensive character;
