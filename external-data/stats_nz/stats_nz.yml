@@ -58,3 +58,138 @@ external_data:
     where: IUR2026_V1_00_NAME NOT IN ('Rural other', 'Oceanic', 'Inland water', 'Inlet')
 
   urban_current: *urban_current
+
+  meshblocks_2026: &meshblocks_current
+    <<: *stats_nz
+    layer: layer-123519
+    geom_type: multipolygon
+    indices:
+      - columns: [MB2026_V1_00]
+        type: btree
+        name: idx_btree_MB2026_V1_00
+      - columns: [SA12026_V1_00]
+        type: btree
+        name: idx_btree_SA12026_V1_00
+      - columns: [SA22026_V1_00]
+        type: btree
+        name: idx_btree_SA22026_V1_00
+      - columns: [SA32026_V1_00]
+        type: btree
+        name: idx_btree_SA32026_V1_00
+      - columns: [UR2026_V1_00]
+        type: btree
+        name: idx_btree_UR2026_V1_00
+      - columns: [IUR2026_V1_00]
+        type: btree
+        name: idx_btree_IUR2026_V1_00
+      - columns: [CB2026_V1_00]
+        type: btree
+        name: idx_btree_CB2026_V1_00
+      - columns: [CON2026_V1_00]
+        type: btree
+        name: idx_btree_CON2026_V1_00
+      - columns: [MCON2026_V1_00]
+        type: btree
+        name: idx_btree_MCON2026_V1_00
+      - columns: [MWARD2026_V1_00]
+        type: btree
+        name: idx_btree_MWARD2026_V1_00
+      - columns: [WARD2026_V1_00]
+        type: btree
+        name: idx_btree_WARD2026_V1_00
+      - columns: [REGC2025_V1_00]
+        type: btree
+        name: idx_btree_REGC2025_V1_00
+      - columns: [TA2026_V1_00]
+        type: btree
+        name: idx_btree_TA2026_V1_00
+      - columns: [TALB2026_V1_00]
+        type: btree
+        name: idx_btree_TALB2026_V1_00
+      - columns: [TASUB2026_V1_00]
+        type: btree
+        name: idx_btree_TASUB2026_V1_00
+      - columns: [LANDWATER]
+        type: btree
+        name: idx_btree_LANDWATER
+      - columns: [FUA2026_V1_00]
+        type: btree
+        name: idx_btree_FUA2026_V1_00
+      - columns: [IFUA2026_V1_00]
+        type: btree
+        name: idx_btree_IFUA2026_V1_00
+      - columns: [TFUA2026_V1_00]
+        type: btree
+        name: idx_btree_TFUA2026_V1_00
+      - columns: [IUA2026_V1_00]
+        type: btree
+        name: idx_btree_IUA2026_V1_00
+    description: Meshblocks 2026
+
+  regc2025_01: # Northland
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '01'
+
+  regc2025_02: # Auckland
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '02'
+
+  regc2025_03: # Waikato
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '03'
+
+  regc2025_04: # Bay of Plenty
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '04'
+
+  regc2025_05: # Gisborne
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '05'
+
+  regc2025_06: # Hawke's Bay
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '06'
+
+  regc2025_07: # Taranaki
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '07'
+
+  regc2025_08: # Manawatu-Wanganui
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '08'
+
+  regc2025_09: # Wellington
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '09'
+
+  regc2025_12: # West Coast
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '12'
+
+  regc2025_13: # Canterbury
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '13'
+
+  regc2025_14: # Otago
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '14'
+
+  regc2025_15: # Southland
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '15'
+
+  regc2025_16: # Tasman
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '16'
+
+  regc2025_17: # Nelson
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '17'
+
+  regc2025_18: # Marlborough
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '18'
+
+  regc2025_99: # Area Outside Region
+    <<: *meshblocks_current
+    where: REGC2025_V1_00 = '99'
