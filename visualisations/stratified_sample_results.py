@@ -8,28 +8,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.cm as cm
 
-def main(gpkg_path):
+def main(gpkg_path, truth_col='truth', truth_values=None):
     # Read data
     gdf = gpd.read_file(gpkg_path)
 
     # Validate expected columns
-    for col in ['lu_code', 'confidence', 'truth']:
+    for col in ['lu_code', 'confidence', truth_col]:
         if col not in gdf.columns:
             raise ValueError(f"Column '{col}' not found in the dataset")
 
-    # # Group and count
-    counts = gdf.groupby(['lu_code', 'truth', 'confidence']).size().reset_index(name='count')
+    if truth_values is None:
+        truth_values = sorted(gdf[truth_col].dropna().unique().tolist())
 
-    # Total per lu_code x truth
-    # counts['total'] = counts.groupby(['lu_code', 'truth'])['count'].transform('sum')
-    # counts['proportion'] = counts['count'] / counts['total']
+    # # Group and count
+    counts = gdf.groupby(['lu_code', truth_col, 'confidence']).size().reset_index(name='count')
 
     # Total per lu_code (ignoring truth)
     total_per_lu = counts.groupby('lu_code')['count'].transform('sum')
     counts['proportion'] = counts['count'] / total_per_lu
 
     # Pivot table
-    pivot_df = counts.pivot_table(index=['lu_code', 'truth'],
+    pivot_df = counts.pivot_table(index=['lu_code', truth_col],
                                   columns='confidence',
                                   values='proportion',
                                   fill_value=0).reset_index()
@@ -40,14 +39,12 @@ def main(gpkg_path):
     fig, ax = plt.subplots(figsize=(12, 6))
 
     lu_codes = sorted(gdf['lu_code'].unique())[1:] # Exclude null class
-    truth_values = ['Yes','Maybe','No']
     width = 0.8 / len(truth_values)
     offsets = np.linspace(-0.4 + width/2, 0.4 - width/2, len(truth_values))
 
-
     for i, truth_val in enumerate(truth_values):
-        subset = pivot_df[pivot_df['truth'] == truth_val]
-        all_lu_codes_df = pd.DataFrame({'lu_code': sorted(lu_codes), 'truth': truth_val})
+        subset = pivot_df[pivot_df[truth_col] == truth_val]
+        all_lu_codes_df = pd.DataFrame({'lu_code': sorted(lu_codes), truth_col: truth_val})
         subset = all_lu_codes_df.merge(subset, on='lu_code', how='left').fillna(0.0)
         x = np.arange(len(subset))
         bottom = np.zeros(len(subset))
@@ -59,7 +56,7 @@ def main(gpkg_path):
             bottom += heights
 
         for j, lu in enumerate(subset['lu_code']):
-            ax.text(x[j] + offsets[i], 1.02, truth_val[0].upper(), ha='center', fontsize=5, rotation=0)
+            ax.text(x[j] + offsets[i], 1.02, str(truth_val)[0].upper(), ha='center', fontsize=5, rotation=0)
 
     ax.set_xticks(np.arange(len(lu_codes)))
     ax.set_xticklabels(lu_codes, rotation=45, ha='right')
@@ -79,6 +76,9 @@ def main(gpkg_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Plot confidence distribution by land use code and truth labels.")
     parser.add_argument("gpkg", help="Path to the input GeoPackage file")
+    parser.add_argument("--truth-col", default="truth", help="Column name to use as truth attribute (default: truth)")
+    parser.add_argument("--truth-values", nargs="+", default=None, metavar="VALUE",
+                        help="Ordered list of truth values to display (default: all unique values, sorted)")
     args = parser.parse_args()
-    main(args.gpkg)
+    main(args.gpkg, truth_col=args.truth_col, truth_values=args.truth_values)
 
