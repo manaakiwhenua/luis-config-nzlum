@@ -56,8 +56,8 @@ CREATE TEMPORARY VIEW hail AS (
     ),
     _es_hail AS (
         SELECT h3_index, hail_category_count, hail_category_ids, source_date, source_data, source_scale
-        FROM es_hail
-        INNER JOIN es_hail_h3 USING (ogc_fid)
+        FROM es_slu
+        INNER JOIN es_slu_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
     )
     SELECT * FROM _hbrc_hail
