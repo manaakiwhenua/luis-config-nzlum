@@ -13,11 +13,11 @@ external_data:
     layer: layer-50846
     geom_type: multipolygon
     replace_table: |-
-      WITH g AS (SELECT (ST_Dump(ST_BuildArea(ST_Union(ST_CurveToLine(geom))))).geom AS geom FROM territorial_sea)
+      WITH g AS (SELECT (ST_Dump(ST_BuildArea(ST_Union(ST_CurveToLine(geom))))).geom AS geom FROM :nln)
       SELECT ROW_NUMBER() OVER (ORDER BY g.geom) AS ogc_fid, g.geom
       FROM g
 
-  territorial_sea_outlying_only: # Original table is curve polylines; replace with polygons
+  territorial_sea_outlying_only: &territorial_sea_outlying_only
     <<: *territorial_sea
     description: LINZ 12 Mile Territorial Sea (Kermadec (/222), Antipodes (/3111), Bounty (/3111), Campbell (/3111), Auckland (/286), and Snares (/2411)
     where: |-
@@ -25,6 +25,9 @@ external_data:
       OR \"bp1\" LIKE '%/3111'
       OR \"bp1\" LIKE '%/286'
       OR \"bp1\" LIKE '%/2411'
+
+  regc2025_999: # Convenient alias for "everything else beyond StatsNZ's idea of everything else"
+    <<: *territorial_sea_outlying_only
 
   railway_parcels:
     <<: *linz
