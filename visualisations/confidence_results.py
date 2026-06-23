@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.cm as cm
 
-CMAP = 'RdGy_r'
+CMAP = 'RdBu_r'
 
 def bin_confidence(conf):
     return (int(conf) - 1) // 3 + 1  # Bin 1 to 4

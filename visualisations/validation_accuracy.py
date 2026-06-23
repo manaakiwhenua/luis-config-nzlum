@@ -57,9 +57,9 @@ def _cat_color(cat, true_vals, secondary_vals, maybe_vals):
     if cat in maybe_vals:
         return '#fdae61'
     if cat in secondary_vals:
-        return '#a6d96a'
+        return '#56B4E9'
     if cat in true_vals:
-        return '#1a9641'
+        return '#0072B2'
     return '#d73027'
 
 
@@ -78,24 +78,36 @@ def plot_calibration(ax, gdf, truth_col, confidence_col, area_col, true_vals, se
     cat_order = sorted(all_cats, key=lambda c: _cat_sort_key(c, true_vals, secondary_vals, maybe_vals))
 
     conf_vals = sorted(gdf[confidence_col].dropna().unique())
-    x = np.arange(len(conf_vals))
+
+    total_per_conf = np.array([
+        gdf.loc[gdf[confidence_col] == cv, area_col].sum()
+        for cv in conf_vals
+    ])
+    grand_total = total_per_conf.sum()
+    widths = np.log1p(total_per_conf) / np.log1p(total_per_conf).sum()
+    lefts = np.concatenate([[0], np.cumsum(widths[:-1])])
+    centers = lefts + widths / 2
+
+    gap = 0.015
     bottom = np.zeros(len(conf_vals))
 
     for cat in cat_order:
-        heights = np.array([
+        proportions = np.array([
             gdf.loc[(gdf[confidence_col] == cv) & (gdf[truth_col] == cat), area_col].sum() /
-            max(1e-9, gdf.loc[gdf[confidence_col] == cv, area_col].sum())
-            for cv in conf_vals
+            max(1e-9, total_per_conf[i])
+            for i, cv in enumerate(conf_vals)
         ])
-        ax.bar(x, heights, bottom=bottom,
+        ax.bar(lefts, proportions, width=widths - gap, bottom=bottom, align='edge',
                color=_cat_color(cat, true_vals, secondary_vals, maybe_vals),
-               label=str(cat), width=0.65)
-        bottom += heights
+               label=str(cat))
+        bottom += proportions
 
-    ax.set_xticks(x)
+    ax.set_xticks(centers)
     ax.set_xticklabels([str(int(cv)) for cv in conf_vals])
-    ax.set_xlabel("Confidence score (1 = most confident)")
-    ax.set_ylabel("Proportion of area")
+    ax.set_xlabel("Confidence score (1 = most confident)\n(bar width ∝ log area in bin)")
+    ax.set_ylabel("Proportion of bin area")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
     ax.set_title("Validation outcome by confidence score")
     ax.legend(loc='upper left', fontsize=8, title="Outcome")
     ax.yaxis.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
@@ -106,7 +118,7 @@ def _draw_accuracy_panel(ax, acc, threshold, title):
     y = np.arange(len(acc))
 
     dot_colors = [
-        '#1a9641' if row['ci_lo'] > threshold else
+        '#0072B2' if row['ci_lo'] > threshold else
         '#d73027' if row['ci_hi'] < threshold else
         '#fdae61'
         for _, row in acc.iterrows()
@@ -138,7 +150,7 @@ def _draw_accuracy_panel(ax, acc, threshold, title):
     ax.set_xlim(-0.02, 1.02)
 
     legend_items = [
-        mlines.Line2D([], [], color='#1a9641', marker='o', linestyle='None', label='Passes'),
+        mlines.Line2D([], [], color='#0072B2', marker='o', linestyle='None', label='Passes'),
         mlines.Line2D([], [], color='#fdae61', marker='o', linestyle='None', label='Marginal'),
         mlines.Line2D([], [], color='#d73027', marker='o', linestyle='None', label='Fails'),
         mlines.Line2D([], [], marker='o', color='w', markerfacecolor='w',

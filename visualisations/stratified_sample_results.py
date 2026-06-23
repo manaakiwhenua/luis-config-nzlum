@@ -34,7 +34,7 @@ def main(gpkg_path, truth_col='truth', truth_values=None):
                                   fill_value=0).reset_index()
 
     # Plotting setup
-    cmap = cm.get_cmap('RdGy_r', 12)
+    cmap = cm.get_cmap('RdBu_r', 12)
     colors = [cmap(i) for i in range(12)]
     fig, ax = plt.subplots(figsize=(12, 6))
 
