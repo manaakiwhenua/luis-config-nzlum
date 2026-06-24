@@ -8,7 +8,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             source_data,
             source_scale,
             animal_count,
-            manage
+            manage,
+            NULL::TEXT AS comment
         FROM ecan_effluent_dairy_discharge_area_h3
         INNER JOIN ecan_effluent_dairy_discharge_area USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
@@ -28,7 +29,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             source_data,
             source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY['irrigation']::TEXT[] AS manage
+            ARRAY['irrigation']::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM hbrc_all_consent_polygons -- Spatially imprecise
         INNER JOIN hbrc_all_consent_polygons_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
@@ -50,7 +52,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             c.source_data,
             c.source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM wrc_land_use_consents c
         JOIN wrc_land_use_consents_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
         JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
@@ -73,7 +76,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             c.source_data,
             c.source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM wrc_discharge_permits c
         JOIN wrc_discharge_permits_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
         JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
@@ -96,7 +100,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             c.source_data,
             c.source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM gwrc_resource_consents c
         JOIN gwrc_resource_consents_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
         JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
@@ -121,7 +126,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             c.source_data,
             c.source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM orc_all_consents c
         JOIN orc_all_consents_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
         JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
@@ -144,7 +150,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             source_data,
             source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM mdc_discharge_polygon
         JOIN mdc_discharge_polygon_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
@@ -160,7 +167,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             c.source_data,
             c.source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM mdc_discharge_point c
         JOIN mdc_discharge_point_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
         JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
@@ -183,7 +191,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             source_data,
             source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM wcrc_consent_shapes
         JOIN wcrc_consent_shapes_h3 USING (ogc_fid)
         WHERE :parent::h3index = h3_partition
@@ -199,7 +208,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             c.source_data,
             c.source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM wcrc_consent_points c
         JOIN wcrc_consent_points_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
         JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
@@ -222,7 +232,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             c.source_data,
             c.source_scale,
             NULL::INTEGER AS animal_count,
-            ARRAY[]::TEXT[] AS manage
+            ARRAY[]::TEXT[] AS manage,
+            NULL::TEXT AS comment
         FROM bop_all_consents c
         JOIN bop_all_consents_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
         JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
@@ -237,6 +248,45 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
         AND c.Category = 'Dairy'
         ORDER BY uop_h3.h3_index, upper(c.source_date) DESC NULLS LAST
     ),
+    trc_dairy AS (
+        SELECT DISTINCT ON (uop_h3.h3_index)
+            uop_h3.h3_index,
+            uop_h3.h3_partition,
+            c.source_date,
+            c.source_data,
+            c.source_scale,
+            NULL::INTEGER AS animal_count,
+            ARRAY_REMOVE(ARRAY[
+                CASE
+                    WHEN c.authorisation_tsvector @@ phraseto_tsquery('english', 'spray irrigation')
+                         THEN 'irrigation spray'
+                    WHEN c.authorisation_tsvector @@ to_tsquery('english', 'irrigation')
+                         THEN 'irrigation'
+                END
+            ], NULL)::TEXT[] AS manage,
+            CASE WHEN c.authorisation_tsvector @@ phraseto_tsquery('english', 'oxidation pond')
+                 THEN 'oxidation pond' END AS comment
+        FROM trc_discharge_permits c
+        JOIN trc_discharge_permits_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
+        JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
+        JOIN unit_of_property uop_inner ON uop_inner_h3.ogc_fid = uop_inner.ogc_fid
+            AND ST_Within(c.geom, uop_inner.geom)
+        JOIN unit_of_property uop_all ON uop_inner.unit_of_property_id = uop_all.unit_of_property_id
+        JOIN unit_of_property_h3 uop_h3 ON uop_all.ogc_fid = uop_h3.ogc_fid
+        WHERE :parent::h3index = c_h3.h3_partition
+        AND   :parent::h3index = uop_inner_h3.h3_partition
+        AND   :parent::h3index = uop_h3.h3_partition
+        AND c.status = 'Current'
+        AND (
+            (c.primaryindustrypurpose = 'Agriculture'
+             AND c.activity_subtype IN ('Land - Animal Waste', 'Land - Misc')
+             AND c.authorisation_tsvector @@ to_tsquery('english', '(dairy & effluent) | calves'))
+            OR
+            (c.activity_subtype = 'Land - Industry'
+             AND c.authorisation_tsvector @@ phraseto_tsquery('english', 'dairy effluent'))
+        )
+        ORDER BY uop_h3.h3_index, upper(c.source_date) DESC NULLS LAST
+    ),
     ecan_effluent_discharge_point AS (
         SELECT DISTINCT ON (uop_h3.h3_index)
             uop_h3.h3_index,
@@ -245,7 +295,8 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
             c.source_data,
             c.source_scale,
             c.animal_count,
-            c.manage
+            c.manage,
+            NULL::TEXT AS comment
         FROM ecan_effluent_dairy_discharge c
         JOIN ecan_effluent_dairy_discharge_h3 c_h3 ON c.ogc_fid = c_h3.ogc_fid
         JOIN unit_of_property_h3 uop_inner_h3 ON c_h3.h3_index && uop_inner_h3.h3_index
@@ -281,4 +332,6 @@ CREATE TEMPORARY VIEW dairy_effluent_discharge AS (
     SELECT * FROM wcrc_points_dairy
     UNION ALL
     SELECT * FROM bop_dairy
+    UNION ALL
+    SELECT * FROM trc_dairy
 );

@@ -43,8 +43,9 @@ external_data:
     external_data_type: kart
     geom_type: point
     description: TRC Resource Consents — Discharge Permits (LRIS 124289)
-      # Agriculture + animal waste subtypes indicate livestock discharge consents.
-      # No dairy-specific subcategory; generic pastoral discharge signal only.
+      # AuthorisationDescription free text identifies dairy operations via
+      # authorisation_tsvector (phrase 'dairy effluent'); also encodes manage
+      # signals (spray irrigation, oxidation pond). Filter on Status/Industry.
     kart:
       <<: *kart_mwlcr
       remote: mwlcr/taranaki-regional-council-resource-consents-current-discharge-permits-points
@@ -53,6 +54,9 @@ external_data:
       - columns: [PrimaryIndustryPurpose, Activity_Subtype]
         type: btree
         name: idx_btree_industry_subtype
+      - columns: [authorisation_tsvector]
+        type: gin
+        name: idx_gin_authorisation_tsvector
     derived_columns:
       - column: source_date
         datatype: daterange
@@ -63,3 +67,6 @@ external_data:
       - column: source_scale
         datatype: int4range
         set_query: "'[1,200]'::int4range"
+      - column: authorisation_tsvector
+        datatype: tsvector
+        set_query: "to_tsvector('english', COALESCE(\"AuthorisationDescription\", ''))"

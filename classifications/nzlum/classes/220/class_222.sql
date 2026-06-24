@@ -230,7 +230,7 @@ CREATE TEMPORARY VIEW class_222 AS (
                 nzlri_slope_.source_scale,
                 nzlri_luc_.source_scale
             ], NULL)))::int4range,
-            NULL
+            dairy_effluent_discharge.comment
         )::nzlum_type AS nzlum_type
         FROM roi
         LEFT JOIN (
@@ -257,7 +257,7 @@ CREATE TEMPORARY VIEW class_222 AS (
             ) AND irrigation_.irrigation_type NOT LIKE 'Drip%'
         ) irrigation_ ON roi.h3_index && irrigation_.h3_index
         LEFT JOIN (
-            SELECT h3_index, source_data, source_date, source_scale, manage, animal_count
+            SELECT h3_index, source_data, source_date, source_scale, manage, animal_count, comment
             FROM dairy_effluent_discharge
         ) AS dairy_effluent_discharge ON roi.h3_index && dairy_effluent_discharge.h3_index
         LEFT JOIN (
