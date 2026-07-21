@@ -1,0 +1,597 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mdb:MD_Metadata xmlns:cit="http://standards.iso.org/iso/19115/-3/cit/2.0" xmlns:gco="http://standards.iso.org/iso/19115/-3/gco/1.0" xmlns:gex="http://standards.iso.org/iso/19115/-3/gex/1.0" xmlns:lan="http://standards.iso.org/iso/19115/-3/lan/1.0" xmlns:mcc="http://standards.iso.org/iso/19115/-3/mcc/1.0" xmlns:mco="http://standards.iso.org/iso/19115/-3/mco/1.0" xmlns:mdb="http://standards.iso.org/iso/19115/-3/mdb/2.0" xmlns:mdq="http://standards.iso.org/iso/19115/-3/mdq/1.0" xmlns:mmi="http://standards.iso.org/iso/19115/-3/mmi/1.0" xmlns:mrc="http://standards.iso.org/iso/19115/-3/mrc/2.0" xmlns:mrd="http://standards.iso.org/iso/19115/-3/mrd/1.0" xmlns:mri="http://standards.iso.org/iso/19115/-3/mri/1.0" xmlns:mrl="http://standards.iso.org/iso/19115/-3/mrl/2.0" xmlns:mrs="http://standards.iso.org/iso/19115/-3/mrs/1.0" xmlns:msr="http://standards.iso.org/iso/19115/-3/msr/2.0">
+  <mdb:metadataIdentifier>
+    <mcc:MD_Identifier>
+      <mcc:code>
+        <gco:CharacterString>de45a21d-930b-434c-ab18-ba2cd1706590</gco:CharacterString>
+      </mcc:code>
+    </mcc:MD_Identifier>
+  </mdb:metadataIdentifier>
+  <mdb:defaultLocale>
+    <lan:PT_Locale>
+      <lan:language>
+        <lan:LanguageCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#LanguageCode" codeListValue="eng">eng</lan:LanguageCode>
+      </lan:language>
+      <lan:characterEncoding>
+        <lan:MD_CharacterSetCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_CharacterSetCode" codeListValue="utf8">utf8</lan:MD_CharacterSetCode>
+      </lan:characterEncoding>
+    </lan:PT_Locale>
+  </mdb:defaultLocale>
+  <mdb:metadataScope>
+    <mdb:MD_MetadataScope>
+      <mdb:resourceScope>
+        <mcc:MD_ScopeCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_ScopeCode" codeListValue="dataset">dataset</mcc:MD_ScopeCode>
+      </mdb:resourceScope>
+    </mdb:MD_MetadataScope>
+  </mdb:metadataScope>
+  <mdb:contact>
+    <cit:CI_Responsibility>
+      <cit:role>
+        <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+      </cit:role>
+      <cit:party>
+        <cit:CI_Individual>
+          <cit:name>
+            <gco:CharacterString>Richard Law</gco:CharacterString>
+          </cit:name>
+          <cit:positionName>
+            <gco:CharacterString>Senior Researcher – Geospatial and Remote Sensing</gco:CharacterString>
+          </cit:positionName>
+          <cit:partOfOrganisation>
+            <cit:CI_Organisation>
+              <cit:name>
+                <gco:CharacterString>Bioeconomy Science Institute</gco:CharacterString>
+              </cit:name>
+            </cit:CI_Organisation>
+          </cit:partOfOrganisation>
+          <cit:contactInfo>
+            <cit:CI_Contact>
+              <cit:address>
+                <cit:CI_Address>
+                  <cit:electronicMailAddress>
+                    <gco:CharacterString>lawr@landcareresearch.co.nz</gco:CharacterString>
+                  </cit:electronicMailAddress>
+                </cit:CI_Address>
+              </cit:address>
+            </cit:CI_Contact>
+          </cit:contactInfo>
+        </cit:CI_Individual>
+      </cit:party>
+    </cit:CI_Responsibility>
+  </mdb:contact>
+  <mdb:dateInfo>
+    <cit:CI_Date>
+      <cit:date>
+        <gco:Date>2026-07-21</gco:Date>
+      </cit:date>
+      <cit:dateType>
+        <cit:CI_DateTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_DateTypeCode" codeListValue="creation">creation</cit:CI_DateTypeCode>
+      </cit:dateType>
+    </cit:CI_Date>
+  </mdb:dateInfo>
+  <mdb:metadataStandard>
+    <cit:CI_Citation>
+      <cit:title>
+        <gco:CharacterString>ISO 19115</gco:CharacterString>
+      </cit:title>
+      <cit:edition>
+        <gco:CharacterString>2014 (ISO 19115-1)</gco:CharacterString>
+      </cit:edition>
+    </cit:CI_Citation>
+  </mdb:metadataStandard>
+  <mdb:referenceSystemInfo>
+    <mrs:MD_ReferenceSystem>
+      <mrs:referenceSystemIdentifier>
+        <mcc:MD_Identifier>
+          <mcc:code>
+            <gco:CharacterString>EPSG:3851</gco:CharacterString>
+          </mcc:code>
+          <mcc:codeSpace>
+            <gco:CharacterString>EPSG</gco:CharacterString>
+          </mcc:codeSpace>
+        </mcc:MD_Identifier>
+      </mrs:referenceSystemIdentifier>
+    </mrs:MD_ReferenceSystem>
+    <!-- NZGD2000 / NZCS2000 (New Zealand Continental Shelf 2000): The reference system of the published output. NZCS2000 is a Lambert Conformal Conic projection covering New Zealand's full offshore continental shelf, chosen over NZTM2000 (EPSG:2193) because it suits an extent spanning the antimeridian, including the outlying islands. -->
+  </mdb:referenceSystemInfo>
+  <mdb:referenceSystemInfo>
+    <mrs:MD_ReferenceSystem>
+      <mrs:referenceSystemIdentifier>
+        <mcc:MD_Identifier>
+          <mcc:code>
+            <gco:CharacterString>EPSG:4326</gco:CharacterString>
+          </mcc:code>
+          <mcc:codeSpace>
+            <gco:CharacterString>EPSG</gco:CharacterString>
+          </mcc:codeSpace>
+        </mcc:MD_Identifier>
+      </mrs:referenceSystemIdentifier>
+    </mrs:MD_ReferenceSystem>
+    <!-- WGS 84: The working reference system: the classification is indexed to the H3 discrete global grid system, which operates in WGS84 lat/lon. Also used for the geographic bounding box recorded in this metadata's extent. -->
+  </mdb:referenceSystemInfo>
+  <mdb:referenceSystemInfo>
+    <mrs:MD_ReferenceSystem>
+      <mrs:referenceSystemIdentifier>
+        <mcc:MD_Identifier>
+          <mcc:code>
+            <gco:CharacterString>EPSG:2193</gco:CharacterString>
+          </mcc:code>
+          <mcc:codeSpace>
+            <gco:CharacterString>EPSG</gco:CharacterString>
+          </mcc:codeSpace>
+        </mcc:MD_Identifier>
+      </mrs:referenceSystemIdentifier>
+    </mrs:MD_ReferenceSystem>
+    <!-- NZGD2000 / New Zealand Transverse Mercator 2000 (NZTM2000): Used elsewhere within the wider LUIS project (other classifications with mainland-only extents) for metric (area/distance) calculations; not used for this output, noted here for completeness only. -->
+  </mdb:referenceSystemInfo>
+  <mdb:spatialRepresentationInfo>
+    <msr:MD_VectorSpatialRepresentation>
+      <msr:topologyLevel>
+        <msr:MD_TopologyLevelCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_TopologyLevelCode" codeListValue="geometryOnly">geometryOnly</msr:MD_TopologyLevelCode>
+      </msr:topologyLevel>
+      <msr:geometricObjects>
+        <msr:MD_GeometricObjects>
+          <msr:geometricObjectType>
+            <msr:MD_GeometricObjectTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_GeometricObjectTypeCode" codeListValue="surface">surface</msr:MD_GeometricObjectTypeCode>
+          </msr:geometricObjectType>
+        </msr:MD_GeometricObjects>
+      </msr:geometricObjects>
+    </msr:MD_VectorSpatialRepresentation>
+    <!-- DGGS: H3 (Uber H3 hexagonal discrete global grid system), resolution 11 (avg. edge 24.91 m, avg. cell area 0.0021496 km2). The classification is performed per H3 cell at resolution 11, then dissolved into the multipolygon features that make up the published output. -->
+  </mdb:spatialRepresentationInfo>
+  <mdb:identificationInfo>
+    <mri:MD_DataIdentification>
+      <mri:citation>
+        <cit:CI_Citation>
+          <cit:title>
+            <gco:CharacterString>New Zealand Land Use and Management (NZLUM) classification</gco:CharacterString>
+          </cit:title>
+          <cit:alternateTitle>
+            <gco:CharacterString>NZLUM v0.4 2026</gco:CharacterString>
+          </cit:alternateTitle>
+          <cit:date>
+            <cit:CI_Date>
+              <cit:date>
+                <gco:Date>2026-06-01</gco:Date>
+              </cit:date>
+              <cit:dateType>
+                <cit:CI_DateTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_DateTypeCode" codeListValue="creation">creation</cit:CI_DateTypeCode>
+              </cit:dateType>
+            </cit:CI_Date>
+            <!-- Nominal data date, as published: a land-use map of New Zealand at a nominal date of June 2026. -->
+          </cit:date>
+          <cit:date>
+            <cit:CI_Date>
+              <cit:date>
+                <gco:Date>2026-06-19</gco:Date>
+              </cit:date>
+              <cit:dateType>
+                <cit:CI_DateTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_DateTypeCode" codeListValue="publication">publication</cit:CI_DateTypeCode>
+              </cit:dateType>
+            </cit:CI_Date>
+            <!-- Publication date of the v0.4 2026 edition on the LRIS Portal. -->
+          </cit:date>
+          <cit:edition>
+            <gco:CharacterString>v0.4.0</gco:CharacterString>
+          </cit:edition>
+          <cit:editionDate>
+            <gco:Date>2026-07-21</gco:Date>
+          </cit:editionDate>
+          <cit:citedResponsibility>
+            <cit:CI_Responsibility>
+              <cit:role>
+                <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_RoleCode" codeListValue="originator">originator</cit:CI_RoleCode>
+              </cit:role>
+              <cit:party>
+                <cit:CI_Organisation>
+                  <cit:name>
+                    <gco:CharacterString>Manaaki Whenua – Landcare Research / Bioeconomy Science Institute</gco:CharacterString>
+                  </cit:name>
+                </cit:CI_Organisation>
+              </cit:party>
+            </cit:CI_Responsibility>
+          </cit:citedResponsibility>
+          <cit:citedResponsibility>
+            <cit:CI_Responsibility>
+              <cit:role>
+                <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_RoleCode" codeListValue="author">author</cit:CI_RoleCode>
+              </cit:role>
+              <cit:party>
+                <cit:CI_Individual>
+                  <cit:name>
+                    <gco:CharacterString>Richard Law</gco:CharacterString>
+                  </cit:name>
+                  <cit:partOfOrganisation>
+                    <cit:CI_Organisation>
+                      <cit:name>
+                        <gco:CharacterString>Bioeconomy Science Institute</gco:CharacterString>
+                      </cit:name>
+                    </cit:CI_Organisation>
+                  </cit:partOfOrganisation>
+                  <cit:contactInfo>
+                    <cit:CI_Contact>
+                      <cit:address>
+                        <cit:CI_Address>
+                          <cit:electronicMailAddress>
+                            <gco:CharacterString>lawr@landcareresearch.co.nz</gco:CharacterString>
+                          </cit:electronicMailAddress>
+                        </cit:CI_Address>
+                      </cit:address>
+                    </cit:CI_Contact>
+                  </cit:contactInfo>
+                </cit:CI_Individual>
+              </cit:party>
+            </cit:CI_Responsibility>
+          </cit:citedResponsibility>
+          <cit:citedResponsibility>
+            <cit:CI_Responsibility>
+              <cit:role>
+                <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_RoleCode" codeListValue="publisher">publisher</cit:CI_RoleCode>
+              </cit:role>
+              <cit:party>
+                <cit:CI_Organisation>
+                  <cit:name>
+                    <gco:CharacterString>LRIS Portal (lris.scinfo.org.nz), operated by Manaaki Whenua – Landcare Research</gco:CharacterString>
+                  </cit:name>
+                </cit:CI_Organisation>
+              </cit:party>
+            </cit:CI_Responsibility>
+          </cit:citedResponsibility>
+          <cit:identifier>
+            <mcc:MD_Identifier>
+              <mcc:code>
+                <gco:CharacterString>https://github.com/manaakiwhenua/nzsluc/tree/main/classification-systems/nzlum</gco:CharacterString>
+              </mcc:code>
+              <mcc:codeSpace>
+                <gco:CharacterString>URL</gco:CharacterString>
+              </mcc:codeSpace>
+            </mcc:MD_Identifier>
+            <!-- Canonical reference for the NZSLUC classification system definition that NZLUM implements. -->
+          </cit:identifier>
+          <cit:identifier>
+            <mcc:MD_Identifier>
+              <mcc:code>
+                <gco:CharacterString>https://lris.scinfo.org.nz/set/7516-nzlum-v04-2026/</gco:CharacterString>
+              </mcc:code>
+              <mcc:codeSpace>
+                <gco:CharacterString>URL</gco:CharacterString>
+              </mcc:codeSpace>
+            </mcc:MD_Identifier>
+            <!-- Published dataset, comprising 18 regional layers, first published 2026-06-13 under CC BY 4.0. -->
+          </cit:identifier>
+          <cit:identifier>
+            <mcc:MD_Identifier>
+              <mcc:code>
+                <gco:CharacterString>https://nzlum.landcareresearch.co.nz/</gco:CharacterString>
+              </mcc:code>
+              <mcc:codeSpace>
+                <gco:CharacterString>URL</gco:CharacterString>
+              </mcc:codeSpace>
+            </mcc:MD_Identifier>
+            <!-- NZLUM project website. -->
+          </cit:identifier>
+          <cit:otherCitationDetails>
+            <gco:CharacterString>No DOI has been assigned to this dataset as of 2026-07-21.</gco:CharacterString>
+          </cit:otherCitationDetails>
+        </cit:CI_Citation>
+      </mri:citation>
+      <mri:abstract>
+        <gco:CharacterString>NZLUM (New Zealand Land Use and Management classification) is a national land use and management dataset for New Zealand, produced by combinatorial classification of many authoritative spatial datasets aligned to a discrete global grid system (DGGS), using the Land Use Information System (LUIS). Each location is independently assessed against a three-tier hierarchy of land use classes (primary/secondary/tertiary codes) defined by the NZSLUC classification system: 1 = Conservation and natural environments (e.g. nature conservation, cultural and natural heritage, minimal-use natural environments including defence land, unused/transitioning land); 2 = Production land uses (e.g. plantation forestry, dairy and dry stock grazing, cropping, horticulture, intensive animal production, water/wastewater, smallholder farms); 3 = Built environments (e.g. residential density tiers, recreation and community services, commercial, manufacturing and industrial, utilities, transportation, mining, waste treatment). Alongside the class identification, each unit carries a confidence score, spatial scale, and source date range describing the evidentiary basis of its classification.</gco:CharacterString>
+      </mri:abstract>
+      <mri:purpose>
+        <gco:CharacterString>To provide a single, nationally consistent land use and management classification for New Zealand's territorial sea extent, resolving many overlapping and variably-scaled authoritative datasets (national topographic, cadastral, land-cover, and land-use datasets; and regional council resource-consent, hazard, and land-use datasets) into one dataset with a common schema, suitable for national-scale land use analysis, reporting, and planning.</gco:CharacterString>
+      </mri:purpose>
+      <mri:pointOfContact>
+        <cit:CI_Responsibility>
+          <cit:role>
+            <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_RoleCode" codeListValue="pointOfContact">pointOfContact</cit:CI_RoleCode>
+          </cit:role>
+          <cit:party>
+            <cit:CI_Individual>
+              <cit:name>
+                <gco:CharacterString>Richard Law</gco:CharacterString>
+              </cit:name>
+              <cit:positionName>
+                <gco:CharacterString>Senior Researcher – Geospatial and Remote Sensing</gco:CharacterString>
+              </cit:positionName>
+              <cit:partOfOrganisation>
+                <cit:CI_Organisation>
+                  <cit:name>
+                    <gco:CharacterString>Bioeconomy Science Institute</gco:CharacterString>
+                  </cit:name>
+                </cit:CI_Organisation>
+              </cit:partOfOrganisation>
+              <cit:contactInfo>
+                <cit:CI_Contact>
+                  <cit:address>
+                    <cit:CI_Address>
+                      <cit:electronicMailAddress>
+                        <gco:CharacterString>lawr@landcareresearch.co.nz</gco:CharacterString>
+                      </cit:electronicMailAddress>
+                    </cit:CI_Address>
+                  </cit:address>
+                </cit:CI_Contact>
+              </cit:contactInfo>
+            </cit:CI_Individual>
+          </cit:party>
+        </cit:CI_Responsibility>
+      </mri:pointOfContact>
+      <mri:status>
+        <mri:MD_ProgressCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_ProgressCode" codeListValue="onGoing">onGoing</mri:MD_ProgressCode>
+      </mri:status>
+      <mri:resourceMaintenance>
+        <mmi:MD_MaintenanceInformation>
+          <mmi:maintenanceAndUpdateFrequency>
+            <mmi:MD_MaintenanceFrequencyCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_MaintenanceFrequencyCode" codeListValue="asNeeded">asNeeded</mmi:MD_MaintenanceFrequencyCode>
+          </mmi:maintenanceAndUpdateFrequency>
+          <mmi:maintenanceNote>
+            <gco:CharacterString>Regenerated as contributing input datasets or classification rules change. Further versions are expected as the NZSLUC classification system and its contributing datasets evolve.</gco:CharacterString>
+          </mmi:maintenanceNote>
+        </mmi:MD_MaintenanceInformation>
+      </mri:resourceMaintenance>
+      <mri:descriptiveKeywords>
+        <mri:MD_Keywords>
+          <mri:keyword>
+            <gco:CharacterString>land use</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>land use classification</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>land management</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>land cover</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>discrete global grid system</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>DGGS</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>H3</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>NZLUM</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>NZSLUC</gco:CharacterString>
+          </mri:keyword>
+          <mri:type>
+            <mri:MD_KeywordTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_KeywordTypeCode" codeListValue="theme">theme</mri:MD_KeywordTypeCode>
+          </mri:type>
+        </mri:MD_Keywords>
+      </mri:descriptiveKeywords>
+      <mri:descriptiveKeywords>
+        <mri:MD_Keywords>
+          <mri:keyword>
+            <gco:CharacterString>New Zealand</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>New Zealand territorial sea</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Northland</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Auckland</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Waikato</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Bay of Plenty</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Gisborne</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Taranaki</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Hawke's Bay</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Manawatū-Whanganui</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Wellington</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Nelson</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Tasman</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Marlborough</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>West Coast</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Canterbury</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Otago</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Southland</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Area Outside Region</gco:CharacterString>
+          </mri:keyword>
+          <mri:keyword>
+            <gco:CharacterString>Outlying Islands</gco:CharacterString>
+          </mri:keyword>
+          <mri:type>
+            <mri:MD_KeywordTypeCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_KeywordTypeCode" codeListValue="place">place</mri:MD_KeywordTypeCode>
+          </mri:type>
+        </mri:MD_Keywords>
+      </mri:descriptiveKeywords>
+      <mri:spatialResolution>
+        <mri:MD_Resolution>
+          <mri:distance>
+            <gco:Distance uom="m">24.91</gco:Distance>
+          </mri:distance>
+        </mri:MD_Resolution>
+        <!-- Average H3 resolution-11 hexagon edge length. Individual contributing input datasets vary considerably in native scale/resolution. -->
+      </mri:spatialResolution>
+      <mri:topicCategory>
+        <mri:MD_TopicCategoryCode>planningCadastre</mri:MD_TopicCategoryCode>
+      </mri:topicCategory>
+      <mri:extent>
+        <gex:EX_Extent>
+          <gex:geographicElement>
+            <gex:EX_GeographicBoundingBox>
+              <gex:westBoundLongitude>
+                <gco:Decimal>165.5</gco:Decimal>
+              </gex:westBoundLongitude>
+              <gex:eastBoundLongitude>
+                <gco:Decimal>-175.4</gco:Decimal>
+              </gex:eastBoundLongitude>
+              <gex:southBoundLatitude>
+                <gco:Decimal>-52.8216</gco:Decimal>
+              </gex:southBoundLatitude>
+              <gex:northBoundLatitude>
+                <gco:Decimal>-29.0303</gco:Decimal>
+              </gex:northBoundLatitude>
+            </gex:EX_GeographicBoundingBox>
+            <!-- Bounding rectangle only, crossing the antimeridian (180°) to include the Kermadec Islands to the northeast. Taken from the published dataset's own extent. The true footprint is the New Zealand 12 nautical mile territorial sea polygon - mainland New Zealand plus outlying island groups (Kermadec, Chatham, Auckland, Campbell, Antipodes, Bounty, Snares) - not a filled rectangle. -->
+          </gex:geographicElement>
+          <!-- temporalElement: No single production/observation date applies: the dataset is a composite of contributing source datasets with their own source date ranges, spanning at least 1973 to the present across known contributing sources. -->
+        </gex:EX_Extent>
+      </mri:extent>
+      <mri:resourceConstraints>
+        <mco:MD_LegalConstraints>
+          <mco:useConstraints>
+            <mco:MD_RestrictionCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_RestrictionCode" codeListValue="license">license</mco:MD_RestrictionCode>
+          </mco:useConstraints>
+          <mco:otherConstraints>
+            <gco:CharacterString>CC BY 4.0: https://creativecommons.org/licenses/by/4.0/</gco:CharacterString>
+          </mco:otherConstraints>
+          <!-- Confirmed as the license recorded by the publisher on the LRIS Portal. -->
+          <mco:otherConstraints>
+            <gco:CharacterString>Some contributing input datasets carry restricted-use terms - notably two District Valuation Roll (DVR) derived layers used under permission from the Ministry for the Environment (MfE). The published output does not expose the restricted source geometries or attributes directly; it carries only derived/aggregated classification values (land use class, confidence, source metadata) at the resolution of the H3 grid. Users with questions about a specific contributing dataset's terms should contact the point of contact for this record.</gco:CharacterString>
+          </mco:otherConstraints>
+        </mco:MD_LegalConstraints>
+      </mri:resourceConstraints>
+    </mri:MD_DataIdentification>
+  </mdb:identificationInfo>
+  <mdb:contentInfo>
+    <mrc:MD_FeatureCatalogueDescription>
+      <mrc:featureTypes>
+        <mrc:MD_FeatureTypeInfo>
+          <mrc:featureTypeName>nzlum</mrc:featureTypeName>
+        </mrc:MD_FeatureTypeInfo>
+      </mrc:featureTypes>
+      <!-- Feature attributes (informative - ISO 19115 contentInfo does not itself carry per-attribute definitions; see ISO 19110 for a full feature catalogue): unit_id (BIGINT): A deterministic hash of a subset of the unit's own classification attributes (used to identify/dissolve H3 cells sharing the same classification result). Used as the GeoPackage feature id, but is not a persistently-assigned or guaranteed-unique per-feature identifier, and is not stable across reclassification runs if the hashed attributes change.; lu_code_primary (INTEGER): Primary (top-level, 1 digit) NZSLUC land use code, e.g. 1 = Conservation and natural environments, 2 = Production land uses, 3 = Built environments.; lu_code_secondary (INTEGER): Secondary (second-level) NZSLUC land use code, refining the primary code.; lu_code_tertiary (INTEGER): Tertiary (third-level, most specific) NZSLUC land use code, refining the secondary code.; lu_code (TEXT): Dotted concatenation of the primary, secondary, and tertiary codes (e.g. '1.3.6').; lu_description (TEXT): Human-readable label for the lu_code, derived from the NZSLUC v0.4.0 classification system definition.; lu_code_ancillary (TEXT): Additional/ancillary land use code(s) applicable to the same unit, where more than one use co-occurs.; commod (TEXT): Commodity or commodities associated with the classified use (e.g. specific crop or livestock types), where known.; manage (TEXT): Management practice(s) associated with the classified use (e.g. crop-pasture rotation, irrigation type), where known.; land_estate (TEXT): Estate/tenure type of the underlying property title (from LINZ District Valuation Roll / Records of Title), where available.; land_status (TEXT): Land governance/management status (e.g. Crown, local authority, private), derived primarily from the Central Record of State Land (CRoSL) and District Valuation Roll.; water (TEXT): Water feature type intersecting or coincident with the unit (e.g. river, lake, lagoon, swamp, mangrove), where applicable.; zone (TEXT): Planning zone category (e.g. Rural, Residential, Industrial, Commercial, Recreational), derived from District Valuation Roll zone codes.; confidence (INTEGER): Relative confidence in the classification of this unit (lower value = higher confidence), used to prioritise between competing candidate classifications during processing.; luc_date (DATE): Date on which this unit was processed/classified by the LUIS workflow.; source_data (TEXT): Name(s) of the contributing source dataset(s) that determined this unit's classification.; source_date (DATERANGE): Date range over which the contributing source data is valid/current.; source_scale (INT4RANGE): Spatial scale/precision range (in metres) of the contributing source data.; comment (TEXT): Free-text remarks; reserved for classification-specific notes. -->
+    </mrc:MD_FeatureCatalogueDescription>
+  </mdb:contentInfo>
+  <mdb:distributionInfo>
+    <mrd:MD_Distribution>
+      <mrd:distributionFormat>
+        <mrd:MD_Format>
+          <mrd:formatSpecificationCitation>
+            <cit:CI_Citation>
+              <cit:title>
+                <gco:CharacterString>GeoPackage</gco:CharacterString>
+              </cit:title>
+              <cit:alternateTitle>
+                <gco:CharacterString>OGC GeoPackage</gco:CharacterString>
+              </cit:alternateTitle>
+            </cit:CI_Citation>
+          </mrd:formatSpecificationCitation>
+        </mrd:MD_Format>
+      </mrd:distributionFormat>
+      <mrd:distributionFormat>
+        <mrd:MD_Format>
+          <mrd:formatSpecificationCitation>
+            <cit:CI_Citation>
+              <cit:title>
+                <gco:CharacterString>Shapefile</gco:CharacterString>
+              </cit:title>
+              <cit:alternateTitle>
+                <gco:CharacterString>ESRI Shapefile</gco:CharacterString>
+              </cit:alternateTitle>
+            </cit:CI_Citation>
+          </mrd:formatSpecificationCitation>
+        </mrd:MD_Format>
+      </mrd:distributionFormat>
+      <mrd:distributor>
+        <mrd:MD_Distributor>
+          <mrd:distributorContact>
+            <cit:CI_Responsibility>
+              <cit:role>
+                <cit:CI_RoleCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_RoleCode" codeListValue="distributor">distributor</cit:CI_RoleCode>
+              </cit:role>
+              <cit:party>
+                <cit:CI_Organisation>
+                  <cit:name>
+                    <gco:CharacterString>LRIS Portal (lris.scinfo.org.nz), operated by Manaaki Whenua – Landcare Research</gco:CharacterString>
+                  </cit:name>
+                </cit:CI_Organisation>
+              </cit:party>
+            </cit:CI_Responsibility>
+          </mrd:distributorContact>
+        </mrd:MD_Distributor>
+      </mrd:distributor>
+      <mrd:transferOptions>
+        <mrd:MD_DigitalTransferOptions>
+          <mrd:onLine>
+            <cit:CI_OnlineResource>
+              <cit:linkage>
+                <gco:CharacterString>https://lris.scinfo.org.nz/set/7516-nzlum-v04-2026/</gco:CharacterString>
+              </cit:linkage>
+              <cit:function>
+                <cit:CI_OnLineFunctionCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_OnLineFunctionCode" codeListValue="information">information</cit:CI_OnLineFunctionCode>
+              </cit:function>
+              <cit:name>
+                <gco:CharacterString>NZLUM v0.4 2026 (LRIS Portal)</gco:CharacterString>
+              </cit:name>
+              <cit:description>
+                <gco:CharacterString>Landing page for the published dataset: 18 regional layers (16 regions plus 'Area Outside Region' and 'Outlying Islands'), CC BY 4.0. Offers file download (GeoPackage, Shapefile, and others), OGC WFS and WMTS, and an Esri REST API, per layer.</gco:CharacterString>
+              </cit:description>
+            </cit:CI_OnlineResource>
+          </mrd:onLine>
+          <mrd:onLine>
+            <cit:CI_OnlineResource>
+              <cit:linkage>
+                <gco:CharacterString>https://nzlum.landcareresearch.co.nz/</gco:CharacterString>
+              </cit:linkage>
+              <cit:function>
+                <cit:CI_OnLineFunctionCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#CI_OnLineFunctionCode" codeListValue="information">information</cit:CI_OnLineFunctionCode>
+              </cit:function>
+              <cit:name>
+                <gco:CharacterString>NZLUM project website</gco:CharacterString>
+              </cit:name>
+              <cit:description>
+                <gco:CharacterString>More information about the NZLUM classification.</gco:CharacterString>
+              </cit:description>
+            </cit:CI_OnlineResource>
+          </mrd:onLine>
+        </mrd:MD_DigitalTransferOptions>
+      </mrd:transferOptions>
+      <!-- transferOptions: Access to individual download/service endpoints requires a free LRIS Portal account and API key. No DOI is currently assigned. -->
+    </mrd:MD_Distribution>
+  </mdb:distributionInfo>
+  <mdb:dataQualityInfo>
+    <mdq:DQ_DataQuality>
+      <mdq:scope>
+        <mcc:MD_Scope>
+          <mcc:level>
+            <mcc:MD_ScopeCode codeList="https://standards.iso.org/iso/19115/resources/Codelist/cat/codelists.xml#MD_ScopeCode" codeListValue="dataset">dataset</mcc:MD_ScopeCode>
+          </mcc:level>
+        </mcc:MD_Scope>
+      </mdq:scope>
+      <mdq:lineage>
+        <mrl:LI_Lineage>
+          <mrl:statement>
+            <gco:CharacterString>NZLUM is produced by the Land Use Information System (LUIS), which partitions New Zealand's territorial sea extent into H3 discrete global grid cells at resolution 11, then evaluates each cell independently against a series of per-class rules drawing on a large and evolving set of authoritative input datasets. Where more than one candidate classification applies to a cell, rules prefer the more confident, more recent, and more spatially precise identification. Contributing input dataset categories include: Toitu Te Whenua Land Information New Zealand (LINZ) topographic, cadastral, and property/title datasets; Manaaki Whenua - Landcare Research datasets including the Land Cover Database (LCDB) and NZ Land Resource Inventory Land Use Capability (NZLRI LUC); Ministry for the Environment (MfE) and Statistics New Zealand (Stats NZ) datasets; Ministry for Primary Industries (MPI) marine farm data; and regional council resource-consent, contaminated-land (HAIL), land-categorisation, and land-use survey datasets from a wide range of regional and unitary authorities. The full, current list of contributing datasets changes as datasets are added and is intentionally not duplicated verbatim in this metadata record.</gco:CharacterString>
+          </mrl:statement>
+        </mrl:LI_Lineage>
+      </mdq:lineage>
+    </mdq:DQ_DataQuality>
+  </mdb:dataQualityInfo>
+</mdb:MD_Metadata>
