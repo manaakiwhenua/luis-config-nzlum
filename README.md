@@ -3,7 +3,7 @@
 Configuration files for [LUIS](https://github.com/manaakiwhenua/luis) for the [NZLUM classification](https://github.com/manaakiwhenua/nzsluc/tree/main/classification-systems/nzlum).
 
 > [!NOTE]
-> The Land Use Information System (LUIS) is proprietary software, but relies on a structured set of configuration files, which are available here for this particular classification system (the New Zealand Land Use and Management classification, NZLUM). This README loosely describes this structure, but this repository contains nothing more than the authoritative configuration files and does not include any software. It is used a submodule for LUIS.
+> The Land Use Information System (LUIS) is proprietary software, but relies on a structured set of configuration files, which are available here for this particular classification system (the New Zealand Land Use and Management classification, NZLUM). This README loosely describes this structure, but this repository contains nothing more than the authoritative configuration files and does not include any software. It is used as a submodule for LUIS.
 
 ## Structure
 
@@ -36,16 +36,35 @@ external_data:
 
   lcdb_v5:
     <<: *lcr_wfs
-    description: LCDB v5
+    description: LCDB v5.0 (mainland) [DEPRECATED]
     layer: layer-104400
     geom_type: multipolygon
-    indices: &lcdb_indices
+    indices: &lcdb_v5_indices
       - columns: [Name_2018]
         type: btree
         name: idx_name_2018
-      - columns: [Class_2018]
+      - columns: [Class_2023]
         type: btree
-        name: idx_class_2018
+        name: idx_class_2023
+      - columns: [editdate]
+        type: btree
+        name: idx_editdate
+      - columns: [geom]
+        type: gist
+        name: idx_gist_geom
+  
+  lcdb_v6:
+    <<: *lcr_wfs
+    layer: layer-123148
+    description: LCDB v6.0 (mainland)
+    geom_type: multipolygon
+    indices: &lcdb_v6_indices
+      - columns: [Name_2023]
+        type: btree
+        name: idx_name_2023
+      - columns: [Class_2023]
+        type: btree
+        name: idx_class_2023
       - columns: [editdate]
         type: btree
         name: idx_editdate
@@ -53,16 +72,22 @@ external_data:
         type: gist
         name: idx_gist_geom
 
-
   lcdb_v5_chathams:
     <<: *lcr_wfs
-    description: LCDB v5 [Chatham Islands]
+    description: LCDB v5 (Chatham Islands) [DEPRECATED]
     layer: layer-104442
     geom_type: multipolygon
-    indices: *lcdb_indices
+    indices: *lcdb_v5_indices
+
+  lcdb_v6_chathams:
+    <<: *lcr_wfs
+    description: LCDB v6 (Chatham Islands)
+    layer: layer-123145
+    geom_type: multipolygon
+    indices: *lcdb_v6_indices
 ```
 
-This example demonstrates how LCDB v5 is configured. It uses YAML templates for shared properties across LCDB mainland and Chatham Island versions, which have the same schema and can therefore also share the same `indices`. Indices include a GiST index for geometry data, and three btree indices for the `Name_2018`, `Class_2018`, and `editdate` attributes as they are used within later queries (which perform the land use classification).
+This example demonstrates how LCDB is configured. `lcdb_v5`/`lcdb_v5_chathams` are deprecated; `lcdb_v6`/`lcdb_v6_chathams` are the current mainland and Chatham Island layers. It uses YAML templates for shared properties across versions and island groups, which have the same schema and can therefore also share the same `indices`. Indices include a GiST index for geometry data, and btree indices for the `Name_2023`, `Class_2023`, and `editdate` attributes as they are used within later queries (which perform the land use classification).
 
 > [!IMPORTANT]
 > The `key` property should refer to an environment variable which will be checked at runtime. Unless a key is supposed to be public, it is never to be included in configuration beyond the expected name of the environment variable. It can be included in any part of the API URL as above by using `{key}` as above.
@@ -73,7 +98,11 @@ This example demonstrates how LCDB v5 is configured. It uses YAML templates for 
 The `classifications` directory is for logic relating more to the classification implementation, as distinct from configuration describing what and how to access published data.
 
 > [!NOTE]
-> As more versions of the NZLUM classification are published, additional classifications may be added to this directory so that older versions remain available for inspection and re-use; for now it only contains the configuration for the pilot implementation of the NZLUM classification.
+> As more versions of the NZLUM classification are published, additional classifications may be added to this directory so that older versions remain available for inspection and re-use; for now it only contains the configuration for the present implementation of the NZLUM classification.
+
+[`classifications/nzlum/metadata/metadata.iso19115.json`](classifications/nzlum/metadata/metadata.iso19115.json) is discovery/catalogue metadata for the NZLUM output dataset, structured after the ISO 19115 information model. It is the editable source of truth; two XML encodings are generated from it and should not be hand-edited — re-run the relevant script after editing the JSON:
+- [`classifications/nzlum/metadata/metadata.iso19139.xml`](classifications/nzlum/metadata/metadata.iso19139.xml), the older but still more widely-supported ISO 19139 encoding, via [`generate_iso19139.py`](classifications/nzlum/metadata/generate_iso19139.py).
+- [`classifications/nzlum/metadata/metadata.iso19115-3.xml`](classifications/nzlum/metadata/metadata.iso19115-3.xml), the newer package-based ISO/TS 19115-3 encoding, via [`generate_iso19115_3.py`](classifications/nzlum/metadata/generate_iso19115_3.py).
 
 [`classifications/nzlum/config.nzlum.yml`](classifications/nzlum/config.nzlum.yml)
 
@@ -85,7 +114,7 @@ This configuration files adds a few more top-level attributes:
     - `depends`: array of layer IDs (defined in `external_data`) on which the classification depends (and therefore should be downloaded and processed as described).
     - `table_schema`: the classification produces an output with attributes and these attributes have particular types, together these are a data schema. For example, `lu_code_primary: INTEGER`.
     - `outputs.nzlum`: declares output geospatial data format, and the location of SQL files where the combinatorial logic is written.
-        - `preclassify`: A SQL file (PostgreSQL dialect) to be executed _before_ the classification proper. Can be used to declare new types, useful functions, etc. See [`nzlum-preclassify.sql`](classifications/nzlum/nzlum-preclassify.sql). Funtions may be written using PL/pgSQL.
+        - `preclassify`: A SQL file (PostgreSQL dialect) to be executed _before_ the classification proper. Can be used to declare new types, useful functions, etc. See [`nzlum-preclassify.sql`](classifications/nzlum/nzlum-preclassify.sql). Functions may be written using PL/pgSQL.
         - `query`: A SQL file (PostgreSQL dialect) that performs the classification itself. Using [psql](https://www.postgresql.org/docs/current/app-psql.html) this can make use of `\ir filename` (`\include_relative filename`) so that additional SQL files can be included to make the overall (very large) query can be more maintainable. There are two primary constraints:
             - The query must work on the basis of H3 partitions, referred to by using the `:parent` variable (which will be substituted for the parent H3 index).
             - The output of the query must match the `table_schema` as described in the configuration.

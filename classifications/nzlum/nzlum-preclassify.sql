@@ -75,7 +75,7 @@ CREATE TYPE nzlum0_lu_coden AS ENUM (
     '0'
 );
 
-CREATE OR REPLACE FUNCTION nzsluc_v0_2_0_lu_description(lu_code_primary integer, lu_code_secondary integer, lu_code_tertiary integer) RETURNS text
+CREATE OR REPLACE FUNCTION nzsluc_v0_4_0_lu_description(lu_code_primary integer, lu_code_secondary integer, lu_code_tertiary integer) RETURNS text
     AS \$\$
         SELECT CASE
 

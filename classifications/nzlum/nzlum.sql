@@ -107,7 +107,7 @@ FROM (
         lu_code_secondary::INT,
         lu_code_tertiary::INT,
         ARRAY_TO_STRING(ARRAY[lu_code_primary, lu_code_secondary, lu_code_tertiary]::TEXT[], '.') AS lu_code,
-        nzsluc_v0_2_0_lu_description(lu_code_primary, lu_code_secondary, lu_code_tertiary) AS lu_description,
+        nzsluc_v0_4_0_lu_description(lu_code_primary, lu_code_secondary, lu_code_tertiary) AS lu_description,
         lu_code_ancillary,
         commod,
         manage,
