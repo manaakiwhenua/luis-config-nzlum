@@ -79,12 +79,11 @@ def plot_calibration(ax, gdf, truth_col, confidence_col, area_col, true_vals, se
 
     conf_vals = sorted(gdf[confidence_col].dropna().unique())
 
-    total_per_conf = np.array([
-        gdf.loc[gdf[confidence_col] == cv, area_col].sum()
+    counts_per_conf = np.array([
+        (gdf[confidence_col] == cv).sum()
         for cv in conf_vals
     ])
-    grand_total = total_per_conf.sum()
-    widths = np.log1p(total_per_conf) / np.log1p(total_per_conf).sum()
+    widths = np.log1p(counts_per_conf) / np.log1p(counts_per_conf).sum()
     lefts = np.concatenate([[0], np.cumsum(widths[:-1])])
     centers = lefts + widths / 2
 
@@ -93,8 +92,8 @@ def plot_calibration(ax, gdf, truth_col, confidence_col, area_col, true_vals, se
 
     for cat in cat_order:
         proportions = np.array([
-            gdf.loc[(gdf[confidence_col] == cv) & (gdf[truth_col] == cat), area_col].sum() /
-            max(1e-9, total_per_conf[i])
+            (gdf.loc[gdf[confidence_col] == cv, truth_col] == cat).sum() /
+            max(1, counts_per_conf[i])
             for i, cv in enumerate(conf_vals)
         ])
         ax.bar(lefts, proportions, width=widths - gap, bottom=bottom, align='edge',
@@ -104,8 +103,8 @@ def plot_calibration(ax, gdf, truth_col, confidence_col, area_col, true_vals, se
 
     ax.set_xticks(centers)
     ax.set_xticklabels([str(int(cv)) for cv in conf_vals])
-    ax.set_xlabel("Confidence score (1 = most confident)\n(bar width ∝ log area in bin)")
-    ax.set_ylabel("Proportion of bin area")
+    ax.set_xlabel("More ⟷ less confident\n(bar width ∝ log count in bin)")
+    ax.set_ylabel("Proportion of bin (count)")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.set_title("Validation outcome by confidence score")
@@ -114,12 +113,14 @@ def plot_calibration(ax, gdf, truth_col, confidence_col, area_col, true_vals, se
     ax.set_axisbelow(True)
 
 
-def _draw_accuracy_panel(ax, acc, threshold, title):
+def _draw_accuracy_panel(ax, acc, threshold, title, show_legend=True, bold_labels=None,
+                         xlabel="Area-weighted accuracy"):
     y = np.arange(len(acc))
 
     dot_colors = [
         '#0072B2' if row['ci_lo'] > threshold else
         '#d73027' if row['ci_hi'] < threshold else
+        '#56B4E9' if row['p_strict'] >= threshold else
         '#fdae61'
         for _, row in acc.iterrows()
     ]
@@ -132,31 +133,41 @@ def _draw_accuracy_panel(ax, acc, threshold, title):
     ax.errorbar(acc['p_strict'], y, xerr=xerr, fmt='none',
                 color='#777777', linewidth=1, capsize=3, zorder=2)
 
-    ax.scatter(acc['p_strict'], y, c=dot_colors, zorder=4, s=45)
+    ax.scatter(acc['p_strict'], y, c=dot_colors, zorder=3, s=45)
     ax.scatter(acc['p_lenient'], y, facecolors='none', edgecolors='#555555',
-               zorder=3, s=45, linewidths=1)
+               zorder=4, s=45, linewidths=1)
 
     ax.axvline(threshold, color='black', linestyle='--', linewidth=1)
     ax.text(threshold - 0.008, len(acc) - 0.7, f'{threshold:.0%}',
             fontsize=8, va='top', ha='right')
 
     ax.set_yticks(y)
-    ax.set_yticklabels(acc.index.tolist(), fontsize=8)
-    ax.set_xlabel("Area-weighted accuracy")
+    tick_labels = ax.set_yticklabels(acc.index.tolist(), fontsize=8)
+    if bold_labels:
+        for lbl in tick_labels:
+            if lbl.get_text() in bold_labels:
+                lbl.set_fontweight('bold')
+    trans = ax.get_yaxis_transform()
+    for i, (_, row) in enumerate(acc.iterrows()):
+        ax.text(1.02, y[i], f'n={int(row["n"])}', fontsize=6, ha='left', va='center',
+                transform=trans, clip_on=False, color='#555555')
+    ax.set_xlabel(xlabel)
     ax.set_title(title)
     ax.xaxis.grid(True, linestyle='--', linewidth=0.5, alpha=0.7)
     ax.yaxis.grid(True, linestyle=':', linewidth=0.4, alpha=0.3, color='#888888')
     ax.set_axisbelow(True)
     ax.set_xlim(-0.02, 1.02)
 
-    legend_items = [
-        mlines.Line2D([], [], color='#0072B2', marker='o', linestyle='None', label='Passes'),
-        mlines.Line2D([], [], color='#fdae61', marker='o', linestyle='None', label='Marginal'),
-        mlines.Line2D([], [], color='#d73027', marker='o', linestyle='None', label='Fails'),
-        mlines.Line2D([], [], marker='o', color='w', markerfacecolor='w',
-                      markeredgecolor='#555555', linestyle='None', label='Lenient (incl. maybe)'),
-    ]
-    ax.legend(handles=legend_items, fontsize=8, loc='lower right')
+    if show_legend:
+        legend_items = [
+            mlines.Line2D([], [], color='#0072B2', marker='o', linestyle='None', label='Passes'),
+            mlines.Line2D([], [], color='#56B4E9', marker='o', linestyle='None', label='Marginal pass'),
+            mlines.Line2D([], [], color='#fdae61', marker='o', linestyle='None', label='Marginal fail'),
+            mlines.Line2D([], [], color='#d73027', marker='o', linestyle='None', label='Fails'),
+            mlines.Line2D([], [], marker='o', color='w', markerfacecolor='w',
+                          markeredgecolor='#555555', linestyle='None', label='Lenient (incl. maybe)'),
+        ]
+        ax.legend(handles=legend_items, fontsize=8, loc='upper left')
 
 
 def _groupby_accuracy(gdf, group_col, truth_col, area_col, true_vals, maybe_vals, n_boot, ci):
@@ -166,22 +177,25 @@ def _groupby_accuracy(gdf, group_col, truth_col, area_col, true_vals, maybe_vals
 
 
 def plot_accuracy_uncombined(ax, gdf, lu_col, truth_col, area_col, true_vals, maybe_vals,
-                             threshold, n_boot, ci):
+                             threshold, n_boot, ci, xlabel="Area-weighted accuracy"):
     acc = _groupby_accuracy(gdf, lu_col, truth_col, area_col, true_vals, maybe_vals, n_boot, ci)
     acc = acc.loc[sorted(acc.index, key=_lu_sort_key, reverse=True)]
     _draw_accuracy_panel(ax, acc, threshold,
-                         f"Tertiary accuracy\n(bootstrap {ci:.0%} CI)")
+                         f"Tertiary accuracy\n(bootstrap {ci:.0%} CI)", xlabel=xlabel)
+    ax.set_ylabel("NZLUM v0.4 class")
 
 
 def plot_accuracy_combined(ax, gdf, lu_col, truth_col, area_col, true_vals, secondary_vals,
-                           maybe_vals, threshold, n_boot, ci):
+                           maybe_vals, threshold, n_boot, ci, xlabel="Area-weighted accuracy"):
     gdf = gdf.copy()
     gdf['_secondary_lu'] = gdf[lu_col].map(to_secondary_code)
     strict_vals = list(set(true_vals) | set(secondary_vals))
     acc = _groupby_accuracy(gdf, '_secondary_lu', truth_col, area_col, strict_vals, maybe_vals, n_boot, ci)
     acc = acc.loc[sorted(acc.index, key=_lu_sort_key, reverse=True)]
+    has_tertiary = set(gdf.loc[gdf[lu_col] != gdf['_secondary_lu'], '_secondary_lu'])
     _draw_accuracy_panel(ax, acc, threshold,
-                         f"Secondary accuracy\n(bootstrap {ci:.0%} CI)")
+                         f"Secondary accuracy\n(bootstrap {ci:.0%} CI)", show_legend=False,
+                         bold_labels=has_tertiary, xlabel=xlabel)
 
 
 def main(gpkg_paths, truth_col, confidence_col, lu_col, area_col, true_values, secondary_values,
